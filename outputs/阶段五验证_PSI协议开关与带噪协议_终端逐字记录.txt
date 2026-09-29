@@ -1,0 +1,89 @@
+==============================================================
+ 阶段五验证：PSI 协议开关打通 + 带噪协议（DP）披露
+ 环境：WSL2 Ubuntu / Python 3.11.16 / spu 0.9.5 / jax 0.4.34
+ 记录时间：2026-09-28
+ 说明：以下为终端逐字输出，未做美化。
+==============================================================
+
+########## 0. 版本 ##########
+spu    0.9.5
+jax    0.4.34
+numpy  1.26.4
+
+########## 1. 全量测试 ##########
+416 passed in 7.59s
+
+########## 2. 协议关系三分类 / 带噪登记 ##########
+  PROTOCOL_ECDH      relation=required  needs_curve=True  exact=True
+  PROTOCOL_KKRT      relation=ignored   needs_curve=False exact=True
+  PROTOCOL_RR22      relation=ignored   needs_curve=False exact=True
+  PROTOCOL_ECDH_3PC  relation=required  needs_curve=True  exact=True
+  PROTOCOL_ECDH_NPC  relation=required  needs_curve=True  exact=True
+  PROTOCOL_KKRT_NPC  relation=ignored   needs_curve=False exact=True
+  PROTOCOL_DP        relation=implicit  needs_curve=False exact=False
+
+  PSI_PROTOCOLS_CURVE_REQUIRED : ('PROTOCOL_ECDH', 'PROTOCOL_ECDH_3PC', 'PROTOCOL_ECDH_NPC')
+  PSI_PROTOCOLS_WITHOUT_CURVE  : ('PROTOCOL_KKRT', 'PROTOCOL_RR22', 'PROTOCOL_KKRT_NPC')
+  PSI_PROTOCOLS_WITH_NOISE     : ('PROTOCOL_DP',)
+  可替代协议清单              : PROTOCOL_ECDH, PROTOCOL_KKRT, PROTOCOL_RR22, PROTOCOL_ECDH_NPC, PROTOCOL_KKRT_NPC, PROTOCOL_DP*（带 * 者为差分隐私协议，结果带噪）
+  resolve_psi_protocol('DP','CURVE_SM2') = ('PROTOCOL_DP', None)
+
+########## 3. 原生库自证：PROTOCOL_DP == DP_PSI_2PC ##########
+[2026-09-28 17:09:57.836] [info] [launch.cc:159] LEGACY PSI config: {"psi_type":"DP_PSI_2PC","input_params":{"path":"/tmp/geo_psi_l0e0c9em/party0.csv","select_fields":["grid_code"]},"output_params":{"path":"/tmp/geo_psi_l0e0c9em/out_rank0.csv","need_sort":true},"bucket_size":1048576,"dppsi_params":{"bob_sub_sampling":0.9,"epsilon":3}}
+[2026-09-28 17:09:57.836] [info] [launch.cc:159] LEGACY PSI config: {"psi_type":"DP_PSI_2PC","input_params":{"path":"/tmp/geo_psi_l0e0c9em/party1.csv","select_fields":["grid_code"]},"output_params":{"path":"/tmp/geo_psi_l0e0c9em/out_rank0.csv","need_sort":true},"bucket_size":1048576,"dppsi_params":{"bob_sub_sampling":0.9,"epsilon":3}}
+[2026-09-28 17:09:57.843] [info] [dp_psi.h:37] DpPsiOptions p1:0.9 epsilon:3 p2:0.9525741268224333, q:0.047425873177566746
+[2026-09-28 17:09:57.843] [info] [dp_psi.h:37] DpPsiOptions p1:0.9 epsilon:3 p2:0.9525741268224333, q:0.047425873177566746
+[2026-09-28 17:09:57.843] [info] [dp_psi.cc:74] sample bernoulli_distribution: 0.9
+[2026-09-28 17:09:57.843] [info] [dp_psi.cc:87] bernoulli_items: 2, bernoulli_idx:2 ratio:0.6666666666666666 
+[2026-09-28 17:09:57.844] [info] [dp_psi.cc:49] sample bernoulli_distribution: 0.9525741268224333
+[2026-09-28 17:09:57.844] [info] [dp_psi.cc:60] bernoulli_items_idx:1 ratio:1 
+[2026-09-28 17:09:57.844] [info] [dp_psi.cc:49] sample bernoulli_distribution: 0.047425873177566746
+[2026-09-28 17:09:57.844] [info] [dp_psi.cc:60] bernoulli_items_idx:0 ratio:0 
+
+########## 4. 漏报率实测：真交集 2 个元素 ##########
+  ECDH/SM2  n= 10  value 分布 = {True: 10}
+  KKRT      n= 10  value 分布 = {True: 10}
+  DP        n= 30  value 分布 = {True: 26, False: 4}
+  （真交集非空，正确结果应恒为 True）
+
+########## 5. CLI: --psi-protocol KKRT（精确协议，回归） ##########
+[7/8] PSI capability check   + OK       1 个算子需 PSI（Intersects）；选用 PROTOCOL_KKRT（不读曲线）；当前环境可执行（spu 0.9.5）
+[8/8] PSI simulation         + OK       1 个算子经真实 PSI 求交验证
+Intersects  CompactCellSet  PSI      b=64 d=0 R=1（PSI 求交轮次）  high      planned
+  选用      : PROTOCOL_KKRT（不读曲线）
+  Intersects: ok  [PROTOCOL_KKRT]
+Intersects  CompactCellSet  PSI      verified
+编译完成。
+
+########## 6. CLI: --psi-protocol DP（带噪协议） ##########
+[7/8] PSI capability check   ! WARNING  1 个算子需 PSI（Intersects）；选用 PROTOCOL_DP（协议自带默认曲线，本项目未传入）；PROTOCOL_DP 为差分隐私协议，结果带噪，不能作为与明文一致的验证依据
+[8/8] PSI simulation         ! WARNING  1 个算子执行完成；所选协议 PROTOCOL_DP 结果带噪，不作为与明文一致的验证依据
+Intersects  CompactCellSet  PSI      b=64 d=0 R=1（PSI 求交轮次）  high      planned
+  选用      : PROTOCOL_DP（协议自带默认曲线，本项目未传入）
+  带噪      : PROTOCOL_DP（差分隐私：结果不与明文保证一致）
+  Intersects: ok  [PROTOCOL_DP]
+Intersects  CompactCellSet  PSI      executed-noisy
+编译完成。
+
+########## 7. CLI: DP + --psi-curve（不写"不生效"） ##########
+提示：协议 PROTOCOL_DP 自带内置默认曲线（上游源码默认 25519），本项目不覆盖，--psi-curve 未传入。
+
+########## 8. CLI: ECDH_3PC 替代清单带 * 标注 ##########
+[7/8] PSI capability check   x ERROR    选用的 PSI 协议 PROTOCOL_ECDH_3PC 需要 3 个参与方，本链路固定 2 方；可改用 PROTOCOL_ECDH, PROTOCOL_KKRT, PROTOCOL_RR22, PROTOCOL_ECDH_NPC, PROTOCOL_KKRT_NPC, PROTOCOL_DP*（带 * 者为差分隐私协议，结果带噪）
+Intersects  CompactCellSet  PSI      b=64 d=0 R=1（PSI 求交轮次）  high      planned
+Intersects  CompactCellSet  PSI      backend-direct
+
+########## 9. CLI: 非法协议名（退出码 2，无 traceback） ##########
+  exit=2
+错误：未知 PSI 协议 'NOPE'；spu 0.9.5 支持 ('PROTOCOL_ECDH', 'PROTOCOL_KKRT', 'PROTOCOL_RR22', 'PROTOCOL_ECDH_3PC', 'PROTOCOL_ECDH_NPC', 'PROTOCOL_KKRT_NPC', 'PROTOCOL_DP')
+  Traceback 行数: 0
+
+########## 10. psi-check 带噪披露 ##########
+    "以下协议结果**带噪**，不保证与明文一致、不可用于一致性验证：PROTOCOL_DP（差分隐私 PSI：交集中会注入假元素/丢弃真元素）"
+
+########## 11. 五个示例回归 ##########
+  route_conflict       exit=0  statuses=[-------- verified ]
+  distance_check       exit=0  statuses=[-------- verified ]
+  risk_score           exit=0  statuses=[-------- verified verified ]
+  vertical_conflict    exit=0  statuses=[-------- verified verified ]
+  altitude_band        exit=0  statuses=[--------------- plaintext-local plaintext-local verified verified ]

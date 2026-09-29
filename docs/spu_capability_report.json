@@ -1,0 +1,223 @@
+{
+  "environment": {
+    "status": "unavailable",
+    "runnable": false,
+    "platform": "Windows",
+    "machine": "AMD64",
+    "python_version": "3.12.14",
+    "python_supported": false,
+    "jax": {
+      "installed": true,
+      "version": "0.11.2",
+      "prefix": "C:\\Users\\DELL\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\site-packages\\jax\\__init__.py",
+      "private_deps_ok": false,
+      "missing_deps": [
+        "jax._src.lib.xla_extension_version"
+      ],
+      "jit_ok": true,
+      "hlo_lowering_ok": true,
+      "hlo_bytes": 1268,
+      "error": null
+    },
+    "spu": {
+      "installed": false,
+      "version": null,
+      "prefix": null,
+      "libspu_loadable": false,
+      "simulation_api": [],
+      "error": "spu 未安装：No module named 'spu'"
+    },
+    "blockers": [
+      "Python 3.12.14 不在 spu 支持区间（>=3.10,<3.12）",
+      "原生 Windows 无 libspu 原生库（需 WSL2 / Linux）",
+      "spu 未安装",
+      "SPU 依赖的 jax 私有接口缺失：jax._src.lib.xla_extension_version",
+      "jax 0.11.2 超出 SPU 绑定区间 >=0.4.16,<=0.4.34"
+    ],
+    "details": {
+      "platform": {
+        "system": "Windows",
+        "machine": "AMD64",
+        "python_version": "3.12.14",
+        "libspu_present": false,
+        "notes": [
+          "spu 0.9.5 要求 Python >=3.10,<3.12；当前 3.12.14 不在支持区间",
+          "spu 的 libspu 以 manylinux/macOS wheel 发布，原生 Windows x64 不受支持；官方要求 WSL2 或 Linux 容器"
+        ],
+        "python_supported": false
+      }
+    }
+  },
+  "operations": {
+    "Intersects": {
+      "op": "Intersects",
+      "supported": false,
+      "status": "unavailable",
+      "protocol_hint": "ABY3",
+      "field_hint": "FM64",
+      "primitives": [],
+      "warnings": [
+        "grid_code 为 64 位定长键；FM64 下作为无符号整数参与运算时存在溢出风险，需要时改用 FM128"
+      ],
+      "blockers": [
+        "Python 3.12.14 不在 spu 支持区间（>=3.10,<3.12）",
+        "原生 Windows 无 libspu 原生库（需 WSL2 / Linux）",
+        "spu 未安装",
+        "SPU 依赖的 jax 私有接口缺失：jax._src.lib.xla_extension_version",
+        "jax 0.11.2 超出 SPU 绑定区间 >=0.4.16,<=0.4.34"
+      ]
+    },
+    "Contains": {
+      "op": "Contains",
+      "supported": false,
+      "status": "unavailable",
+      "protocol_hint": "ABY3",
+      "field_hint": "FM64",
+      "primitives": [],
+      "warnings": [
+        "grid_code 为 64 位定长键；FM64 下作为无符号整数参与运算时存在溢出风险，需要时改用 FM128"
+      ],
+      "blockers": [
+        "Python 3.12.14 不在 spu 支持区间（>=3.10,<3.12）",
+        "原生 Windows 无 libspu 原生库（需 WSL2 / Linux）",
+        "spu 未安装",
+        "SPU 依赖的 jax 私有接口缺失：jax._src.lib.xla_extension_version",
+        "jax 0.11.2 超出 SPU 绑定区间 >=0.4.16,<=0.4.34"
+      ]
+    },
+    "DistanceLE": {
+      "op": "DistanceLE",
+      "supported": false,
+      "status": "unavailable",
+      "protocol_hint": "ABY3",
+      "field_hint": "FM64",
+      "primitives": [
+        "subtract",
+        "multiply",
+        "reduce",
+        "add",
+        "convert",
+        "compare",
+        "constant"
+      ],
+      "warnings": [],
+      "blockers": [
+        "Python 3.12.14 不在 spu 支持区间（>=3.10,<3.12）",
+        "原生 Windows 无 libspu 原生库（需 WSL2 / Linux）",
+        "spu 未安装",
+        "SPU 依赖的 jax 私有接口缺失：jax._src.lib.xla_extension_version",
+        "jax 0.11.2 超出 SPU 绑定区间 >=0.4.16,<=0.4.34"
+      ]
+    },
+    "WeightedSum": {
+      "op": "WeightedSum",
+      "supported": false,
+      "status": "unavailable",
+      "protocol_hint": "ABY3",
+      "field_hint": "FM64",
+      "primitives": [
+        "multiply",
+        "reduce",
+        "add",
+        "divide",
+        "remainder",
+        "compare",
+        "select",
+        "sign",
+        "and",
+        "convert",
+        "subtract",
+        "constant"
+      ],
+      "warnings": [
+        "divide: 定点除法的 MPC 电路代价高（d 与 R 上升）；能改乘倒数或平方比较就改",
+        "remainder: 取余随除法一同展开，进一步抬升 d"
+      ],
+      "blockers": [
+        "Python 3.12.14 不在 spu 支持区间（>=3.10,<3.12）",
+        "原生 Windows 无 libspu 原生库（需 WSL2 / Linux）",
+        "spu 未安装",
+        "SPU 依赖的 jax 私有接口缺失：jax._src.lib.xla_extension_version",
+        "jax 0.11.2 超出 SPU 绑定区间 >=0.4.16,<=0.4.34"
+      ]
+    },
+    "TemporalOverlap": {
+      "op": "TemporalOverlap",
+      "supported": false,
+      "status": "unavailable",
+      "protocol_hint": "ABY3",
+      "field_hint": "FM64",
+      "primitives": [
+        "shift_left",
+        "add",
+        "broadcast_in_dim",
+        "compare",
+        "and",
+        "or",
+        "reduce",
+        "constant"
+      ],
+      "warnings": [],
+      "blockers": [
+        "Python 3.12.14 不在 spu 支持区间（>=3.10,<3.12）",
+        "原生 Windows 无 libspu 原生库（需 WSL2 / Linux）",
+        "spu 未安装",
+        "SPU 依赖的 jax 私有接口缺失：jax._src.lib.xla_extension_version",
+        "jax 0.11.2 超出 SPU 绑定区间 >=0.4.16,<=0.4.34"
+      ]
+    },
+    "CellSetIntersect": {
+      "op": "CellSetIntersect",
+      "supported": false,
+      "status": "unavailable",
+      "protocol_hint": "ABY3",
+      "field_hint": "FM64",
+      "primitives": [],
+      "warnings": [
+        "grid_code 为 64 位定长键；FM64 下作为无符号整数参与运算时存在溢出风险，需要时改用 FM128"
+      ],
+      "blockers": [
+        "Python 3.12.14 不在 spu 支持区间（>=3.10,<3.12）",
+        "原生 Windows 无 libspu 原生库（需 WSL2 / Linux）",
+        "spu 未安装",
+        "SPU 依赖的 jax 私有接口缺失：jax._src.lib.xla_extension_version",
+        "jax 0.11.2 超出 SPU 绑定区间 >=0.4.16,<=0.4.34"
+      ]
+    }
+  },
+  "hlo_primitives_measured": {
+    "DistanceLE": [
+      "subtract",
+      "multiply",
+      "reduce",
+      "add",
+      "convert",
+      "compare",
+      "constant"
+    ],
+    "WeightedSum": [
+      "multiply",
+      "reduce",
+      "add",
+      "divide",
+      "remainder",
+      "compare",
+      "select",
+      "sign",
+      "and",
+      "convert",
+      "subtract",
+      "constant"
+    ],
+    "TemporalOverlap": [
+      "shift_left",
+      "add",
+      "broadcast_in_dim",
+      "compare",
+      "and",
+      "or",
+      "reduce",
+      "constant"
+    ]
+  }
+}

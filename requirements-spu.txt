@@ -1,0 +1,27 @@
+# 接入真实蚂蚁隐语 SPU 所需的额外约束
+#
+# 注意：SPU 只发布 macOS 与 Linux(manylinux) wheel，无 Windows wheel。
+# 在 Windows 上安装会被 pip 拒绝（No matching distribution），
+# 必须使用 WSL2 或 Linux 容器。且 requires-python 为 >=3.10,<3.12。
+#
+# 已在以下环境实测跑通（2026-09-23）：
+#   Ubuntu 26.04 (WSL2) / conda Python 3.11.16
+#   spu 0.9.5 + jax 0.4.34 + numpy 1.26.4
+#   -> tests/ 208 项全部通过，无跳过
+#
+# 另经同一环境实测（2026-09-24）：
+#   PSI 入口 spu.psi.psi_execute 可用；ECDH/SM2 两方求交结果与明文一致。
+#   PSI 与 SPU 共用 libpsi.so，系统库依赖一致（仅需 libgomp1）。
+#
+# 另需系统库 libgomp1（libspu / libpsi 的 OpenMP 运行时），否则导入即报
+#   ImportError: libgomp.so.1: cannot open shared object file
+# Debian/Ubuntu 安装：apt-get install -y libgomp1
+
+# SPU 运行时（含 libspu 原生库）
+spu==0.9.5
+
+# SPU 钉定的 JAX 版本区间（0.9.5 的元数据：jax[cpu]<=0.4.34,>=0.4.16）
+jax[cpu]>=0.4.16,<=0.4.34
+
+# SPU 还要求 numpy<2
+numpy<2

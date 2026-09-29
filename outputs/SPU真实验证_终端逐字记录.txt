@@ -1,0 +1,98 @@
+######## SPU 真实验证 终端逐字记录 2026-09-23 17:29:10 CST ########
+
+===== [A] 环境 =====
+platform : Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.43
+python   : 3.11.16
+numpy    : 1.26.4
+jax      : 0.4.34
+spu      : 0.9.5
+libspu   : /opt/miniconda3/envs/spu311/lib/python3.11/site-packages/spu/libspu.so
+
+===== [B] geosecure check =====
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+SPU 能力核查
+------------------------------------------------------------------------
+{
+  "status": "available",
+  "runnable": true,
+  "platform": "Linux",
+  "machine": "x86_64",
+  "python_version": "3.11.16",
+  "python_supported": true,
+  "jax": {
+    "installed": true,
+    "version": "0.4.34",
+    "prefix": "/opt/miniconda3/envs/spu311/lib/python3.11/site-packages/jax/__init__.py",
+    "private_deps_ok": true,
+    "missing_deps": [],
+    "jit_ok": true,
+    "hlo_lowering_ok": true,
+    "hlo_bytes": 1979,
+    "error": null
+  },
+  "spu": {
+    "installed": true,
+    "version": "0.9.5",
+    "prefix": "/opt/miniconda3/envs/spu311/lib/python3.11/site-packages/spu/__init__.py",
+    "libspu_loadable": true,
+    "simulation_api": [
+      "spu.utils.simulation.Simulator",
+      "spu.utils.simulation.sim_jax",
+      "spu.utils.frontend.compile",
+      "spu.utils.frontend.Kind"
+    ],
+    "error": null
+  },
+  "blockers": [],
+  "details": {
+    "platform": {
+      "system": "Linux",
+      "machine": "x86_64",
+      "python_version": "3.11.16",
+      "libspu_present": true,
+      "notes": [],
+      "python_supported": true
+    }
+  }
+}
+
+===== [C] pytest tests/ =====
+platform linux -- Python 3.11.16, pytest-9.1.1, pluggy-1.6.0
+rootdir: /mnt/c/Users/DELL/Documents/Codex/2026-09-20/geosot-3d-dqg-4d-c-users-2/GIS_SPU
+configfile: pyproject.toml
+collected 164 items
+
+tests/test_end_to_end.py .................................               [ 20%]
+tests/test_ir.py .....................................                   [ 42%]
+tests/test_jax_backend.py .....................................          [ 65%]
+tests/test_planner.py ..........................                         [ 81%]
+tests/test_spu_backend.py ...............................                [100%]
+
+============================= 164 passed in 4.41s ==============================
+
+===== [D] 真实 SPU 算子一致性（ABY3 / FM64） =====
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+DistanceLE: status=ok spu=True plain=True err=0.0 pphlo=1508B
+WeightedSum: status=ok spu=80 plain=80 err=0.0 pphlo=2390B
+TemporalOverlap: status=ok spu=True plain=True err=0.0 pphlo=2593B
+
+===== [E] 三个示例的最终状态表 =====
+--- examples/route_conflict.py ---
+Result
+Operation   Representation  Backend  Status
+----------  --------------  -------  --------------
+Intersects  CompactCellSet  PSI      backend-direct
+
+--- examples/distance_check.py ---
+Result
+Operation   Representation   Backend  Status
+----------  ---------------  -------  --------
+DistanceLE  QuantizedVector  MPC/SPU  verified
+
+--- examples/risk_score.py ---
+Result
+Operation        Representation    Backend  Status
+---------------  ----------------  -------  --------
+WeightedSum      FixedPointVector  SPU/MPC  verified
+TemporalOverlap  TimeInterval      MPC/SPU  verified
+

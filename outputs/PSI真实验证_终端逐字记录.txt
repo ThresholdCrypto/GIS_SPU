@@ -1,0 +1,369 @@
+###### geosecure — PSI 真实验证终端逐字记录 ######
+环境： Linux 6.18.33.2-microsoft-standard-WSL2 / Python 3.11.16
+
+============================= 0. 版本 =============================
+Python 3.11.16
+spu    0.9.5
+jax    0.4.34
+numpy  1.26.4
+
+============================= 1. SPU / JAX 能力核查 =============================
+SPU 能力核查
+------------------------------------------------------------------------
+{
+  "status": "available",
+  "runnable": true,
+  "platform": "Linux",
+  "machine": "x86_64",
+  "python_version": "3.11.16",
+  "python_supported": true,
+  "jax": {
+    "installed": true,
+    "version": "0.4.34",
+    "prefix": "/opt/miniconda3/envs/spu311/lib/python3.11/site-packages/jax/__init__.py",
+    "private_deps_ok": true,
+    "missing_deps": [],
+    "jit_ok": true,
+    "hlo_lowering_ok": true,
+    "hlo_bytes": 1979,
+    "error": null
+  },
+  "spu": {
+    "installed": true,
+    "version": "0.9.5",
+    "prefix": "/opt/miniconda3/envs/spu311/lib/python3.11/site-packages/spu/__init__.py",
+    "libspu_loadable": true,
+    "simulation_api": [
+      "spu.utils.simulation.Simulator",
+      "spu.utils.simulation.sim_jax",
+      "spu.utils.frontend.compile",
+      "spu.utils.frontend.Kind"
+    ],
+    "error": null
+  },
+  "blockers": [],
+  "details": {
+    "platform": {
+      "system": "Linux",
+      "machine": "x86_64",
+      "python_version": "3.11.16",
+      "libspu_present": true,
+      "notes": [],
+      "python_supported": true
+    }
+  }
+}
+
+============================= 2. PSI 能力核查 =============================
+PSI 能力核查
+------------------------------------------------------------------------
+{
+  "installed": true,
+  "version": "0.9.5",
+  "prefix": "/opt/miniconda3/envs/spu311/lib/python3.11/site-packages/spu/__init__.py",
+  "libpsi_loadable": true,
+  "psi_execute_available": true,
+  "create_mem_available": true,
+  "protocols": [
+    "PROTOCOL_DP",
+    "PROTOCOL_ECDH",
+    "PROTOCOL_ECDH_3PC",
+    "PROTOCOL_ECDH_NPC",
+    "PROTOCOL_KKRT",
+    "PROTOCOL_KKRT_NPC",
+    "PROTOCOL_RR22"
+  ],
+  "curves": [
+    "CURVE_25519",
+    "CURVE_25519_ELLIGATOR2",
+    "CURVE_FOURQ",
+    "CURVE_SECP256K1",
+    "CURVE_SM2"
+  ],
+  "source_types": [
+    "SOURCE_TYPE_FILE_CSV"
+  ],
+  "join_types": [
+    "JOIN_TYPE_DIFFERENCE",
+    "JOIN_TYPE_FULL_JOIN",
+    "JOIN_TYPE_INNER_JOIN",
+    "JOIN_TYPE_LEFT_JOIN",
+    "JOIN_TYPE_RIGHT_JOIN"
+  ],
+  "file_io_only": true,
+  "runnable": true,
+  "blockers": [],
+  "notes": [
+    "PSI 当前只提供 CSV 文件接口，无内存张量接口；本后端用临时工作目录承载输入输出"
+  ],
+  "error": null,
+  "supported_ops": [
+    "Intersects",
+    "Contains",
+    "CellSetIntersect"
+  ]
+}
+
+============================= 3. route_conflict.py (Intersects -> PSI) =============================
+geo-secure — 地理信息行业低门槛隐私计算编译器
+------------------------------------------------------------------------
+Pipeline
+[1/8] Parsing                + OK       1 个函数，1 个算子调用
+[2/8] IR generation          + OK       GeoProgram route_conflict.py：2 输入 / 1 算子 / 1 关系
+[3/8] Privacy planning       + OK       1 步方案，1 步需密态
+[4/8] JAX generation         ! WARNING  生成 0 个函数；1 个算子不生成（Intersects）
+[5/8] SPU capability check   + OK       available
+[6/8] SPU simulation         - SKIPPED  没有可模拟的 JAX 实现；Intersects 属 PSI 族，由 PSI 阶段执行
+[7/8] PSI capability check   + OK       1 个算子需 PSI（Intersects）；当前环境可执行（spu 0.9.5）
+[8/8] PSI simulation         + OK       1 个算子经真实 PSI 求交验证
+
+------------------------------------------------------------------------
+IR generation
+Operation   Inputs                OutputType  Output        Location
+----------  --------------------  ----------  ------------  --------------------------------
+Intersects  route_A, NoFlyZone_B  Relation    intersects_0  examples/route_conflict.py:16:11
+
+关系（GeoRelation）：
+Subject  Predicate   Object       Time  SpatialScope  Sensitivity
+-------  ----------  -----------  ----  ------------  -----------
+route_A  Intersects  NoFlyZone_B        A             sensitive
+  route_A | Intersects | NoFlyZone_B
+
+------------------------------------------------------------------------
+Privacy planning
+Operation   Representation  Backend  EstimatedCost           Security  Status
+----------  --------------  -------  ----------------------  --------  -------
+Intersects  CompactCellSet  PSI      b=64 d=0 R=1（PSI 求交轮次）  high      planned
+
+  后端: ['PSI']   表征: ['CompactCellSet']   安全级别: ['high']
+
+------------------------------------------------------------------------
+JAX generation
+  - Intersects [PSI]：不生成 JAX（Intersects 属于 PSI 族，在 jax.numpy 中没有逐元素对应原语；集合交是组合问题而非逐元素算子，无法用张量表达式表达。该算子由 PSI 直接执行，不经过 JAX 代码生成。）
+
+------------------------------------------------------------------------
+SPU capability check
+  状态      : available
+  平台      : Linux / x86_64 / Python 3.11.16
+  jax       : 0.4.34
+  spu       : 0.9.5
+  可运行    : 是
+
+------------------------------------------------------------------------
+PSI capability check
+  协议      : PROTOCOL_DP, PROTOCOL_ECDH, PROTOCOL_ECDH_3PC, PROTOCOL_ECDH_NPC, PROTOCOL_KKRT, PROTOCOL_KKRT_NPC, PROTOCOL_RR22
+  曲线      : CURVE_25519, CURVE_25519_ELLIGATOR2, CURVE_FOURQ, CURVE_SECP256K1, CURVE_SM2
+  输入形态  : CSV 文件（无内存张量接口）
+  可运行    : 是
+
+------------------------------------------------------------------------
+SPU simulation
+  （未执行：没有可模拟的 JAX 实现；Intersects 属 PSI 族，由 PSI 阶段执行）
+
+------------------------------------------------------------------------
+PSI simulation
+  Intersects: ok  [PROTOCOL_ECDH / CURVE_SM2]
+      |A|=3  |A∩B|=2
+      result    : True
+      reference : True   agree=True
+      leaks     : 接收方获得交集本体（不只是布尔值）；交集基数由 recipient 可见
+
+------------------------------------------------------------------------
+Result
+Operation   Representation  Backend  Status
+----------  --------------  -------  --------
+Intersects  CompactCellSet  PSI      verified
+
+------------------------------------------------------------------------
+编译完成。
+
+============================= 4. distance_check.py (DistanceLE -> SPU/MPC) =============================
+geo-secure — 地理信息行业低门槛隐私计算编译器
+------------------------------------------------------------------------
+Pipeline
+[1/8] Parsing                + OK       1 个函数，1 个算子调用
+[2/8] IR generation          + OK       GeoProgram distance_check.py：3 输入 / 1 算子 / 1 关系
+[3/8] Privacy planning       + OK       1 步方案，1 步需密态
+[4/8] JAX generation         + OK       生成 1 个函数
+[5/8] SPU capability check   + OK       available
+[6/8] SPU simulation         + OK       1 个算子在 SPU 模拟器上验证通过
+[7/8] PSI capability check   - SKIPPED  方案中没有走 PSI 的算子
+[8/8] PSI simulation         - SKIPPED  方案中没有走 PSI 的算子
+
+------------------------------------------------------------------------
+IR generation
+Operation   Inputs             OutputType  Output        Location
+----------  -----------------  ----------  ------------  --------------------------------
+DistanceLE  p1, p2, threshold  Relation    distancele_0  examples/distance_check.py:15:11
+
+关系（GeoRelation）：
+Subject  Predicate   Object  Time  SpatialScope  Sensitivity
+-------  ----------  ------  ----  ------------  -----------
+p1       DistanceLE  p2                          sensitive
+  p1 | DistanceLE | p2
+
+------------------------------------------------------------------------
+Privacy planning
+Operation   Representation   Backend  EstimatedCost                     Security  Status
+----------  ---------------  -------  --------------------------------  --------  -------
+DistanceLE  QuantizedVector  MPC/SPU  b=8（量化箱号） d=1（平方后求和，无开方） R=1（归约）  high      planned
+
+  后端: ['MPC/SPU']   表征: ['QuantizedVector']   安全级别: ['high']
+
+------------------------------------------------------------------------
+JAX generation
+  + geo_distancele_0(left, right, threshold) [jax.jit 可追踪, HLO 2243 B]
+
+------------------------------------------------------------------------
+SPU capability check
+  状态      : available
+  平台      : Linux / x86_64 / Python 3.11.16
+  jax       : 0.4.34
+  spu       : 0.9.5
+  可运行    : 是
+
+------------------------------------------------------------------------
+SPU simulation
+  DistanceLE: ok
+      outputs   : True
+      reference : True
+      tolerance : 0.0  err=0.0  ok=True
+
+------------------------------------------------------------------------
+Result
+Operation   Representation   Backend  Status
+----------  ---------------  -------  --------
+DistanceLE  QuantizedVector  MPC/SPU  verified
+
+------------------------------------------------------------------------
+编译完成。
+
+============================= 5. risk_score.py (WeightedSum / TemporalOverlap -> SPU/MPC) =============================
+geo-secure — 地理信息行业低门槛隐私计算编译器
+------------------------------------------------------------------------
+Pipeline
+[1/8] Parsing                + OK       1 个函数，2 个算子调用
+[2/8] IR generation          + OK       GeoProgram risk_score.py：4 输入 / 2 算子 / 1 关系
+[3/8] Privacy planning       + OK       2 步方案，2 步需密态
+[4/8] JAX generation         + OK       生成 2 个函数
+[5/8] SPU capability check   + OK       available
+[6/8] SPU simulation         + OK       2 个算子在 SPU 模拟器上验证通过
+[7/8] PSI capability check   - SKIPPED  方案中没有走 PSI 的算子
+[8/8] PSI simulation         - SKIPPED  方案中没有走 PSI 的算子
+
+------------------------------------------------------------------------
+IR generation
+Operation        Inputs                                 OutputType  Output     Location
+---------------  -------------------------------------  ----------  ---------  ----------------------------
+WeightedSum      risk_factors, weights                  Scalar      score      examples/risk_score.py:17:12
+TemporalOverlap  availability_window, operation_window  Relation    window_ok  examples/risk_score.py:18:16
+
+关系（GeoRelation）：
+Subject              Predicate        Object            Time  SpatialScope  Sensitivity
+-------------------  ---------------  ----------------  ----  ------------  -----------
+availability_window  TemporalOverlap  operation_window        window        sensitive
+  availability_window | TemporalOverlap | operation_window
+
+------------------------------------------------------------------------
+Privacy planning
+Operation        Representation    Backend  EstimatedCost                              Security  Status
+---------------  ----------------  -------  -----------------------------------------  --------  -------
+WeightedSum      FixedPointVector  SPU/MPC  b=16（8 位量化 × 8 位权重，留进位余量） d=1（乘加） R=1（归约）  medium    planned
+TemporalOverlap  TimeInterval      MPC/SPU  b=18（Toff 14 + Lt 4） d=1（区间比较） R=1（归约）     high      planned
+
+  后端: ['MPC/SPU', 'SPU/MPC']   表征: ['FixedPointVector', 'TimeInterval']   安全级别: ['high', 'medium']
+
+------------------------------------------------------------------------
+JAX generation
+  + geo_weightedsum_0(values, weights, scale) [jax.jit 可追踪, HLO 3948 B]
+  + geo_temporaloverlap_1(left_toff, left_lt, right_toff, right_lt) [jax.jit 可追踪, HLO 4668 B]
+
+------------------------------------------------------------------------
+SPU capability check
+  状态      : available
+  平台      : Linux / x86_64 / Python 3.11.16
+  jax       : 0.4.34
+  spu       : 0.9.5
+  可运行    : 是
+
+------------------------------------------------------------------------
+SPU simulation
+  WeightedSum: ok
+      outputs   : 80
+      reference : 80
+      tolerance : 0.0  err=0.0  ok=True
+  TemporalOverlap: ok
+      outputs   : True
+      reference : True
+      tolerance : 0.0  err=0.0  ok=True
+
+------------------------------------------------------------------------
+Result
+Operation        Representation    Backend  Status
+---------------  ----------------  -------  --------
+WeightedSum      FixedPointVector  SPU/MPC  verified
+TemporalOverlap  TimeInterval      MPC/SPU  verified
+
+------------------------------------------------------------------------
+编译完成。
+
+============================= 6. PSI 后端单元测试（逐项） =============================
+============================= test session starts ==============================
+collecting ... collected 47 items
+
+tests/test_psi_backend.py::TestCapability::test_probe_reports_installed_and_version PASSED [  2%]
+tests/test_psi_backend.py::TestCapability::test_enum_lists_are_not_silently_empty PASSED [  4%]
+tests/test_psi_backend.py::TestCapability::test_probe_agrees_with_module_constants PASSED [  6%]
+tests/test_psi_backend.py::TestCapability::test_file_io_only_is_declared PASSED [  8%]
+tests/test_psi_backend.py::TestCapability::test_supported_ops_lists_the_psi_family PASSED [ 10%]
+tests/test_psi_backend.py::TestProtocolNormalization::test_protocol_accepts_short_and_full_forms PASSED [ 12%]
+tests/test_psi_backend.py::TestProtocolNormalization::test_unknown_protocol_raises_with_available_list PASSED [ 14%]
+tests/test_psi_backend.py::TestProtocolNormalization::test_curve_accepts_short_and_full_forms PASSED [ 17%]
+tests/test_psi_backend.py::TestProtocolNormalization::test_unknown_curve_raises PASSED [ 19%]
+tests/test_psi_backend.py::TestProtocolNormalization::test_ecdh_family_requires_curve PASSED [ 21%]
+tests/test_psi_backend.py::TestProtocolNormalization::test_defaults_are_available_in_this_environment PASSED [ 23%]
+tests/test_psi_backend.py::TestProtocolNormalization::test_default_curve_is_a_chinese_standard_curve PASSED [ 25%]
+tests/test_psi_backend.py::TestLeakDisclosure::test_every_psi_op_has_a_leak_entry PASSED [ 27%]
+tests/test_psi_backend.py::TestLeakDisclosure::test_leak_entries_are_specific_not_boilerplate PASSED [ 29%]
+tests/test_psi_backend.py::TestLeakDisclosure::test_run_result_carries_leak_disclosure PASSED [ 31%]
+tests/test_psi_backend.py::TestLeakDisclosure::test_intersects_discloses_that_it_reveals_more_than_a_bool PASSED [ 34%]
+tests/test_psi_backend.py::TestLeakDisclosure::test_contains_discloses_the_plaintext_comparison PASSED [ 36%]
+tests/test_psi_backend.py::TestRealPsiIntersection::test_intersects_matches_plaintext PASSED [ 38%]
+tests/test_psi_backend.py::TestRealPsiIntersection::test_cellset_intersect_returns_the_intersection_body PASSED [ 40%]
+tests/test_psi_backend.py::TestRealPsiIntersection::test_psi_intersection_count_matches_the_grid_codes PASSED [ 42%]
+tests/test_psi_backend.py::TestRealPsiIntersection::test_contains_true_direction PASSED [ 44%]
+tests/test_psi_backend.py::TestRealPsiIntersection::test_contains_false_when_inner_is_larger PASSED [ 46%]
+tests/test_psi_backend.py::TestRealPsiIntersection::test_contains_direction_matches_plain_on_both_orientations PASSED [ 48%]
+tests/test_psi_backend.py::TestRealPsiIntersection::test_contains_does_not_include_itself_when_disjoint PASSED [ 51%]
+tests/test_psi_backend.py::TestRealPsiIntersection::test_all_protocols_agree_on_the_same_input PASSED [ 53%]
+tests/test_psi_backend.py::TestRealPsiIntersection::test_high_bit_grid_codes_are_not_truncated PASSED [ 55%]
+tests/test_psi_backend.py::TestRealPsiIntersection::test_run_psi_operation_dispatches_named_arguments PASSED [ 57%]
+tests/test_psi_backend.py::TestRealPsiIntersection::test_receiver_rank_may_be_either_party PASSED [ 59%]
+tests/test_psi_backend.py::TestEmptyInput::test_empty_right_is_resolved_without_protocol_error PASSED [ 61%]
+tests/test_psi_backend.py::TestEmptyInput::test_empty_left_is_resolved_without_protocol_error PASSED [ 63%]
+tests/test_psi_backend.py::TestEmptyInput::test_cellset_intersect_with_empty_side_returns_empty_body PASSED [ 65%]
+tests/test_psi_backend.py::TestEmptyInput::test_contains_with_empty_sets_follows_plaintext_convention PASSED [ 68%]
+tests/test_psi_backend.py::TestEmptyInput::test_empty_outer_is_not_a_contains PASSED [ 70%]
+tests/test_psi_backend.py::TestEmptyInput::test_empty_input_is_disclosed_in_notes PASSED [ 72%]
+tests/test_psi_backend.py::TestNeverFakesValues::test_unavailable_environment_leaves_value_empty PASSED [ 74%]
+tests/test_psi_backend.py::TestNeverFakesValues::test_unavailable_environment_still_explains_itself PASSED [ 76%]
+tests/test_psi_backend.py::TestNeverFakesValues::test_unavailable_never_claims_agreement PASSED [ 78%]
+tests/test_psi_backend.py::TestNeverFakesValues::test_unknown_operator_is_rejected_explicitly PASSED [ 80%]
+tests/test_psi_backend.py::TestNeverFakesValues::test_bad_receiver_rank_is_rejected PASSED [ 82%]
+tests/test_psi_backend.py::TestNeverFakesValues::test_run_psi_operation_rejects_non_psi_operator PASSED [ 85%]
+tests/test_psi_backend.py::TestNativeLogHygiene::test_no_spu_log_is_written_into_cwd[True] PASSED [ 87%]
+tests/test_psi_backend.py::TestNativeLogHygiene::test_no_spu_log_is_written_into_cwd[False] PASSED [ 89%]
+tests/test_psi_backend.py::TestNativeLogHygiene::test_quiet_is_the_default PASSED [ 91%]
+tests/test_psi_backend.py::TestNativeLogHygiene::test_loud_mode_still_runs_correctly PASSED [ 93%]
+tests/test_psi_backend.py::TestAgreementDiscipline::test_mismatch_with_plaintext_is_reported_as_error PASSED [ 95%]
+tests/test_psi_backend.py::TestAgreementDiscipline::test_agreement_is_none_when_no_reference_supplied PASSED [ 97%]
+tests/test_psi_backend.py::TestAgreementDiscipline::test_reference_exception_does_not_break_the_run PASSED [100%]
+
+============================== 47 passed in 1.01s ==============================
+
+============================= 7. 全量测试 =============================
+........................................................................ [ 32%]
+........................................................................ [ 65%]
+........................................................................ [ 98%]
+...                                                                      [100%]
+219 passed in 5.66s

@@ -1,0 +1,43 @@
+{
+  "status": "available",
+  "runnable": true,
+  "platform": "Linux",
+  "machine": "x86_64",
+  "python_version": "3.11.16",
+  "python_supported": true,
+  "jax": {
+    "installed": true,
+    "version": "0.4.34",
+    "prefix": "/opt/miniconda3/envs/spu311/lib/python3.11/site-packages/jax/__init__.py",
+    "private_deps_ok": true,
+    "missing_deps": [],
+    "jit_ok": true,
+    "hlo_lowering_ok": true,
+    "hlo_bytes": 1753,
+    "error": null
+  },
+  "spu": {
+    "installed": true,
+    "version": "0.9.5",
+    "prefix": "/opt/miniconda3/envs/spu311/lib/python3.11/site-packages/spu/__init__.py",
+    "libspu_loadable": true,
+    "simulation_api": [
+      "spu.utils.simulation.Simulator",
+      "spu.utils.simulation.sim_jax",
+      "spu.utils.frontend.compile",
+      "spu.utils.frontend.Kind"
+    ],
+    "error": null
+  },
+  "blockers": [],
+  "details": {
+    "platform": {
+      "system": "Linux",
+      "machine": "x86_64",
+      "python_version": "3.11.16",
+      "libspu_present": true,
+      "notes": [],
+      "python_supported": true
+    }
+  }
+}

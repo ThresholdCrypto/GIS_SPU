@@ -1,0 +1,62 @@
+"""SPU 后端：能力探测与模拟执行。
+
+`run_spu_simulation` 是本层对外的主入口。
+"""
+
+from .capability import (
+    FIELD_BITS,
+    OP_HLO_PRIMITIVES,
+    OP_PRIMITIVES,
+    PROTOCOL_MIN_WORLD_SIZE,
+    SPU_ADAPTED_HLO_PRIMITIVES,
+    SPU_ADAPTED_PRIMITIVES,
+    SPU_EXPENSIVE_HLO_PRIMITIVES,
+    SPU_FIELDS,
+    SPU_JAX_PIN,
+    SPU_JAX_PRIVATE_DEPS,
+    SPU_PROTOCOLS,
+    CapabilityReport,
+    JaxProbe,
+    OpCapability,
+    SpuProbe,
+    check_capabilities,
+    check_operation_capability,
+    normalize_field,
+    normalize_protocol,
+    platform_can_run_spu,
+    probe_jax,
+    probe_platform,
+    probe_spu,
+    protocol_min_world_size,
+)
+from .runtime import SpuRunResult, TripleResult, run_spu_simulation
+
+__all__ = [
+    "CapabilityReport",
+    "FIELD_BITS",
+    "JaxProbe",
+    "OP_HLO_PRIMITIVES",
+    "OP_PRIMITIVES",
+    "OpCapability",
+    "PROTOCOL_MIN_WORLD_SIZE",
+    "SPU_ADAPTED_HLO_PRIMITIVES",
+    "SPU_ADAPTED_PRIMITIVES",
+    "SPU_EXPENSIVE_HLO_PRIMITIVES",
+    "SPU_FIELDS",
+    "SPU_JAX_PIN",
+    "SPU_JAX_PRIVATE_DEPS",
+    "SPU_PROTOCOLS",
+    "SpuProbe",
+    "SpuRunResult",
+    "TripleResult",
+    "check_capabilities",
+    "check_operation_capability",
+    "normalize_field",
+    "normalize_protocol",
+    "platform_can_run_spu",
+    "probe_jax",
+    "probe_platform",
+    "probe_spu",
+    "protocol_min_world_size",
+    "run_spu_simulation",
+]

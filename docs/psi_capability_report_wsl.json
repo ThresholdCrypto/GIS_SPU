@@ -1,0 +1,154 @@
+{
+  "generated_at": "2026-09-24T09:22:30+0800",
+  "environment": {
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+    "python": "3.11.16",
+    "executable": "/opt/miniconda3/envs/spu311/bin/python"
+  },
+  "capability": {
+    "installed": true,
+    "version": "0.9.5",
+    "prefix": "/opt/miniconda3/envs/spu311/lib/python3.11/site-packages/spu/__init__.py",
+    "libpsi_loadable": true,
+    "psi_execute_available": true,
+    "create_mem_available": true,
+    "protocols": [
+      "PROTOCOL_DP",
+      "PROTOCOL_ECDH",
+      "PROTOCOL_ECDH_3PC",
+      "PROTOCOL_ECDH_NPC",
+      "PROTOCOL_KKRT",
+      "PROTOCOL_KKRT_NPC",
+      "PROTOCOL_RR22"
+    ],
+    "curves": [
+      "CURVE_25519",
+      "CURVE_25519_ELLIGATOR2",
+      "CURVE_FOURQ",
+      "CURVE_SECP256K1",
+      "CURVE_SM2"
+    ],
+    "source_types": [
+      "SOURCE_TYPE_FILE_CSV"
+    ],
+    "join_types": [
+      "JOIN_TYPE_DIFFERENCE",
+      "JOIN_TYPE_FULL_JOIN",
+      "JOIN_TYPE_INNER_JOIN",
+      "JOIN_TYPE_LEFT_JOIN",
+      "JOIN_TYPE_RIGHT_JOIN"
+    ],
+    "file_io_only": true,
+    "runnable": true,
+    "blockers": [],
+    "notes": [
+      "PSI 当前只提供 CSV 文件接口，无内存张量接口；本后端用临时工作目录承载输入输出"
+    ],
+    "error": null,
+    "supported_ops": [
+      "Intersects",
+      "Contains",
+      "CellSetIntersect"
+    ]
+  },
+  "probes": [
+    {
+      "probe": "Intersects/ECDH/SM2",
+      "status": "ok",
+      "value": true,
+      "intersection_count": 2,
+      "protocol": "PROTOCOL_ECDH",
+      "curve": "CURVE_SM2",
+      "elapsed_ms": 112.8
+    },
+    {
+      "probe": "Intersects/ECDH/25519",
+      "status": "ok",
+      "value": true,
+      "intersection_count": 2,
+      "protocol": "PROTOCOL_ECDH",
+      "curve": "CURVE_25519",
+      "elapsed_ms": 18.0
+    },
+    {
+      "probe": "Intersects/KKRT",
+      "status": "ok",
+      "value": true,
+      "intersection_count": 2,
+      "protocol": "PROTOCOL_KKRT",
+      "curve": null,
+      "elapsed_ms": 33.0
+    },
+    {
+      "probe": "Intersects/RR22",
+      "status": "ok",
+      "value": true,
+      "intersection_count": 2,
+      "protocol": "PROTOCOL_RR22",
+      "curve": null,
+      "elapsed_ms": 29.3
+    },
+    {
+      "probe": "CellSetIntersect/ECDH/SM2",
+      "status": "ok",
+      "value": [
+        3076832715350736904,
+        3076973452839092232
+      ],
+      "intersection_count": 2,
+      "protocol": "PROTOCOL_ECDH",
+      "curve": "CURVE_SM2",
+      "elapsed_ms": 17.7
+    },
+    {
+      "probe": "Contains/ECDH/SM2",
+      "status": "ok",
+      "value": false,
+      "intersection_count": 1,
+      "protocol": "PROTOCOL_ECDH",
+      "curve": "CURVE_SM2",
+      "elapsed_ms": 17.2
+    },
+    {
+      "probe": "Intersects/empty-right",
+      "status": "empty-input",
+      "value": false,
+      "intersection_count": null,
+      "protocol": "PROTOCOL_ECDH",
+      "curve": "CURVE_SM2",
+      "elapsed_ms": 0.1
+    },
+    {
+      "probe": "Intersects/high-bit-code",
+      "status": "ok",
+      "value": true,
+      "intersection_count": 1,
+      "protocol": "PROTOCOL_ECDH",
+      "curve": "CURVE_SM2",
+      "elapsed_ms": 13.9
+    }
+  ],
+  "truth": {
+    "route_codes": [
+      3076691977862381576,
+      3076832715350736904,
+      3076973452839092232
+    ],
+    "zone_codes": [
+      3076832715350736904,
+      3076973452839092232,
+      3236851239610744840
+    ],
+    "expected_intersection": [
+      3076832715350736904,
+      3076973452839092232
+    ],
+    "plain_intersects": true,
+    "plain_contains_zone_route2": false
+  },
+  "notes": [
+    "本报告由真实执行生成，不是静态推断。",
+    "PROTOCOL_UNSPECIFIED / CURVE_INVALID_TYPE 为哨位值，已从可用清单剔除。",
+    "PSI 为 CSV 文件接口；空集合会触发 arrow 读表失败，已前置判掉。"
+  ]
+}

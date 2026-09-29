@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geo-secure"
+version = "0.1.0"
+description = "面向地理信息行业的低门槛隐私计算编译器 MVP"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+# JAX 仅用于代码生成的追踪验证；不装也能跑明文与 IR 流程
+jax = ["jax[cpu]"]
+test = ["pytest"]
+# SPU 需要原生 Linux/macOS 运行时，见 README 的"当前 SPU 版本/API"一节
+spu = ["spu"]
+
+[project.scripts]
+geo-secure = "geosecure.cli:main"
+
+[tool.setuptools]
+packages = [
+    "geo_privacy",
+    "geosecure",
+    "frontend",
+    "ir",
+    "semantic",
+    "planner",
+    "backends",
+    "backends.plain",
+    "backends.jax_backend",
+    "backends.spu_backend",
+    "validator",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra"

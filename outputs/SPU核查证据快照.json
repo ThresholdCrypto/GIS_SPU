@@ -1,0 +1,242 @@
+{
+  "核查对象": "secretflow/spu",
+  "核查时点": "2026-09-20",
+  "版本": {
+    "主分支标记": "0.10.0.dev20251211",
+    "标记文件": "version.bzl",
+    "最新正式发布": "0.9.4",
+    "正式发布时间": "2025-09",
+    "开发态持续": "约 9 个月（自 2025-12 至核查时点）",
+    "staging 段落": "空",
+    "发布总数": 93
+  },
+  "仓库规模": {
+    "提交数": 760,
+    "贡献者": 73,
+    "星标": 327,
+    "复刻": 146,
+    "许可证": "Apache-2.0"
+  },
+  "语言占比": {
+    "C++": "85.4%",
+    "Python": "7.1%",
+    "MLIR": "7%",
+    "CUDA": "0.2%",
+    "Markdown": "0.2%",
+    "C": "0.1%"
+  },
+  "源码模块": {
+    "根": "src/libspu",
+    "一级模块": [
+      "compiler",
+      "core",
+      "cuda_support",
+      "device",
+      "dialect",
+      "kernel",
+      "mpc"
+    ]
+  },
+  "协议族": {
+    "目录": "src/libspu/mpc",
+    "实现": [
+      "semi2k",
+      "aby3",
+      "cheetah",
+      "spdz2k",
+      "securenn",
+      "ref2k"
+    ],
+    "支撑目录": [
+      "common",
+      "tools",
+      "utils",
+      "standard_shape"
+    ]
+  },
+  "平台支持": {
+    "CPU": {
+      "Linux x86_64": true,
+      "Linux aarch64": true,
+      "macOS x64": "预编译已停止提供",
+      "macOS Apple Silicon": true,
+      "Windows x64": false,
+      "Windows WSL2 x64": true
+    },
+    "GPU": {
+      "Linux x86_64": "实验",
+      "WSL2 x64": "实验",
+      "其他": "不支持",
+      "CUDA 最低版本": "11.8"
+    },
+    "硬件特性": {
+      "通用": "AVX/ARMv8",
+      "FourQ PSI": "AVX2/ARMv8"
+    }
+  },
+  "提交活跃度": {
+    "密集开发期": "2025-11 至 2025-12",
+    "2026 年功能提交": [
+      "2026-01-06 基数排序支持有符号/无符号",
+      "2026-01-26 新增 is_stable"
+    ],
+    "空档": "2026-01-26 至 2026-04-22 约三个月",
+    "最近实质功能提交": "2026-04-22 SEMI2K/ABY3 TruncA 改非对称截断 (#1435)",
+    "最近提交后至今": "约五个月无新功能提交",
+    "待合并请求": {
+      "总数": 22,
+      "主要构成": "依赖升级机器人",
+      "已合并或关闭": 1014
+    }
+  },
+  "0.9.4 后功能增量": [
+    "构建切换 Bazel 模块化，Bazel 升至 7.7.1",
+    "包管理器改用 uv，最低 Python 升至 3.11",
+    "Jax 升级至 0.8.0",
+    "HLO 层新增 GroupByAgg 算子",
+    "保密分组求和优化，新增保密分组求平均",
+    "新增 IChannel 的 Python 绑定",
+    "自定义调用由 custom_call 迁移至 ffi_call"
+  ],
+  "关键算子引入时间线": {
+    "equal（SEMI2K/ABY3）": "2024-01-05",
+    "bitwise_count": "2024-07-16",
+    "奇偶归并排序替代双调排序": "2024-01-05",
+    "ABY3 基数排序": "2024-01-05",
+    "SEMI2K 基数排序": "2023-11-08",
+    "快速排序（semi2k/aby3）": "0.9.4",
+    "ABY3 ORAM dynamic_slice": "2024-06-21",
+    "Permute/InvPermute": "0.9.4",
+    "soPRF（LowMC，SEMI2K）": "0.9.4",
+    "对数 minimax 近似": "2024-04-15",
+    "四舍六入五成双": "2024-04-15",
+    "GroupByAgg": "2025-12-08",
+    "保密分组聚合优化": "2025-12-19"
+  },
+  "可信第三方": {
+    "SEMI2K TTP Beaver 提供者": "0.3.2（2023-04）",
+    "TTP 服务端 SSL 配置": "0.9.4"
+  },
+  "生态拆分": {
+    "SML 迁出": "2025-08-12，独立仓库 secretflow/sml",
+    "PSI": "集成独立仓库 secretflow/psi"
+  },
+  "学术支撑": [
+    {
+      "会议": "USENIX ATC 2023",
+      "题目": "SecretFlow-SPU: A Performant and User-Friendly Framework for Privacy-Preserving Machine Learning"
+    },
+    {
+      "会议": "ICML 2024",
+      "题目": "Ditto: Quantization-aware Secure Inference of Transformers upon MPC",
+      "提速": "相对 MPCFormer 约 3.14~4.40 倍，相对 PUMA 约 1.44~2.35 倍"
+    }
+  ],
+  "官方边界声明": [
+    "SPU 为可编程设备，不面向直接使用，应由 SecretFlow 框架调用",
+    "包内分布式模块仅用于演示，官方明确警告不可用于生产"
+  ],
+  "信息来源": [
+    "version.bzl",
+    "CHANGELOG.md",
+    "REPO_LAYOUT.md",
+    "src/libspu 目录树",
+    "提交历史",
+    "Releases",
+    "Pull requests"
+  ],
+  "局限": [
+    "未做实际部署与运行验证，性能表述属机制层面取舍",
+    "提交活跃度仅反映公开仓库，该项目存在周期性同步机制"
+  ],
+  "JAX使用情况": {
+    "依赖声明": {
+      "jax": "jax[cpu]==0.8.0（双等号锁定，运行时依赖）",
+      "numpy": ">=2.0.0（注释明确为兼容 JAX 0.8.0，附 NumPy 2.0 破坏性变更提示）",
+      "python": ">=3.11,<3.13",
+      "说明": "JAX 为强制运行时依赖，不可选；GPU 实验路径走 CUDA，与 jax[cpu] 不等价"
+    },
+    "桥接模块": {
+      "文件": "spu/utils/frontend.py",
+      "规模": "315 行 / 9.29 KB",
+      "关键函数": [
+        "_jax_compilation_key",
+        "_function_contents",
+        "_argnames_partial_except",
+        "_jax_compilation",
+        "_patch_fcn",
+        "_patched_lax_float_to_int_for_sort",
+        "torch_compile"
+      ],
+      "引用内部模块": [
+        "jax._src.api_util",
+        "jax.extend.linear_util",
+        "jax._src.xla_bridge",
+        "jax.interpreters.xla"
+      ],
+      "编译链路": [
+        "加锁检查 interpreter 后端是否存在",
+        "不存在则 register_backend_factory('interpreter', xla_back, priority=-100)",
+        "jax.jit 包装（keep_unused=True）→ trace → lower(lowering_platforms=('interpreter',))",
+        "compiler_ir('hlo') → as_serialized_hlo_module_proto() → 返回字节流与 out_info"
+      ],
+      "缓存状态": "LRU 缓存（maxsize=128）处于注释状态，留有 lambda 哈希待办注释",
+      "耦合深度": "引用 JAX 内部模块；wrap_init 处标注「在 jax 0.4.16 中位置迁移」"
+    },
+    "算子语义": {
+      "方言目录": "src/libspu/dialect/pphlo（含 IR 与 transforms，pphlo 即隐私保护高层算子）",
+      "Python算子": "spu/ops（含 groupby 子目录）",
+      "辅助模块": [
+        "spu/utils/frontend.py",
+        "spu/utils/polyfill.py",
+        "spu/utils/simulation.py"
+      ],
+      "运行接口": "spu/api.py（Runtime 类：run/set_var/get_var/get_var_meta/del_var/clear）",
+      "相关算子适配": {
+        "bitwise_count": "2024-07-16",
+        "等值比较": "2024-01-05",
+        "jax.lax.top_k": "2024-04-15",
+        "round to nearest even（四舍六入五成双）": "2024-04-15",
+        "signbit（含大输入修复）": "2024-07-16",
+        "Permute/InvPermute": "0.9.4",
+        "GroupByAgg": "2025-12-08",
+        "Jax 64bit 模式": "0.4.0 前后持续改进"
+      }
+    },
+    "测试套件": {
+      "功能维度": [
+        "jax_compile_test.py",
+        "jax_sanity_test.py",
+        "frontend_test.py"
+      ],
+      "协议维度": [
+        "jnp_semi2k_r64_test.py",
+        "jnp_semi2k_r128_test.py",
+        "jnp_aby3_r64_test.py",
+        "jnp_aby3_r128_test.py",
+        "jnp_cheetah_r64_test.py",
+        "jnp_ref2k_r64_test.py"
+      ],
+      "辅助": [
+        "jnp_testbase.py",
+        "jnp_debug.py"
+      ],
+      "划分含义": "算子正确性按协议分别验证；环宽度区分 64/128 位两档，说明溢出与精度为实际关注点"
+    },
+    "对本课题的落点": [
+      "接入层算子表达直接用 JAX 书写，以 JAX 算子语义作为接口契约",
+      "取整规则两端对齐：SPU 采用银行家取整，量化字典明文侧须同规则",
+      "grid_code 为 64 位定长，在 64 位环上做密态运算需核算溢出，必要时升 128 位环",
+      "算子覆盖已够用，可基于正式版 0.9.4 起步，开发态能力作为待评估项"
+    ],
+    "风险": [
+      "版本耦合深入 JAX 内部模块，JAX 升级需 SPU 跟进适配；环境规划须把 JAX 版本列为硬约束",
+      "编译缓存未启用，多轮迭代会重复走追踪与降级；可在脚本层自行缓存序列化产物",
+      "静态图约束：格网运算须写成静态可追踪形式，运行期确定形状的环节需提前改造"
+    ],
+    "局限": [
+      "未做实际编译或运行验证，编译链路行为描述来自源码结构解读",
+      "未逐一核对全部 JAX 算子适配，表列仅为与本课题相关部分"
+    ]
+  }
+}

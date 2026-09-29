@@ -1,0 +1,699 @@
+{
+  "meta": {
+    "title": "三维格网记录明文样例与密态映射（与蚂蚁密算联调口径）",
+    "version": "v6 / 2026-09-29",
+    "supersedes": "v5 / 2026-09-20",
+    "status": "键布局定版（L 4->5）",
+    "change_summary": "修正三处：(1) 时间树原点由窗口起点改为其前 120 分钟，使全部时间节点成为合法二叉节点并复现 720 倍口径；(2) 常量型记录的语义由'整窗默认'改为'全地址空间常量'，并给出窗口投影；(3) 取整规则写死为 half-up 并标注两个未对齐箱边界的阈值。",
+    "scenario": "低空导航验证场景：单城市、海拔 0-1000 m、7 天窗口",
+    "time_tree_origin": "2026-09-06T22:00:00+08:00",
+    "time_tree_origin_rationale": "Toff=0 的锚点。取窗口起点前 120 分钟是使交付的 64+32+8 分解与 14 节点窗口同时成立的唯一整点解，详见 work/solve_origin.py。",
+    "window_start": "2026-09-07T00:00:00+08:00",
+    "window_end": "2026-09-14T00:00:00+08:00",
+    "time_window_min": 10080,
+    "dt_code_min": 1,
+    "Lt_max": 14,
+    "grid_code_layout_bits": {
+      "X'": 17,
+      "Y'": 17,
+      "Z": 7,
+      "L": 5,
+      "Toff": 14,
+      "Lt": 4
+    },
+    "grid_code_bit_order": "高位到低位 X' | Y' | Z | L | Toff | Lt，合计 64 位。上版的 ver（1 位、恒为 0）已并入 L 高位，故不损失任何字段；层级上限由 15 抬到 31。",
+    "layout_change_note": "L 位域 4->5：码位重排，所有既有 64 位码都变了。PSI 走 CSV 交换这些码，两方布局不一致不会报错、只会静默算错，切换必须双方同时完成。",
+    "grid_code_bytes": 8,
+    "partition_key": "11 位分区键（面片 id + 坐标高位）外提，不占 64 位",
+    "quantization_rule": "q = floor((v - min) / (max - min) * (2^b - 1) + 0.5)，b = 8；取整规则固定为半格进位（half-up），不使用 banker's rounding",
+    "default_state_mask": "0x00",
+    "notes": "归一化、量化、规范分解均在明文侧完成；密态侧只见定长整数与位。"
+  },
+  "quantization_dict": [
+    {
+      "attr": "A01",
+      "name": "风速",
+      "unit": "m/s",
+      "min": 0,
+      "max": 50,
+      "b": 8,
+      "scale": 0.196078431,
+      "q_min": 0,
+      "q_max": 255,
+      "threshold_alignment": {
+        "value": 10.8,
+        "bin": 55,
+        "aligned": false,
+        "required_max_for_alignment": 50.072727
+      }
+    },
+    {
+      "attr": "A02",
+      "name": "人口密度",
+      "unit": "/km2",
+      "min": 0,
+      "max": 20000,
+      "b": 8,
+      "scale": 78.431372549,
+      "q_min": 0,
+      "q_max": 255,
+      "threshold_alignment": {
+        "value": 12000,
+        "bin": 153,
+        "aligned": true,
+        "required_max_for_alignment": 20000.0
+      }
+    },
+    {
+      "attr": "A03",
+      "name": "噪声",
+      "unit": "dB",
+      "min": 30,
+      "max": 120,
+      "b": 8,
+      "scale": 0.352941176,
+      "q_min": 0,
+      "q_max": 255,
+      "threshold_alignment": {
+        "value": 90,
+        "bin": 170,
+        "aligned": true,
+        "required_max_for_alignment": 120.0
+      }
+    },
+    {
+      "attr": "A04",
+      "name": "建筑风险",
+      "unit": "-",
+      "min": 0,
+      "max": 1,
+      "b": 8,
+      "scale": 0.003921569,
+      "q_min": 0,
+      "q_max": 255,
+      "threshold_alignment": {
+        "value": 0.7,
+        "bin": 179,
+        "aligned": false,
+        "required_max_for_alignment": 0.997207
+      }
+    }
+  ],
+  "cells": [
+    {
+      "cell_id": "C-2609-0001",
+      "partition_key": "F07",
+      "cell_type": "事件驱动",
+      "grid_code": {
+        "segments": {
+          "X'": 21861,
+          "Y'": 27702,
+          "Z": 15,
+          "L": 9,
+          "Toff": 2160,
+          "Lt": 4
+        },
+        "hex": "0x2AB29B0D87A48704",
+        "bytes": 8,
+        "primary_node_note": "grid_code 内嵌的时间位段取首个事件节点 (Toff=2160, Lt=4)；完整有效期见 time_segments"
+      },
+      "attributes": [
+        {
+          "attr": "A01",
+          "name": "风速",
+          "unit": "m/s",
+          "min": 0,
+          "max": 50,
+          "b": 8,
+          "scale": 0.196078431,
+          "raw": 7.2,
+          "q": 37,
+          "threshold": {
+            "label": "风速上限 10.8 m/s",
+            "value": 10.8,
+            "bin": 55,
+            "unrounded_box": 55.08,
+            "aligned_to_box_edge": false,
+            "decision_edge": 10.784314,
+            "deviation": -0.015686,
+            "deviation_pct_of_box": 8.0
+          }
+        },
+        {
+          "attr": "A02",
+          "name": "人口密度",
+          "unit": "/km2",
+          "min": 0,
+          "max": 20000,
+          "b": 8,
+          "scale": 78.431372549,
+          "raw": 8600,
+          "q": 110,
+          "threshold": {
+            "label": "人口上限 12000 /km2",
+            "value": 12000,
+            "bin": 153,
+            "unrounded_box": 153.0,
+            "aligned_to_box_edge": true,
+            "decision_edge": 12000.0,
+            "deviation": 0.0,
+            "deviation_pct_of_box": 0.0
+          }
+        },
+        {
+          "attr": "A03",
+          "name": "噪声",
+          "unit": "dB",
+          "min": 30,
+          "max": 120,
+          "b": 8,
+          "scale": 0.352941176,
+          "raw": 62,
+          "q": 91,
+          "threshold": {
+            "label": "噪声上限 90 dB",
+            "value": 90,
+            "bin": 170,
+            "unrounded_box": 170.0,
+            "aligned_to_box_edge": true,
+            "decision_edge": 90.0,
+            "deviation": 0.0,
+            "deviation_pct_of_box": 0.0
+          }
+        },
+        {
+          "attr": "A04",
+          "name": "建筑风险",
+          "unit": "-",
+          "min": 0,
+          "max": 1,
+          "b": 8,
+          "scale": 0.003921569,
+          "raw": 0.35,
+          "q": 89,
+          "threshold": {
+            "label": "风险上限 0.70",
+            "value": 0.7,
+            "bin": 179,
+            "unrounded_box": 178.5,
+            "aligned_to_box_edge": false,
+            "decision_edge": 0.701961,
+            "deviation": 0.001961,
+            "deviation_pct_of_box": 50.0
+          }
+        }
+      ],
+      "states": {
+        "mask": "00010000",
+        "state_code": 16,
+        "active": [
+          "b4 临时空管"
+        ]
+      },
+      "time_segments": [
+        {
+          "interval": "[2026-09-08T10:00, 2026-09-08T10:16)",
+          "Toff_span": [
+            2160,
+            2176
+          ],
+          "mask": "0x10",
+          "span_min": 16,
+          "canonical_nodes": [
+            {
+              "Toff": 2160,
+              "Lt": 4,
+              "len_min": 16,
+              "aligned": true
+            }
+          ],
+          "node_count": 1,
+          "single_node_key": {
+            "Toff": 2160,
+            "Lt": 4
+          },
+          "note": "事件段：单节点 Lt=4（16 min），与交付原稿一致"
+        },
+        {
+          "interval": "[2026-09-08T10:16, 2026-09-08T12:00)",
+          "Toff_span": [
+            2176,
+            2280
+          ],
+          "mask": "0x00",
+          "span_min": 104,
+          "canonical_nodes": [
+            {
+              "Toff": 2176,
+              "Lt": 6,
+              "len_min": 64,
+              "aligned": true
+            },
+            {
+              "Toff": 2240,
+              "Lt": 5,
+              "len_min": 32,
+              "aligned": true
+            },
+            {
+              "Toff": 2272,
+              "Lt": 3,
+              "len_min": 8,
+              "aligned": true
+            }
+          ],
+          "node_count": 3,
+          "single_node_key": null,
+          "note": "空管解除：规范分解为 64+32+8 三节点（Toff=2176/Lt=6、2240/Lt=5、2272/Lt=3）"
+        }
+      ],
+      "old_format_contrast": {
+        "string": "0404936..._T202609071000",
+        "bytes": 39
+      }
+    },
+    {
+      "cell_id": "C-2609-0002",
+      "partition_key": "F07",
+      "cell_type": "全地址空间常量",
+      "grid_code": {
+        "segments": {
+          "X'": 21861,
+          "Y'": 27703,
+          "Z": 15,
+          "L": 9,
+          "Toff": 0,
+          "Lt": 14
+        },
+        "hex": "0x2AB29B0DC7A4000E",
+        "bytes": 8,
+        "primary_node_note": "(Toff=0, Lt=14) 表示在整个时间地址空间上恒定，t_end 取 +无穷；这是唯一可用的单节点常量表示"
+      },
+      "attributes": [
+        {
+          "attr": "A01",
+          "name": "风速",
+          "unit": "m/s",
+          "min": 0,
+          "max": 50,
+          "b": 8,
+          "scale": 0.196078431,
+          "raw": 6.4,
+          "q": 33,
+          "threshold": {
+            "label": "风速上限 10.8 m/s",
+            "value": 10.8,
+            "bin": 55,
+            "unrounded_box": 55.08,
+            "aligned_to_box_edge": false,
+            "decision_edge": 10.784314,
+            "deviation": -0.015686,
+            "deviation_pct_of_box": 8.0
+          }
+        },
+        {
+          "attr": "A02",
+          "name": "人口密度",
+          "unit": "/km2",
+          "min": 0,
+          "max": 20000,
+          "b": 8,
+          "scale": 78.431372549,
+          "raw": 7200,
+          "q": 92,
+          "threshold": {
+            "label": "人口上限 12000 /km2",
+            "value": 12000,
+            "bin": 153,
+            "unrounded_box": 153.0,
+            "aligned_to_box_edge": true,
+            "decision_edge": 12000.0,
+            "deviation": 0.0,
+            "deviation_pct_of_box": 0.0
+          }
+        },
+        {
+          "attr": "A03",
+          "name": "噪声",
+          "unit": "dB",
+          "min": 30,
+          "max": 120,
+          "b": 8,
+          "scale": 0.352941176,
+          "raw": 58,
+          "q": 79,
+          "threshold": {
+            "label": "噪声上限 90 dB",
+            "value": 90,
+            "bin": 170,
+            "unrounded_box": 170.0,
+            "aligned_to_box_edge": true,
+            "decision_edge": 90.0,
+            "deviation": 0.0,
+            "deviation_pct_of_box": 0.0
+          }
+        },
+        {
+          "attr": "A04",
+          "name": "建筑风险",
+          "unit": "-",
+          "min": 0,
+          "max": 1,
+          "b": 8,
+          "scale": 0.003921569,
+          "raw": 0.22,
+          "q": 56,
+          "threshold": {
+            "label": "风险上限 0.70",
+            "value": 0.7,
+            "bin": 179,
+            "unrounded_box": 178.5,
+            "aligned_to_box_edge": false,
+            "decision_edge": 0.701961,
+            "deviation": 0.001961,
+            "deviation_pct_of_box": 50.0
+          }
+        }
+      ],
+      "states": {
+        "mask": "00000000",
+        "state_code": 0,
+        "active": []
+      },
+      "time_segments": [
+        {
+          "interval": "[2026-09-07T00:00, +inf)",
+          "Toff_span": [
+            0,
+            16384
+          ],
+          "mask": "0x00",
+          "span_min": 16384,
+          "canonical_nodes": [
+            {
+              "Toff": 0,
+              "Lt": 14,
+              "len_min": 16384,
+              "aligned": true
+            }
+          ],
+          "node_count": 1,
+          "single_node_key": {
+            "Toff": 0,
+            "Lt": 14
+          },
+          "note": "常量节点覆盖全地址空间；若平台要求物化到 7 天窗口边界，则按 window_projection 的 14 个节点裁剪"
+        }
+      ],
+      "old_format_contrast": {
+        "string": "0404936..._T202609070000",
+        "bytes": 24
+      }
+    },
+    {
+      "cell_id": "C-2609-0003",
+      "partition_key": "F07",
+      "cell_type": "全地址空间常量",
+      "grid_code": {
+        "segments": {
+          "X'": 21862,
+          "Y'": 27702,
+          "Z": 16,
+          "L": 9,
+          "Toff": 0,
+          "Lt": 14
+        },
+        "hex": "0x2AB31B0D8824000E",
+        "bytes": 8,
+        "primary_node_note": "(Toff=0, Lt=14) 表示在整个时间地址空间上恒定，t_end 取 +无穷；这是唯一可用的单节点常量表示"
+      },
+      "attributes": [
+        {
+          "attr": "A01",
+          "name": "风速",
+          "unit": "m/s",
+          "min": 0,
+          "max": 50,
+          "b": 8,
+          "scale": 0.196078431,
+          "raw": 8.1,
+          "q": 41,
+          "threshold": {
+            "label": "风速上限 10.8 m/s",
+            "value": 10.8,
+            "bin": 55,
+            "unrounded_box": 55.08,
+            "aligned_to_box_edge": false,
+            "decision_edge": 10.784314,
+            "deviation": -0.015686,
+            "deviation_pct_of_box": 8.0
+          }
+        },
+        {
+          "attr": "A02",
+          "name": "人口密度",
+          "unit": "/km2",
+          "min": 0,
+          "max": 20000,
+          "b": 8,
+          "scale": 78.431372549,
+          "raw": 0,
+          "q": 0,
+          "threshold": {
+            "label": "人口上限 12000 /km2",
+            "value": 12000,
+            "bin": 153,
+            "unrounded_box": 153.0,
+            "aligned_to_box_edge": true,
+            "decision_edge": 12000.0,
+            "deviation": 0.0,
+            "deviation_pct_of_box": 0.0
+          }
+        },
+        {
+          "attr": "A03",
+          "name": "噪声",
+          "unit": "dB",
+          "min": 30,
+          "max": 120,
+          "b": 8,
+          "scale": 0.352941176,
+          "raw": 45,
+          "q": 43,
+          "threshold": {
+            "label": "噪声上限 90 dB",
+            "value": 90,
+            "bin": 170,
+            "unrounded_box": 170.0,
+            "aligned_to_box_edge": true,
+            "decision_edge": 90.0,
+            "deviation": 0.0,
+            "deviation_pct_of_box": 0.0
+          }
+        },
+        {
+          "attr": "A04",
+          "name": "建筑风险",
+          "unit": "-",
+          "min": 0,
+          "max": 1,
+          "b": 8,
+          "scale": 0.003921569,
+          "raw": 0.9,
+          "q": 230,
+          "threshold": {
+            "label": "风险上限 0.70",
+            "value": 0.7,
+            "bin": 179,
+            "unrounded_box": 178.5,
+            "aligned_to_box_edge": false,
+            "decision_edge": 0.701961,
+            "deviation": 0.001961,
+            "deviation_pct_of_box": 50.0
+          }
+        }
+      ],
+      "states": {
+        "mask": "00000001",
+        "state_code": 1,
+        "active": [
+          "b0 禁飞（净空区）"
+        ]
+      },
+      "time_segments": [
+        {
+          "interval": "[2026-09-07T00:00, +inf)",
+          "Toff_span": [
+            0,
+            16384
+          ],
+          "mask": "0x01",
+          "span_min": 16384,
+          "canonical_nodes": [
+            {
+              "Toff": 0,
+              "Lt": 14,
+              "len_min": 16384,
+              "aligned": true
+            }
+          ],
+          "node_count": 1,
+          "single_node_key": {
+            "Toff": 0,
+            "Lt": 14
+          },
+          "note": "常量节点覆盖全地址空间；若平台要求物化到 7 天窗口边界，则按 window_projection 的 14 个节点裁剪"
+        }
+      ],
+      "old_format_contrast": {
+        "string": "0404936..._T202609070000",
+        "bytes": 24
+      }
+    }
+  ],
+  "window_projection": {
+    "window_min": 10080,
+    "node_count": 14,
+    "nodes": [
+      {
+        "Toff": 120,
+        "Lt": 3,
+        "len_min": 8
+      },
+      {
+        "Toff": 128,
+        "Lt": 7,
+        "len_min": 128
+      },
+      {
+        "Toff": 256,
+        "Lt": 8,
+        "len_min": 256
+      },
+      {
+        "Toff": 512,
+        "Lt": 9,
+        "len_min": 512
+      },
+      {
+        "Toff": 1024,
+        "Lt": 10,
+        "len_min": 1024
+      },
+      {
+        "Toff": 2048,
+        "Lt": 11,
+        "len_min": 2048
+      },
+      {
+        "Toff": 4096,
+        "Lt": 12,
+        "len_min": 4096
+      },
+      {
+        "Toff": 8192,
+        "Lt": 10,
+        "len_min": 1024
+      },
+      {
+        "Toff": 9216,
+        "Lt": 9,
+        "len_min": 512
+      },
+      {
+        "Toff": 9728,
+        "Lt": 8,
+        "len_min": 256
+      },
+      {
+        "Toff": 9984,
+        "Lt": 7,
+        "len_min": 128
+      },
+      {
+        "Toff": 10112,
+        "Lt": 6,
+        "len_min": 64
+      },
+      {
+        "Toff": 10176,
+        "Lt": 4,
+        "len_min": 16
+      },
+      {
+        "Toff": 10192,
+        "Lt": 3,
+        "len_min": 8
+      }
+    ],
+    "note": "将常量记录裁剪到 7 天窗口时使用；按此物化则每格网 14 个时间节点"
+  },
+  "crypto_mapping": [
+    {
+      "field": "grid_code",
+      "plaintext": "8 B 定长",
+      "crypto_object": "canonical bytes -> OPRF",
+      "protocol": "PSI / MPC",
+      "four_quantity": "N_ct = 1 / 节点"
+    },
+    {
+      "field": "量化属性",
+      "plaintext": "8 b 整数 x4",
+      "crypto_object": "位平面 x8 / 槽打包",
+      "protocol": "BFV 或位平面 MPC",
+      "four_quantity": "b=8，d=1-2"
+    },
+    {
+      "field": "states 掩码",
+      "plaintext": "8 b",
+      "crypto_object": "小整数 / 位",
+      "protocol": "MPC，次选 TEE",
+      "four_quantity": "d=1"
+    },
+    {
+      "field": "时间段列表",
+      "plaintext": "[(Toff,Lt,mask)]",
+      "crypto_object": "明文常数 x 密文位",
+      "protocol": "FHE 乘加",
+      "four_quantity": "N_ct 正比于规范节点数"
+    },
+    {
+      "field": "rule",
+      "plaintext": "程序化 JSON",
+      "crypto_object": "不加密 + program hash",
+      "protocol": "TEE / ZKP",
+      "four_quantity": "d=0"
+    }
+  ],
+  "cost_prediction": {
+    "candidates": 1000,
+    "buffer_cells": 49,
+    "attrs": 4,
+    "values": 196000,
+    "naive_ciphertexts": 196000,
+    "L1_same_cell_cross_attr": 49000,
+    "L2_bitplane_slots": 8192,
+    "L2_bitplane": 192,
+    "reduction_L2_vs_naive": 1020.8
+  },
+  "time_cost": {
+    "cells": 500,
+    "per_minute_materialization": 5040000,
+    "canonical_nodes_per_window": 14,
+    "segmented": 7000,
+    "reduction": 720,
+    "robustness": "7 天窗口的规范节点数随树原点对齐在 6 至 19 之间变化，对应 530 倍至 1680 倍。720 倍是 14 节点对齐下的取值，不是普适常数；建议以区间或上界表述。",
+    "bound": 28
+  },
+  "acceptance": {
+    "metrics": [
+      "N_ct",
+      "b",
+      "d",
+      "R"
+    ],
+    "formula": "Cost = alpha*N_ct + beta*b + gamma*d + delta*R",
+    "process": "接入层给出预测值，平台回填实测值，二者写入联调测试用例作为验收条款",
+    "self_check": "随附 work/audit_consistency.py 可复算本样例的全部口径：位段回环、量化与箱边界、节点对齐与规范分解、压缩倍数。"
+  }
+}

@@ -1,0 +1,154 @@
+﻿### 环境
+    3.11.16 | jax 0.4.34 | spu 0.9.5 | numpy 1.26.4
+
+$ python -m pytest tests/ -q
+    380 passed in 6.86s
+
+$ python -m pytest tests/test_height_materialize.py -q
+    50 passed in 1.01s
+
+$ python -m pytest tests/test_height_materialize.py -q --collect-only | head -50
+    collected: 50 cases
+      tests/test_height_materialize.py::TestDialectRegistration::test_facade_methods_are_all_in_the_dialect
+      tests/test_height_materialize.py::TestDialectRegistration::test_plaintext_utilities_are_not_declared_as_operators
+      tests/test_height_materialize.py::TestDialectRegistration::test_plaintext_utility_is_explained_not_rejected
+      tests/test_height_materialize.py::TestDialectRegistration::test_height_band_is_registered_as_materialize
+      tests/test_height_materialize.py::TestDialectRegistration::test_config_defaults_match_the_facade_signature
+      tests/test_height_materialize.py::TestDialectRegistration::test_required_params_have_no_default
+      tests/test_height_materialize.py::TestDialectRegistration::test_height_band_is_registered_in_the_operator_registry
+      tests/test_height_materialize.py::TestDialectRegistration::test_materialize_ops_are_a_subset_of_the_dialect
+      tests/test_height_materialize.py::TestDialectRegistration::test_geo_operations_table_declares_the_same_keys
+      tests/test_height_materialize.py::TestAliases::test_dialect_aliases_resolve[altitude_band]
+      tests/test_height_materialize.py::TestAliases::test_dialect_aliases_resolve[elevation_band]
+      tests/test_height_materialize.py::TestAliases::test_dialect_aliases_resolve[\u9ad8\u5ea6\u5e26]
+      tests/test_height_materialize.py::TestAliases::test_suggest_ops_offers_an_alternative[height_band]
+      tests/test_height_materialize.py::TestAliases::test_suggest_ops_offers_an_alternative[altitude_band]
+      tests/test_height_materialize.py::TestAliases::test_suggest_ops_offers_an_alternative[height_bandd]
+      tests/test_height_materialize.py::TestAliases::test_suggest_ops_offers_an_alternative[\u9ad8\u5ea6\u5e26]
+      tests/test_height_materialize.py::TestModuleLevelTraversal::test_documented_module_level_form_reaches_the_ir
+      tests/test_height_materialize.py::TestModuleLevelTraversal::test_module_level_band_output_feeds_the_set_operator
+      tests/test_height_materialize.py::TestModuleLevelTraversal::test_module_level_calls_are_never_silently_accepted
+      tests/test_height_materialize.py::TestModuleLevelTraversal::test_main_guard_is_not_reported_as_dynamic_control_flow
+      tests/test_height_materialize.py::TestModuleLevelTraversal::test_try_import_fallback_is_not_dynamic_control_flow
+      tests/test_height_materialize.py::TestModuleLevelTraversal::test_geo_call_inside_main_guard_is_not_dynamic_control_flow
+      tests/test_height_materialize.py::TestModuleLevelTraversal::test_literal_true_guard_is_not_dynamic_control_flow
+      tests/test_height_materialize.py::TestModuleLevelTraversal::test_dynamic_module_branch_is_still_caught
+      tests/test_height_materialize.py::TestArgumentForms::test_positional_form_matches_the_facade_signature
+      tests/test_height_materialize.py::TestArgumentForms::test_positional_and_keyword_forms_give_the_same_ir
+      tests/test_height_materialize.py::TestArgumentForms::test_data_params_go_to_inputs_and_config_to_params
+      tests/test_height_materialize.py::TestArgumentForms::test_keyword_form_inside_a_function_infers_scalar_params
+      tests/test_height_materialize.py::TestArgumentForms::test_inline_nested_form_is_emitted_innermost_first
+      tests/test_height_materialize.py::TestMaterializeArgumentDiagnostics::test_missing_required_parameter_is_reported
+      tests/test_height_materialize.py::TestMaterializeArgumentDiagnostics::test_unknown_keyword_is_reported_not_ignored
+      tests/test_height_materialize.py::TestMaterializeArgumentDiagnostics::test_non_literal_configuration_is_rejected
+      tests/test_height_materialize.py::TestMaterializeArgumentDiagnostics::test_non_scalar_data_argument_is_rejected
+      tests/test_height_materialize.py::TestMaterializeArgumentDiagnostics::test_too_many_positional_arguments_is_reported
+      tests/test_height_materialize.py::TestPlannerTreatsMaterializeAsPlaintext::test_band_is_planned_as_plaintext
+      tests/test_height_materialize.py::TestPlannerTreatsMaterializeAsPlaintext::test_set_operator_still_goes_to_psi
+      tests/test_height_materialize.py::TestPlannerTreatsMaterializeAsPlaintext::test_secret_coordinates_keep_the_downstream_operator_in_crypto
+      tests/test_height_materialize.py::TestPlannerTreatsMaterializeAsPlaintext::test_secret_threshold_literal_is_still_public
+      tests/test_height_materialize.py::TestPlannerTreatsMaterializeAsPlaintext::test_plaintext_band_does_not_make_the_program_look_public
+      tests/test_height_materialize.py::TestPlannerTreatsMaterializeAsPlaintext::test_every_registered_rule_survives_the_new_entry
+      tests/test_height_materialize.py::TestHeightLayerFailureFromSource::test_overflowing_level_is_reported_with_four_elements
+      tests/test_height_materialize.py::TestHeightLayerFailureFromSource::test_fitting_level_produces_no_diagnostic
+      tests/test_height_materialize.py::TestHeightLayerFailureFromSource::test_overflow_surfaces_through_validate_all
+      tests/test_height_materialize.py::TestPlaintextAgreement::test_materialized_codes_equal_the_plaintext_reference
+      tests/test_height_materialize.py::TestPlaintextAgreement::test_documented_example_still_answers_true
+      tests/test_height_materialize.py::TestPlaintextAgreement::test_defaults_are_applied_when_omitted
+      tests/test_height_materialize.py::TestAltitudeBandExample::test_example_compiles_without_errors
+      tests/test_height_materialize.py::TestAltitudeBandExample::test_example_uses_module_level_materialization
+      tests/test_height_materialize.py::TestAltitudeBandExample::test_example_final_status_table_matches_the_documented_one
+      tests/test_height_materialize.py::TestAltitudeBandExample::test_example_plaintext_semantics_agree
+
+$ geo-secure build examples/altitude_band.py   （八阶段，逐字）
+geo-secure — 地理信息行业低门槛隐私计算编译器
+------------------------------------------------------------------------
+Pipeline
+[1/8] Parsing                + OK       0 个函数，4 个算子调用
+[2/8] IR generation          + OK       GeoProgram altitude_band.py：2 输入 / 4 算子 / 2 关系
+[3/8] Privacy planning       + OK       4 步方案，0 步需密态
+[4/8] JAX generation         ! WARNING  生成 0 个函数；4 个算子不生成（HeightBand, HeightBand, Intersects, Contains）
+[5/8] SPU capability check   + OK       available
+[6/8] SPU simulation         - SKIPPED  没有可模拟的 JAX 实现；Intersects, Contains 属 PSI 族，由 PSI 阶段执行；HeightBand, HeightBand 为明文物化算子，不走密态路径
+[7/8] PSI capability check   + OK       2 个算子需 PSI（Intersects, Contains）；当前环境可执行（spu 0.9.5）
+[8/8] PSI simulation         + OK       2 个算子经真实 PSI 求交验证
+
+------------------------------------------------------------------------
+IR generation
+Operation   Inputs               OutputType  Output        Location
+----------  -------------------  ----------  ------------  -------------------------------
+HeightBand  21861, 27702         CellSet     route         examples/altitude_band.py:24:8
+HeightBand  21861, 27702         CellSet     control_zone  examples/altitude_band.py:29:15
+Intersects  route, control_zone  Relation    conflict      examples/altitude_band.py:34:11
+Contains    control_zone, route  Relation    covered       examples/altitude_band.py:37:10
+
+关系（GeoRelation）：
+Subject  Predicate   Object        Time  SpatialScope  Sensitivity
+-------  ----------  ------------  ----  ------------  -----------
+route    Intersects  control_zone                      public
+route    Contains    control_zone                      public
+  route | Intersects | control_zone
+  route | Contains | control_zone
+
+------------------------------------------------------------------------
+Privacy planning
+Operation   Representation  Backend    EstimatedCost                       Security  Status
+----------  --------------  ---------  ----------------------------------  --------  ------------
+HeightBand  CompactCellSet  Plaintext  b=64 d=0 R=0                        low       plaintext-ok
+HeightBand  CompactCellSet  Plaintext  b=64 d=0 R=0                        low       plaintext-ok
+Intersects  CompactCellSet  PSI        b=64 d=0 R=1（PSI 求交轮次）              high      plaintext-ok
+Contains    CompactCellSet  PSI/MPC    b=64 d=1（包含性判定） R=1（PSI）+ 1（包含性确认）  high      plaintext-ok
+
+  后端: ['Plaintext']   表征: ['CompactCellSet']   安全级别: ['high', 'low']
+
+------------------------------------------------------------------------
+JAX generation
+  - HeightBand [Plaintext]：不生成 JAX（HeightBand 属于 Plaintext 物化算子，在本方明文把高度带展开为格网码集合；它不是逐元素张量算子，也不经过任何密态后端，因此不生成 JAX 代码（密态边界落在消费它的集合族算子上）。）
+  - HeightBand [Plaintext]：不生成 JAX（HeightBand 属于 Plaintext 物化算子，在本方明文把高度带展开为格网码集合；它不是逐元素张量算子，也不经过任何密态后端，因此不生成 JAX 代码（密态边界落在消费它的集合族算子上）。）
+  - Intersects [PSI]：不生成 JAX（Intersects 属于 PSI 族，在 jax.numpy 中没有逐元素对应原语；集合交是组合问题而非逐元素算子，无法用张量表达式表达。该算子由 PSI 直接执行，不经过 JAX 代码生成。）
+  - Contains [PSI/MPC]：不生成 JAX（Contains 属于 PSI/MPC 族，在 jax.numpy 中没有逐元素对应原语；集合交是组合问题而非逐元素算子，无法用张量表达式表达。该算子由 PSI/MPC 直接执行，不经过 JAX 代码生成。）
+
+------------------------------------------------------------------------
+SPU capability check
+  状态      : available
+  平台      : Linux / x86_64 / Python 3.11.16
+  jax       : 0.4.34
+  spu       : 0.9.5
+  可运行    : 是
+
+------------------------------------------------------------------------
+PSI capability check
+  协议      : PROTOCOL_DP, PROTOCOL_ECDH, PROTOCOL_ECDH_3PC, PROTOCOL_ECDH_NPC, PROTOCOL_KKRT, PROTOCOL_KKRT_NPC, PROTOCOL_RR22
+  曲线      : CURVE_25519, CURVE_25519_ELLIGATOR2, CURVE_FOURQ, CURVE_SECP256K1, CURVE_SM2
+  输入形态  : CSV 文件（无内存张量接口）
+  可运行    : 是
+
+------------------------------------------------------------------------
+SPU simulation
+  （未执行：没有可模拟的 JAX 实现；Intersects, Contains 属 PSI 族，由 PSI 阶段执行；HeightBand, HeightBand 为明文物化算子，不走密态路径）
+
+------------------------------------------------------------------------
+PSI simulation
+  Intersects: ok  [PROTOCOL_ECDH / CURVE_SM2]
+      |A|=3  |A∩B|=2
+      result    : True
+      reference : True   agree=True
+      leaks     : 接收方获得交集本体（不只是布尔值）；交集基数由 recipient 可见
+  Contains: ok  [PROTOCOL_ECDH / CURVE_SM2]
+      |A|=3  |A∩B|=2
+      result    : False
+      reference : False   agree=True
+      leaks     : 接收方获得交集本体；再叠加一次明文比较 inner ⊆ (A∩B) 判定子集关系
+
+------------------------------------------------------------------------
+Result
+Operation   Representation  Backend    Status
+----------  --------------  ---------  ---------------
+HeightBand  CompactCellSet  Plaintext  plaintext-local
+HeightBand  CompactCellSet  Plaintext  plaintext-local
+Intersects  CompactCellSet  PSI        verified
+Contains    CompactCellSet  PSI/MPC    verified
+
+------------------------------------------------------------------------
+编译完成。
+EXIT = 0
