@@ -47,6 +47,12 @@ class OperatorRule:
     #: 是否具备可验证的后端实现（决定 planner 是否给出 proceed 结论）
     has_jax_impl: bool = False
     has_spu_protocol_support: bool = False
+    #: PSI 族算子的默认协议；None = 该算子不经过协议化的 PSI（数值/物化算子）
+    default_protocol: str | None = None
+    #: 该算子预期可用的协议清单（不含带噪的 DP）；只作登记与提示，不做强制
+    protocol_candidates: tuple[str, ...] = ()
+    #: 协议级默认参数（receiver_rank / broadcast_result 等）；曲线不在此列
+    protocol_params: Mapping[str, Any] = field(default_factory=dict)
     notes: str = ""
     #: 位宽随元素数 K 变化的算子在此登记公式；None 表示位宽与 K 无关
     bit_width_formula: Callable[[int], int] | None = None
@@ -85,6 +91,9 @@ class OperatorRule:
             "estimated_cost": resolve_cost(self),
             "has_jax_impl": self.has_jax_impl,
             "has_spu_protocol_support": self.has_spu_protocol_support,
+            "default_protocol": self.default_protocol,
+            "protocol_candidates": list(self.protocol_candidates),
+            "protocol_params": dict(self.protocol_params),
             "notes": self.notes,
         }
 
@@ -147,6 +156,20 @@ def resolve_cost(rule: "OperatorRule", k: int | None = None) -> dict[str, Any]:
     return profile
 
 
+#: PSI 族算子共享的协议候选。`PROTOCOL_DP` **不在**候选内：它是差分隐私
+#: 协议，结果带噪（见 backends.psi_backend.capability.PSI_PROTOCOLS_WITH_NOISE），
+#: 用于冲突判定会漏报/误报；CLI 显式选择仍可用，但候选清单不给它位置。
+PSI_PROTOCOL_CANDIDATES: tuple[str, ...] = (
+    "PROTOCOL_ECDH",
+    "PROTOCOL_KKRT",
+    "PROTOCOL_RR22",
+)
+
+#: PSI 族算子的默认协议。与 backends.psi_backend.capability.PSI_DEFAULT_PROTOCOL
+#: 是同一个值的两处独立成文（tests/test_planner.py 有交叉断言防漂移）。
+#: 真实 RR22 跑通并完成性能/正确性验证前**不把默认改成 RR22**（课题要求）。
+PSI_RULE_DEFAULT_PROTOCOL = "PROTOCOL_ECDH"
+
 OPERATOR_REGISTRY: dict[str, OperatorRule] = {
     "Intersects": OperatorRule(
         op="Intersects",
@@ -162,6 +185,9 @@ OPERATOR_REGISTRY: dict[str, OperatorRule] = {
         ),
         has_jax_impl=False,
         has_spu_protocol_support=True,
+        default_protocol=PSI_RULE_DEFAULT_PROTOCOL,
+        protocol_candidates=PSI_PROTOCOL_CANDIDATES,
+        protocol_params={"receiver_rank": 0, "broadcast_result": False},
         notes=(
             "集合交语义，走 PSI；JAX 侧无对应原语（交集性是组合问题，非逐元素算子）",
             "Z 位域是 GB/T 40087 附录 B 的高度层号，故该算子天然是三维判定："
@@ -182,6 +208,9 @@ OPERATOR_REGISTRY: dict[str, OperatorRule] = {
         ),
         has_jax_impl=False,
         has_spu_protocol_support=True,
+        default_protocol=PSI_RULE_DEFAULT_PROTOCOL,
+        protocol_candidates=PSI_PROTOCOL_CANDIDATES,
+        protocol_params={"receiver_rank": 0, "broadcast_result": False},
         notes=(
             "交集本体仍由 PSI 求出（CompactCellSet 求交），子集判定**默认**走 MPC 基数等值"
             "（k=|outer∩inner| == n=|inner|），不再做明文比较；MPC 不可用时按 plaintext-fallback 退回明文并披露"
@@ -253,6 +282,9 @@ OPERATOR_REGISTRY: dict[str, OperatorRule] = {
         ),
         has_jax_impl=False,
         has_spu_protocol_support=True,
+        default_protocol=PSI_RULE_DEFAULT_PROTOCOL,
+        protocol_candidates=PSI_PROTOCOL_CANDIDATES,
+        protocol_params={"receiver_rank": 0, "broadcast_result": False},
         notes=(
             "输出为格网集合本体，用于后续链式计算",
             "Z 位域是 GB/T 40087 附录 B 的高度层号，故交集本体会同时带出高度层"

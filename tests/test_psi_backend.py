@@ -755,3 +755,110 @@ class TestAgreementDiscipline:
         assert run.status == "ok"
         assert run.value is True
         assert run.reference is None
+
+
+# --------------------------------------------------------------------------
+# 9. RR22：协议声明 + 参数能力 + 真实执行（课题 §18 / §19）
+# --------------------------------------------------------------------------
+
+
+class TestRr22ProtocolDeclaration:
+    """RR22 是协议清单里的正式成员：两方、精确、不读 curve。"""
+
+    def test_rr22_is_registered(self):
+        assert "PROTOCOL_RR22" in PSI_PROTOCOLS
+
+    def test_rr22_is_two_party(self):
+        assert protocol_world_size("PROTOCOL_RR22") == 2
+
+    def test_rr22_needs_no_curve(self):
+        assert protocol_needs_curve("PROTOCOL_RR22") is False
+        assert psi_curve_relation("PROTOCOL_RR22") == "ignored"
+        assert protocol_is_exact("PROTOCOL_RR22") is True
+
+
+@needs_psi
+class TestRr22ParamsAndExecution:
+    """参数必须真的进 Rr22Rarams 并跑出与明文一致的结果，而非登记在纸上。"""
+
+    def test_rr22_param_capability_probe_matches_the_installed_spu(self):
+        from spu import psi
+
+        report = check_psi_capabilities()
+        probe = report.rr22_params
+        assert probe["protocol"] == "PROTOCOL_RR22"
+        assert probe["protocol_present"] is True
+        assert "rr22_params" in report.to_dict()
+        if not hasattr(psi, "Rr22Rarams"):
+            # 诚实分支：本版本没有参数类 → 探测必须如实置 False，不许伪装
+            assert probe["runnable"] is False
+            assert probe["params"]["rr22_params"] is False
+            pytest.skip("当前 SPU 版本没有 Rr22Rarams，参数注入能力不完整")
+        # 直接验证官方构造（§19 测试 4）
+        conf = psi.PsiProtocolConfig(
+            protocol=psi.PsiProtocol.PROTOCOL_RR22,
+            receiver_rank=0,
+            broadcast_result=False,
+            rr22_params=psi.Rr22Rarams(low_comm_mode=False),
+        )
+        assert hasattr(conf, "rr22_params")
+        assert probe["params"]["low_comm_mode"] is True
+        assert probe["params"]["rr22_params"] is True
+        assert probe["runnable"] is True
+
+    def test_rr22_intersects_matches_plaintext(self):
+        run = run_psi_intersection(
+            ROUTE, ZONE, op="Intersects", protocol="PROTOCOL_RR22",
+            reference_fn=lambda left, right: plain.plain_intersects(left, right).value,
+        )
+        assert run.status == "ok", run.error
+        assert run.value is True
+        assert run.agreement is True
+        assert dict(run.protocol_params) == {"low_comm_mode": False}
+        assert run.protocol_params["low_comm_mode"] is False
+
+    def test_rr22_cellset_intersect_returns_the_intersection_body(self):
+        run = run_psi_intersection(
+            ROUTE, ZONE, op="CellSetIntersect", protocol="PROTOCOL_RR22",
+            reference_fn=lambda left, right: tuple(sorted(set(left) & set(right))),
+        )
+        assert run.status == "ok", run.error
+        assert run.value == EXPECTED_INTERSECTION
+        assert run.agreement is True
+
+    def test_rr22_does_not_truncate_high_bit_codes(self):
+        high = _code(x=131071)
+        assert high >= 2 ** 63
+        run = run_psi_intersection(
+            [high], [high], op="CellSetIntersect", protocol="PROTOCOL_RR22",
+            reference_fn=lambda left, right: tuple(sorted(set(left) & set(right))),
+        )
+        assert run.status == "ok", run.error
+        assert run.value == (high,)
+        assert run.agreement is True
+
+    def test_rr22_low_comm_mode_both_values_run_and_agree(self):
+        results = {}
+        for mode in (False, True):
+            run = run_psi_intersection(
+                ROUTE, ZONE, op="Intersects", protocol="PROTOCOL_RR22",
+                rr22_low_comm_mode=mode,
+                reference_fn=lambda left, right: plain.plain_intersects(left, right).value,
+            )
+            assert run.status == "ok", f"low_comm_mode={mode}: {run.error}"
+            assert run.value is True
+            assert run.agreement is True
+            assert dict(run.protocol_params) == {"low_comm_mode": mode}
+            results[mode] = run.value
+        assert len(set(results.values())) == 1
+
+    def test_rr22_param_is_not_recorded_for_other_protocols(self):
+        """别的协议带出空参数档：不把"传了"写成"协议读了"。"""
+
+        run = run_psi_intersection(
+            ROUTE, ZONE, op="Intersects", protocol="PROTOCOL_KKRT",
+            rr22_low_comm_mode=True,
+        )
+        assert run.status == "ok", run.error
+        assert dict(run.protocol_params) == {}
+        assert any("rr22_low_comm_mode" in note for note in run.notes)

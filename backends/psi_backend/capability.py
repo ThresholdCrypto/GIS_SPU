@@ -29,7 +29,7 @@ from __future__ import annotations
 import importlib
 import platform
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Mapping
 
 # --------------------------------------------------------------------------
@@ -192,6 +192,8 @@ class PsiCapabilityReport:
     join_types: tuple[str, ...] = ()
     file_io_only: bool = True
     runnable: bool = False
+    #: RR22 参数能力探测（PROTOCOL_RR22 / Rr22Rarams / rr22_params 是否齐备）
+    rr22_params: Mapping[str, Any] = field(default_factory=dict)
     blockers: tuple[str, ...] = ()
     notes: tuple[str, ...] = ()
     error: str | None = None
@@ -214,6 +216,7 @@ class PsiCapabilityReport:
             "join_types": list(self.join_types),
             "file_io_only": self.file_io_only,
             "runnable": self.runnable,
+            "rr22_params": dict(self.rr22_params),
             "blockers": list(self.blockers),
             "notes": list(self.notes),
             "error": self.error,
@@ -244,6 +247,76 @@ def _enum_members(obj: Any, *, skip: tuple[str, ...] = ()) -> tuple[str, ...]:
         if isinstance(inner, int):
             out.append(name)
     return tuple(out)
+
+
+def probe_rr22_params() -> dict[str, Any]:
+    """探测 RR22 的参数能力（不许把"没有参数类"当成"参数可用"）。
+
+    三个结论都来自**实际构造**，不是名字比对：
+
+    1. `PsiProtocol.PROTOCOL_RR22` 是否存在；
+    2. `psi.Rr22Rarams` 是否存在，且 `low_comm_mode=True/False` 都能构造；
+    3. `PsiProtocolConfig(...)` 是否接受 `rr22_params=` 关键字。
+
+    `runnable` 表示"RR22 的参数路径完整可用"（三者全真）。缺任一环时
+    如实置 False 并在 `notes` 里说明——RR22 本体或许仍能按内部默认配置运行，
+    但"参数可以不完整"这件事必须让使用者看见。
+    """
+
+    probe: dict[str, Any] = {
+        "protocol": "PROTOCOL_RR22",
+        "protocol_present": False,
+        "params": {"rr22_params": False, "low_comm_mode": False},
+        "runnable": False,
+        "notes": [],
+    }
+
+    try:
+        from spu import psi
+    except Exception as exc:
+        probe["notes"].append(f"spu.psi 不可导入：{type(exc).__name__}: {exc}")
+        return probe
+
+    probe["protocol_present"] = hasattr(psi.PsiProtocol, "PROTOCOL_RR22")
+
+    rr22_cls = getattr(psi, "Rr22Rarams", None)
+    if rr22_cls is None:
+        probe["notes"].append("spu.psi 无 Rr22Rarams：RR22 参数能力不完整")
+        return probe
+
+    low_comm_mode_obj = None
+    try:
+        rr22_cls(low_comm_mode=False)
+        low_comm_mode_obj = rr22_cls(low_comm_mode=True)
+        probe["params"]["low_comm_mode"] = True
+    except Exception as exc:
+        probe["notes"].append(
+            f"Rr22Rarams(low_comm_mode=...) 构造失败：{type(exc).__name__}: {exc}"
+        )
+
+    if probe["protocol_present"] and low_comm_mode_obj is not None:
+        try:
+            psi.PsiProtocolConfig(
+                protocol=psi.PsiProtocol.PROTOCOL_RR22,
+                receiver_rank=0,
+                broadcast_result=False,
+                rr22_params=low_comm_mode_obj,
+            )
+            probe["params"]["rr22_params"] = True
+        except TypeError as exc:
+            probe["notes"].append(f"PsiProtocolConfig 不接受 rr22_params 关键字：{exc}")
+        except Exception as exc:
+            probe["notes"].append(
+                "PsiProtocolConfig(..., rr22_params=...) 构造失败："
+                f"{type(exc).__name__}: {exc}"
+            )
+
+    probe["runnable"] = bool(
+        probe["protocol_present"]
+        and probe["params"]["rr22_params"]
+        and probe["params"]["low_comm_mode"]
+    )
+    return probe
 
 
 def check_psi_capabilities() -> PsiCapabilityReport:
@@ -297,6 +370,17 @@ def check_psi_capabilities() -> PsiCapabilityReport:
                 field_name,
                 _enum_members(enum_obj, skip=("name", "value") + ENUM_SENTINELS),
             )
+
+    # ---------------- 3.5 RR22 参数能力 ----------------
+    # "协议在枚举里"不等于"参数类存在"。结论来自实际构造（probe_rr22_params）；
+    # 不完整时如实披露：参数注入会失败，而不是被静默忽略。
+    report.rr22_params = probe_rr22_params()
+    if report.rr22_params and not report.rr22_params.get("runnable"):
+        report.notes = report.notes + (
+            "RR22 参数能力不完整："
+            + "；".join(report.rr22_params.get("notes") or ("原因未记录",))
+            + "（RR22 仍可按协议内部默认配置运行，但 low_comm_mode 无法注入）",
+        )
 
     # ---------------- 4. 内存 link（模拟必需） ----------------
     try:

@@ -27,6 +27,12 @@ class PlannedStep:
     backend: str
     estimated_cost: Mapping[str, Any]
     security_level: str
+    #: PSI 族算子选用的协议（来自算子规则 default_protocol，或编译器显式指定）。
+    #: None = 该算子不经过协议化的后端（数值算子 / 明文物化算子）。
+    protocol: str | None = None
+    #: 协议级参数（如 RR22 的 low_comm_mode）。协议属于规划/后端层，
+    #: 不进入 Geo-IR 的任何数据模型。
+    protocol_params: Mapping[str, Any] = field(default_factory=dict)
     inputs: tuple[str, ...] = ()
     output_name: str | None = None
     sensitivity: Sensitivity = Sensitivity.INTERNAL
@@ -52,6 +58,8 @@ class PlannedStep:
             "backend": self.backend,
             "estimated_cost": dict(self.estimated_cost),
             "security_level": self.security_level,
+            "protocol": self.protocol,
+            "protocol_params": dict(self.protocol_params),
             "inputs": list(self.inputs),
             "output_name": self.output_name,
             "sensitivity": str(self.sensitivity),
@@ -107,8 +115,18 @@ class PrivacyPlan:
 class Planner:
     """把 Geo-IR 程序规划为隐私计算方案。"""
 
-    def __init__(self, registry: Mapping[str, OperatorRule] | None = None) -> None:
+    def __init__(
+        self,
+        registry: Mapping[str, OperatorRule] | None = None,
+        *,
+        psi_protocol: str | None = None,
+        psi_protocol_params: Mapping[str, Any] | None = None,
+    ) -> None:
         self.registry = dict(registry or OPERATOR_REGISTRY)
+        #: 编译器显式选择的 PSI 协议；None = 各算子用规则里的默认协议
+        self.psi_protocol = psi_protocol
+        #: 随协议变化的协议级参数（如 RR22 的 low_comm_mode）
+        self.psi_protocol_params = dict(psi_protocol_params or {})
 
     def plan(self, program: GeoProgram) -> PrivacyPlan:
         plan = PrivacyPlan(program_name=program.name)
@@ -137,6 +155,15 @@ class Planner:
         # 不能沿用档案里那个与自身公式矛盾的静态值。
         cost = resolve_cost(rule, k=operation.params.get("K"))
 
+        # 协议配置只对登记了默认协议的算子（PSI 族）生效。协议是规划层面的
+        # 选择，不是地理语义——Geo-IR 的算子模型不因 RR22 增加任何字段。
+        protocol: str | None = None
+        protocol_params: dict[str, Any] = {}
+        if rule.default_protocol is not None:
+            protocol = self.psi_protocol or rule.default_protocol
+            protocol_params = dict(rule.protocol_params)
+            protocol_params.update(self.psi_protocol_params)
+
         reasons = [
             f"算子 {operation.op} 的默认表征为 {rule.representation}",
             f"首选后端 {rule.primary_backend}，安全级别 {rule.security_level}",
@@ -156,6 +183,8 @@ class Planner:
             backend=rule.backend,
             estimated_cost=cost,
             security_level=rule.security_level,
+            protocol=protocol,
+            protocol_params=protocol_params,
             inputs=operation.inputs,
             output_name=operation.output_name,
             sensitivity=sensitivity,
@@ -194,10 +223,24 @@ class Planner:
         )
 
 
-def plan_program(program: GeoProgram, registry: Mapping[str, OperatorRule] | None = None) -> PrivacyPlan:
-    """便捷入口。"""
+def plan_program(
+    program: GeoProgram,
+    registry: Mapping[str, OperatorRule] | None = None,
+    *,
+    psi_protocol: str | None = None,
+    psi_protocol_params: Mapping[str, Any] | None = None,
+) -> PrivacyPlan:
+    """便捷入口。
 
-    return Planner(registry).plan(program)
+    `psi_protocol` / `psi_protocol_params` 是编译器对 PSI 族算子的协议选择；
+    给了就覆盖算子规则的默认协议，并把参数并进每个 PSI 步骤的 protocol_params。
+    """
+
+    return Planner(
+        registry,
+        psi_protocol=psi_protocol,
+        psi_protocol_params=psi_protocol_params,
+    ).plan(program)
 
 
 def plan_table_rows(plan: PrivacyPlan) -> list[list[str]]:

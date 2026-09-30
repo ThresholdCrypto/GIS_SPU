@@ -574,6 +574,38 @@ class TestCli:
         for run in result.psi_runs.values():
             assert run.protocol == "PROTOCOL_RR22"
 
+    def test_rr22_low_comm_mode_reaches_the_real_run(self, capsys):
+        """`--psi-rr22-low-comm-mode` 必须体现在真实执行的参数档里。"""
+
+        exit_code = cli_main(
+            [
+                "build", example("route_conflict.py"),
+                "--psi-protocol", "RR22",
+                "--psi-rr22-low-comm-mode",
+            ]
+        )
+        output = capsys.readouterr().out
+        assert exit_code == 0
+        assert "[PROTOCOL_RR22]" in output
+        assert "low_comm_mode=True" in output
+        from tests._helpers import has_psi
+
+        if has_psi():
+            assert "verified" in output
+
+    def test_rr22_flag_with_another_protocol_is_disclosed(self, capsys):
+        """RR22 专用参数配了别的协议：必须提示它不生效，而不是静默忽略。"""
+
+        cli_main(
+            [
+                "build", example("route_conflict.py"),
+                "--psi-protocol", "KKRT",
+                "--psi-rr22-low-comm-mode",
+            ]
+        )
+        output = capsys.readouterr().out
+        assert "RR22 专用参数" in output
+
     def test_unknown_psi_protocol_exits_2_without_traceback(self, capsys):
         exit_code = cli_main(
             ["build", example("route_conflict.py"), "--psi-protocol", "NOPE"]

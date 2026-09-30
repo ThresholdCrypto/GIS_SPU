@@ -173,6 +173,14 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
                         f"  选用      : {result.psi_protocol}"
                         + curve_suffix(result.psi_protocol, result.psi_curve)
                     )
+                if result.psi_protocol_params:
+                    _emit(
+                        "  协议参数  : "
+                        + ", ".join(
+                            f"{key}={value}"
+                            for key, value in result.psi_protocol_params.items()
+                        )
+                    )
                 _emit(f"  曲线      : {', '.join(report.curves) or '（未探测到）'}")
                 noisy = [name for name in report.protocols if not protocol_is_exact(name)]
                 if noisy:
@@ -215,6 +223,13 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
             for op, run in result.psi_runs.items():
                 _emit(f"  {op}: {run.status}  [{run.protocol}"
                       + (f" / {run.curve}" if run.curve else "") + "]")
+                if run.protocol_params:
+                    _emit(
+                        "      params    : "
+                        + ", ".join(
+                            f"{key}={value}" for key, value in run.protocol_params.items()
+                        )
+                    )
                 if run.status in ("ok", "empty-input"):
                     _emit(f"      |A|={run.original_count}  |A∩B|={run.intersection_count}")
                     _emit(f"      result    : {run.value}")
@@ -303,6 +318,13 @@ def build_command(args: argparse.Namespace) -> int:
                 f"本项目不覆盖，--psi-curve 未传入。"
             )
 
+    # RR22 专用参数给了、协议却不是 RR22：如实提示，不静默忽略。
+    if args.psi_rr22_low_comm_mode and psi_protocol != "PROTOCOL_RR22":
+        _emit(
+            f"提示：--psi-rr22-low-comm-mode 是 RR22 专用参数，"
+            f"协议 {psi_protocol} 不使用它。"
+        )
+
     compiler = Compiler(
         protocol=args.protocol,
         field=args.field,
@@ -312,6 +334,7 @@ def build_command(args: argparse.Namespace) -> int:
         psi_protocol=psi_protocol,
         psi_curve=psi_curve,
         psi_subset=args.psi_subset,
+        psi_rr22_low_comm_mode=args.psi_rr22_low_comm_mode,
     )
     try:
         result = compiler.compile_file(args.source, entry=args.entry)
@@ -421,6 +444,15 @@ def build_parser() -> argparse.ArgumentParser:
             f"{SUBSET_MODE_MPC}（默认，MPC 基数等值）/ "
             f"{SUBSET_MODE_PLAINTEXT}（显式明文）。"
             "MPC 不可用时会自动退回明文并把模式标为 plaintext-fallback"
+        ),
+    )
+    build.add_argument(
+        "--psi-rr22-low-comm-mode",
+        action="store_true",
+        help=(
+            "RR22 专用参数：设置 Rr22Rarams.low_comm_mode=True（低通信模式）。"
+            "只对 --psi-protocol RR22 生效，不是通用 curve 参数；"
+            "缺省 false，使用 RR22 默认通信模式"
         ),
     )
     build.add_argument("--world-size", type=int, default=None, help="参与方数量")

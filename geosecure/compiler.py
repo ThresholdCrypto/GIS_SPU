@@ -139,6 +139,8 @@ class CompileResult:
     #: 本次编译实际使用的 PSI 协议与曲线（来自构造参数，不是环境探测所得）
     psi_protocol: str | None = None
     psi_curve: str | None = None
+    #: 本次编译实际使用的协议级参数（如 RR22 的 low_comm_mode）
+    psi_protocol_params: Mapping[str, Any] = field(default_factory=dict)
     psi_capability: PsiCapabilityReport | None = None
     psi_runs: dict[str, PsiRunResult] = field(default_factory=dict)
     operator_status: list[dict[str, Any]] = field(default_factory=list)
@@ -192,6 +194,8 @@ class CompileResult:
                     "backend": s.backend,
                     "estimated_cost": dict(s.estimated_cost),
                     "security_level": s.security_level,
+                    "protocol": s.protocol,
+                    "protocol_params": dict(s.protocol_params),
                     "status": s.status,
                 }
                 for s in (self.plan.steps if self.plan else [])
@@ -205,6 +209,7 @@ class CompileResult:
             "spu_runs": {op: run.to_dict() for op, run in self.spu_runs.items()},
             "psi_protocol": self.psi_protocol,
             "psi_curve": self.psi_curve,
+            "psi_protocol_params": dict(self.psi_protocol_params),
             "psi_capability": self.psi_capability.to_dict() if self.psi_capability else None,
             "psi_runs": {op: run.to_dict() for op, run in self.psi_runs.items()},
             "operator_status": list(self.operator_status),
@@ -225,6 +230,7 @@ class Compiler:
         psi_protocol: str | None = None,
         psi_curve: str | None = None,
         psi_subset: str = SUBSET_MODE_MPC,
+        psi_rr22_low_comm_mode: bool = False,
         capability_report: CapabilityReport | None = None,
         psi_capability_report: PsiCapabilityReport | None = None,
         sensitivities: Mapping[str, Any] | None = None,
@@ -238,6 +244,12 @@ class Compiler:
         # PSI 协议/曲线走同一套解析：非法名在此即报错（消息里带可用清单），
         # 不读曲线的协议把曲线归一为 None——避免"设了但不生效"的错觉。
         self.psi_protocol, self.psi_curve = resolve_psi_protocol(psi_protocol, psi_curve)
+        # RR22 专用参数（对应 spu.psi.Rr22Rarams.low_comm_mode）。随协议选择
+        # 构造进 protocol_params，一路进 Planner 的步骤与 PSI 后端。
+        self.psi_rr22_low_comm_mode = bool(psi_rr22_low_comm_mode)
+        self.psi_protocol_params: dict[str, Any] = {}
+        if self.psi_protocol == "PROTOCOL_RR22":
+            self.psi_protocol_params["low_comm_mode"] = self.psi_rr22_low_comm_mode
         # `Contains` 的子集判定走哪条路。默认 MPC；显式选明文时也照做，
         # 但状态词会变成 subset-plaintext，不会被读成密态子集比较。
         self.psi_subset = resolve_subset_mode(psi_subset)
@@ -258,6 +270,7 @@ class Compiler:
         result = CompileResult(source_file=None if filename == "<source>" else filename)
         result.psi_protocol = self.psi_protocol
         result.psi_curve = self.psi_curve
+        result.psi_protocol_params = dict(self.psi_protocol_params)
 
         # ---- 阶段 1：Parsing ----
         parse_result = parse_source(
@@ -318,7 +331,11 @@ class Compiler:
         )
 
         # ---- 阶段 3：Privacy planning ----
-        plan = plan_program(parse_result.program)
+        plan = plan_program(
+            parse_result.program,
+            psi_protocol=self.psi_protocol,
+            psi_protocol_params=self.psi_protocol_params,
+        )
         result.plan = plan
         result.stages.append(
             StageResult(
@@ -567,6 +584,10 @@ class Compiler:
         selection = f"选用 {self.psi_protocol}" + curve_suffix(
             self.psi_protocol, self.psi_curve
         )
+        if self.psi_protocol_params:
+            selection += "（" + ", ".join(
+                f"{key}={value}" for key, value in self.psi_protocol_params.items()
+            ) + "）"
         if not protocol_is_exact(self.psi_protocol):
             # 带噪协议与三方协议同属"名字有、语义不一样"：
             # 一个跑不起来，一个跑起来但不准。都要在方案阶段就说清楚。
@@ -653,6 +674,7 @@ class Compiler:
                 report=result.psi_capability,
                 protocol=self.psi_protocol,
                 curve=self.psi_curve,
+                rr22_low_comm_mode=self.psi_rr22_low_comm_mode,
                 subset_via=self.psi_subset,
                 # 子集判定这条 MPC 电路沿用编译器的协议/环宽，与其它 MPC 算子
                 # 共用同一套开关，不另开一个配置面。
@@ -754,6 +776,8 @@ class Compiler:
                     "operation": step.operation,
                     "representation": step.representation,
                     "backend": step.backend,
+                    "protocol": step.protocol,
+                    "protocol_params": dict(step.protocol_params),
                     "status": status,
                     "security_level": step.security_level,
                     "jax_ready": jax_ready,
@@ -887,6 +911,10 @@ _COMPILER_KEYS = {
     "tolerance",
     "run_simulation",
     "capability_report",
+    "psi_subset",
+    "psi_protocol",
+    "psi_curve",
+    "psi_rr22_low_comm_mode",
     "psi_capability_report",
     "sensitivities",
     "type_hints",

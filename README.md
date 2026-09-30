@@ -43,7 +43,7 @@ bash scripts/setup_wsl_spu.sh         # 一键：系统依赖 + Python 3.11 + �
 
 ```bash
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 456 项全部通过
+python -m pytest tests/ -q            # 480 项全部通过
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -542,6 +542,7 @@ geo-secure build examples/vertical_conflict.py --psi-subset plaintext
 | `--psi-protocol` | `PROTOCOL_ECDH` | 取值见上表"本链路可执行协议"；`KKRT` / `RR22` / `KKRT_NPC` 不基于椭圆曲线（给了也不读）；`DP` 能跑但结果带噪 |
 | `--psi-curve` | `CURVE_SM2` | 只有 ECDH 族由本项目注入。**即使当前协议用不上也会校验拼写**，拼错即报错而非静默忽略。`DP` 自带内置默认曲线（上游源码默认 25519），本项目**不覆盖**它——所以提示语写"未传入"而**不写**"不生效" |
 | `--psi-subset` | `mpc` | `Contains` 的**子集判定**走哪条路：`mpc`（MPC 基数等值）/ `plaintext`（显式明文）。只接受这两个值；MPC 不可用时自动退回明文并把模式标为 `plaintext-fallback`，状态词记 `subset-plaintext`（见 7.6） |
+| `--psi-rr22-low-comm-mode` | 关 | **RR22 专用参数**：开 → `Rr22Rarams.low_comm_mode=True`（低通信模式）。只对 `--psi-protocol RR22` 生效（配其它协议会打印提示且不注入），不是通用 curve 参数 |
 
 三条纪律（都有测试守着）：
 
@@ -564,6 +565,59 @@ geo-secure build examples/vertical_conflict.py --psi-subset plaintext
 6. `PROTOCOL_DP` 的 `curve` 是**带默认值的形参**（上游源码默认 25519），不是"不读曲线"。
    早期把它与 `KKRT` / `RR22` 并列，于是 CLI 告诉使用者"--psi-curve 不生效"——一条
    没核对过的断言。现在按 `required` / `ignored` / `implicit` 三分类分别措辞。
+
+### 5.6 RR22 支持（本版新增）
+
+**接入方式**：复用 SPU/libpsi 已提供的 RR22 实现，**不在 GIS_SPU 内重新实现 RR22
+密码学算法**（OPRF / OKVS 等一概不落地到本仓库）。本仓库负责：协议选择 → 参数装配
+→ 运行验证。链路：
+
+```text
+GeoSOT-3D 64-bit grid_code → CellSet → Geo-IR（Intersects / CellSetIntersect）
+    → CompactCellSet（Planner）→ PrivacyPlan（protocol=PROTOCOL_RR22 + protocol_params）
+    → PSI Backend → psi.PsiProtocolConfig(rr22_params=psi.Rr22Rarams(low_comm_mode=...))
+    → spu.psi.psi_execute → libpsi RR22
+```
+
+```bash
+geo-secure build examples/rr22_grid_intersection.py --psi-protocol RR22
+geo-secure build examples/rr22_grid_intersection.py --psi-protocol RR22 --psi-rr22-low-comm-mode
+```
+
+```text
+[7/8] PSI capability check   + OK   ...；选用 PROTOCOL_RR22（不读曲线）（low_comm_mode=True）...
+PSI simulation
+  Intersects: ok  [PROTOCOL_RR22]
+      params    : low_comm_mode=True
+      |A|=3  |A∩B|=2
+      result    : True
+      reference : True   agree=True
+```
+
+| 项目 | 结论（spu 0.9.5 实测，2026-09-30） |
+|------|------|
+| 协议登记 | `PsiProtocol.PROTOCOL_RR22`，两方、精确协议 |
+| 参数类 | `psi.Rr22Rarams(low_comm_mode=False/True)` 均可构造 |
+| 参数注入 | `PsiProtocolConfig(..., rr22_params=...)` 实测接受；runtime 在 worker 内注入 |
+| 曲线 | `RR22 = ignored`：不读 curve，绝不把 SM2 注入 RR22 |
+| 真实执行 | `Intersects` / `CellSetIntersect` 与明文一致；两种 `low_comm_mode` 均验证 |
+| 64 位码 | `>= 2^63` 的格网码不被截断（同 ECDH/KKRT 的回归口径） |
+| 参数可追踪 | 运行结果 / 计划步骤 / JSON / CLI 四处都带 `protocol`、`protocol_params` |
+| 能力探测 | `check_psi_capabilities().rr22_params`：`protocol_present` / `rr22_params` / `low_comm_mode` / `runnable` 逐项如实探测 |
+
+已完成与未完成必须分开写：
+
+```text
+已完成：RR22 协议接入 —— 可配置 / 可编译 / 可执行 / 可验证（本版）
+未完成：RR22 密码算法改造、Geo-RR22 优化 —— 下一阶段（见 8.0 与 docs/RR22_INTEGRATION.md）
+```
+
+- 默认协议**仍是** `PROTOCOL_ECDH + CURVE_SM2`；RR22 由 `--psi-protocol RR22` 显式选择。
+  是否改为默认，等真实 RR22 完成性能/正确性对拍后再定（`planner/registry.py`
+  的 `PSI_RULE_DEFAULT_PROTOCOL`）。
+- `--psi-rr22-low-comm-mode` 是 RR22 专用；配其它协议会打印提示且不注入。
+- 若上游版本没有 `Rr22Rarams`：能力探测如实报"不完整"；运行期显式请求
+  `low_comm_mode=True` 会失败而不是静默忽略（详见 `docs/RR22_INTEGRATION.md`）。
 
 ---
 
@@ -661,27 +715,28 @@ PSI 的 `empty-input`（空集合）与 `unavailable`（环境缺失）**都不�
 
 ```
 tests/test_ir.py                 38 项   类型系统、格网口径、算子/程序/关系
-tests/test_planner.py            31 项   注册表、五元组、敏感度策略、代价模型、无副作用
+tests/test_planner.py            36 项   注册表、五元组、敏感度策略、代价模型、无副作用、协议与协议参数（RR22）
 tests/test_jax_backend.py        37 项   生成器、可追踪性、原语核对、与明文对拍
 tests/test_spu_backend.py        31 项   协议/环宽规范化、能力门控、私有接口与共享库回归、SPU 实跑
-tests/test_psi_backend.py        71 项   PSI 能力/协议归一化/真实求交/空输入/泄漏面/诚实留空/日志卫生/带噪与精确披露
+tests/test_psi_backend.py        80 项   PSI 能力/协议归一化/真实求交/空输入/泄漏面/诚实留空/日志卫生/带噪与精确披露/RR22 参数链路
 tests/test_subset_mpc.py         30 项   Contains 密态子集比较：电路原语与注册表一致、模式口径、逐点精确、只有基数进 MPC、退路披露
 tests/test_frontend.py           41 项   表达式级调用识别、输入可解析性、敏感度不降级、链式类型、语义
-tests/test_end_to_end.py         72 项   全流程、状态表、CLI（协议/曲线/子集开关与 DP 带噪）、六类失败报告、编译入口参数、诊断聚合、确定性
+tests/test_end_to_end.py         74 项   全流程、状态表、CLI（协议/曲线/子集/RR22 低通信开关与 DP 带噪）、六类失败报告、编译入口参数、诊断聚合、确定性
 tests/test_geosot.py             43 项   国标附录 A/B 特征值、层号与层区间互逆、Z/L 位域容量、低空可分辨性、高度带集合语义
 tests/test_height_materialize.py 50 项   height band 方言注册/别名/模块级遍历/参数形式/materialize 诊断/明文一致/示例
 tests/test_height_planner.py     12 项   第 6 类失败模式、三维工作流、规划器的高度语义诚实性
+tests/test_rr22_geosot.py         8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
                                  ─────
-                                 456 通过 / 0 跳过
+                                 480 通过 / 0 跳过
 ```
 
 在 **WSL2 + Linux + Python 3.11.16 + jax 0.4.34 + spu 0.9.5** 上，
-**456 项全部通过，无跳过**。其中真实执行隐私协议的有：
+**480 项全部通过，无跳过**。其中真实执行隐私协议的有：
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
 | SPU(MPC) 真跑 | 5 项 | `test_spu_backend` 3 项 + 子集比较电路 2 项；整数路径误差 0.0 |
-| PSI 真机求交 | 30 项 | 真的调用 `psi_execute`，非 mock（含 `Contains` 的 MPC 子集判定 11 项） |
+| PSI 真机求交 | 43 项 | 真的调用 `psi_execute`，非 mock（含 `Contains` 的 MPC 子集判定 11 项；本版新增 RR22 双模式与 GeoSOT-3D 链路 13 项） |
 | PSI 空输入路径 | 6 项 | 前置判定，不启动协议 |
 | PSI 原生日志卫生 | 4 项 | 真机执行 + 校验不落 CWD 日志 |
 
@@ -1035,6 +1090,7 @@ MPC 电路输出一个比特  k == n
 
 | 优先级 | 待办 | 说明 |
 |--------|------|------|
+| 高 | **Geo-RR22 优化** | RR22 接入闭环已完成（见 5.6）；下一步才是 64-bit GridCode 专用编码、排序/去重、前缀压缩、分层压缩、bucket 分区、地理候选集剪枝、通信代价估计等联合优化 |
 | 中 | PSI 结果链式传递 | `CellSetIntersect` 的交集本体尚未喂给下游算子 |
 | 中 | 编译期按方案实算元素数 K | `resolve_cost` 已支持按 K 实例化，但 K 目前需显式传入 |
 | 低 | 三维示例接入真实 3D 码集 | `examples/vertical_conflict.py` 已跑通编译与 PSI 真实执行，但 `DEFAULT_EXAMPLE_INPUTS` 仍是二维码；换码集即可 |
@@ -1072,6 +1128,15 @@ MPC 电路输出一个比特  k == n
 > 现在拆成两条独立披露：`PSI_PROTOCOL_WORLD_SIZE`（能不能跑）与
 > `PSI_PROTOCOLS_WITH_NOISE`（跑出来准不准）；状态词新增 `executed-noisy`；
 > 曲线关系改为 `required` / `ignored` / `implicit` 三分类。见 5.5 与 6.1.1。
+
+> 已闭合（本版）：**RR22 协议接入**（课题下一阶段的接入闭环）。`PROTOCOL_RR22` 从
+> "协议名已登记"升级为"可配置 → 可编译 → 可执行 → 可验证"：`PlannedStep` 携带
+> `protocol` / `protocol_params`；`OperatorRule` 登记 `default_protocol` /
+> `protocol_candidates`；Compiler / CLI 新增 `psi_rr22_low_comm_mode` /
+> `--psi-rr22-low-comm-mode`；runtime 向 `PsiProtocolConfig` 注入 `Rr22Rarams`；
+> 运行结果 / 计划 / JSON / CLI 四处都带协议参数。RR22 仍走 PSI 后端（`spu.psi`），
+> JAX Backend 与 SPU MPC `ProtocolKind` 均未改动；新增 `tests/test_rr22_geosot.py`
+> 与 `examples/rr22_grid_intersection.py`。见 5.6 与 `docs/RR22_INTEGRATION.md`。
 
 ### 8.1 接入新增隐私后端
 

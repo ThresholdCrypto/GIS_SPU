@@ -114,6 +114,9 @@ class PsiRunResult:
     curve: str | None
     world_size: int
     receiver_rank: int
+    #: 实际注入的协议级参数（如 RR22 的 low_comm_mode）；空 = 无协议级参数。
+    #: 只登记真实注入过的值——"传了但协议不读"不写成"已生效"。
+    protocol_params: Mapping[str, Any] = field(default_factory=dict)
     # 原始 PSI 计数（来自官方 PsiExecuteReport）
     original_count: int | None = None
     intersection_count: int | None = None
@@ -142,6 +145,7 @@ class PsiRunResult:
             "op": self.op,
             "protocol": self.protocol,
             "curve": self.curve,
+            "protocol_params": dict(self.protocol_params),
             "world_size": self.world_size,
             "receiver_rank": self.receiver_rank,
             "original_count": self.original_count,
@@ -169,6 +173,8 @@ class PsiRunResult:
                 f"  semantics    : {self.semantics}",
                 f"  |A|          : {self.original_count}   |A∩B| = {self.intersection_count}",
             ]
+            if self.protocol_params:
+                lines.append(f"  protocol_params: {dict(self.protocol_params)}")
             if self.value is not None:
                 lines.append(f"  result       : {_jsonable(self.value)}")
             if self.reference is not None:
@@ -339,6 +345,7 @@ def run_psi_intersection(
     protocol: str = PSI_DEFAULT_PROTOCOL,
     curve: str | None = PSI_DEFAULT_CURVE,
     receiver_rank: int = 0,
+    rr22_low_comm_mode: bool = False,
     reference_fn: Any = None,
     report: PsiCapabilityReport | None = None,
     workdir: str | None = None,
@@ -356,6 +363,9 @@ def run_psi_intersection(
         op:   受支持算子之一（见 PSI_OPS）。
         protocol / curve: PSI 协议与椭圆曲线；ECDH 族必须给曲线。
         receiver_rank: 谁拿交集（0 或 1）；默认 0。
+        rr22_low_comm_mode: RR22 专用参数（`Rr22Rarams.low_comm_mode`，低通信
+            模式）。仅当 protocol=RR22 时注入并登记进结果；其它协议下不生效，
+            且会在 notes 里如实说明——不把"传了但没注入"伪装成"已生效"。
         reference_fn: 明文参考实现；给出后计算一致性。
         workdir: 临时工作目录；缺省自建自删。
         subset_via: `Contains` 的子集判定走哪条路——"mpc"（默认，密态基数
@@ -369,11 +379,18 @@ def run_psi_intersection(
     protocol_name = normalize_psi_protocol(protocol)
     curve_name = normalize_curve(curve) if (curve and protocol_needs_curve(protocol_name)) else None
 
+    # RR22 的协议级参数在这里定型：只登记**会实际注入**的参数。
+    # 其它协议带出空字典——不把"用户传了"写成"协议读了"。
+    protocol_params: dict[str, Any] = {}
+    if protocol_name == "PROTOCOL_RR22":
+        protocol_params["low_comm_mode"] = bool(rr22_low_comm_mode)
+
     result = PsiRunResult(
         status="unavailable",
         op=op,
         protocol=protocol_name,
         curve=curve_name,
+        protocol_params=protocol_params,
         world_size=2,
         receiver_rank=int(receiver_rank),
         reveals=PSI_OP_LEAKS.get(op, "（未登记泄漏面，请补充）"),
@@ -383,6 +400,13 @@ def run_psi_intersection(
     # 带噪协议从第一行起就把话说清楚，而不是等结果对不上再解释。
     if protocol_name in PSI_PROTOCOLS_WITH_NOISE:
         result.notes = result.notes + (_NOISE_NOTE,)
+
+    # RR22 专用参数给了、协议却不是 RR22：说了，不静默带过。
+    if protocol_name != "PROTOCOL_RR22" and rr22_low_comm_mode:
+        result.notes = result.notes + (
+            "rr22_low_comm_mode=True 但所选协议不是 RR22："
+            "该参数未注入、未生效（结果 protocol_params 为空）",
+        )
 
     if not report.runnable:
         result.blockers = report.blockers
@@ -499,6 +523,24 @@ def run_psi_intersection(
             )
             return result
 
+        # RR22 参数类必须真实存在，注入才算数。缺失时：
+        # 显式请求 low_comm_mode=True → 直接失败（不能假装设置成功）；
+        # 未请求 → 按协议内部默认配置执行，清空参数档并如实加注。
+        if protocol_name == "PROTOCOL_RR22" and not hasattr(psi, "Rr22Rarams"):
+            if rr22_low_comm_mode:
+                result.status = "error"
+                result.error = (
+                    "当前 spu.psi 没有 Rr22Rarams，无法设置 low_comm_mode=True；"
+                    "该 SPU 版本的 RR22 参数能力不完整"
+                    "（见 PSI capability 报告的 rr22_params）"
+                )
+                return result
+            result.protocol_params = {}
+            result.notes = result.notes + (
+                "当前 spu.psi 没有 Rr22Rarams：未注入任何 RR22 参数，"
+                "按协议内部默认配置执行",
+            )
+
         # ---------------- 建进程内两方链路 ----------------
         desc = libspu.link.Desc()
         for rank in range(2):
@@ -519,6 +561,12 @@ def run_psi_intersection(
                 if curve_name is not None:
                     protocol_conf.ecdh_params = psi.EcdhParams(
                         curve=getattr(psi.EllipticCurveType, curve_name)
+                    )
+                if protocol_name == "PROTOCOL_RR22":
+                    # RR22 不读 curve，参数只走 Rr22Rarams；可用性已在进入
+                    # 线程前核对过。low_comm_mode 用调用方给的实值，不用默认值兜底。
+                    protocol_conf.rr22_params = psi.Rr22Rarams(
+                        low_comm_mode=bool(rr22_low_comm_mode)
                     )
                 cfg = psi.PsiExecuteConfig(
                     protocol_conf=protocol_conf,

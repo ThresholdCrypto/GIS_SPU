@@ -317,3 +317,68 @@ class TestPlanTable:
         assert rows[0][0] == "Intersects"
         assert rows[0][1] == "CompactCellSet"
         assert rows[0][2] == "PSI"
+
+
+# --------------------------------------------------------------------------
+# 协议属于规划层：Geo-IR 不知道 RR22（课题下一阶段 §11 / §12）
+# --------------------------------------------------------------------------
+
+
+class TestProtocolPlanning:
+    """协议与协议参数是 Planner 的输出，不是地理语义的一部分。"""
+
+    SOURCE = (
+        "from geo_privacy import geo\n"
+        "def f(route, no_fly_zone):\n"
+        "    return geo.intersects(route, no_fly_zone)\n"
+    )
+
+    def _plan(self, **kwargs):
+        return plan_program(parse_source(self.SOURCE).program, **kwargs)
+
+    def test_psi_rules_carry_the_default_protocol(self):
+        from backends.psi_backend import PSI_DEFAULT_PROTOCOL
+
+        for op in ("Intersects", "Contains", "CellSetIntersect"):
+            rule = get_rule(op)
+            assert rule.default_protocol == PSI_DEFAULT_PROTOCOL, op
+            assert "PROTOCOL_RR22" in rule.protocol_candidates, op
+            assert rule.protocol_params.get("receiver_rank") == 0, op
+            assert rule.protocol_params.get("broadcast_result") is False, op
+
+    def test_non_psi_rules_have_no_protocol(self):
+        for op in ("DistanceLE", "WeightedSum", "TemporalOverlap", "HeightBand"):
+            rule = get_rule(op)
+            assert rule.default_protocol is None, op
+            assert rule.protocol_candidates == (), op
+            assert dict(rule.protocol_params) == {}, op
+
+    def test_plan_records_the_default_protocol(self):
+        from backends.psi_backend import PSI_DEFAULT_PROTOCOL
+
+        step = self._plan().steps[0]
+        assert step.protocol == PSI_DEFAULT_PROTOCOL
+        assert step.protocol_params.get("receiver_rank") == 0
+        assert step.to_dict()["protocol"] == PSI_DEFAULT_PROTOCOL
+
+    def test_plan_records_the_rr22_override_with_params(self):
+        step = self._plan(
+            psi_protocol="PROTOCOL_RR22",
+            psi_protocol_params={"low_comm_mode": True},
+        ).steps[0]
+        assert step.protocol == "PROTOCOL_RR22"
+        assert step.protocol_params["low_comm_mode"] is True
+        data = step.to_dict()
+        assert data["protocol"] == "PROTOCOL_RR22"
+        assert data["protocol_params"]["low_comm_mode"] is True
+
+    def test_geo_ir_does_not_know_about_rr22(self):
+        """约束（课题 §27-不要 4）：Geo-IR 的算子模型不得增加协议字段。"""
+
+        import dataclasses
+
+        from ir import GeoOperation
+
+        names = {f.name for f in dataclasses.fields(GeoOperation)}
+        assert "protocol" not in names
+        assert "protocol_params" not in names
