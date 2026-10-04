@@ -55,7 +55,7 @@ ZONE = (_code(21862), _code(21863), _code(22999))
 #: 真值断言：交集恰好 2 个，且两侧都不包含对方
 EXPECTED_INTERSECTION = (ZONE[0], ZONE[1])
 
-needs_psi = pytest.mark.skipif(not has_psi(), reason="当前环境不具备真实 PSI 执行能力(python3.11+spu+libgrad1)")
+needs_psi = pytest.mark.skipif(not has_psi(), reason="当前环境不具备真实 PSI 执行能力(python3.11+spu+libgomp1)")
 
 
 # --------------------------------------------------------------------------

@@ -46,7 +46,7 @@ needs_spu = pytest.mark.skipif(
     not has_spu(), reason="当前环境无法真实执行 SPU 模拟（见 backends.spu_backend.capability）"
 )
 needs_psi = pytest.mark.skipif(
-    not has_psi(), reason="当前环境不具备真实 PSI 执行能力(python3.11+spu+libgrad1)"
+    not has_psi(), reason="当前环境不具备真实 PSI 执行能力(python3.11+spu+libgomp1)"
 )
 
 _T = 0

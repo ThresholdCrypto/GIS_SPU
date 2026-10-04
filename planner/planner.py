@@ -11,11 +11,18 @@ from typing import Any, Mapping, Sequence
 
 from frontend.analyzer import (
     DIAG_BACKEND_MISSING,
+    DIAG_PROTOCOL_UNSUPPORTED,
     Diagnostic,
 )
 from ir import GeoOperation, GeoProgram, Sensitivity, requires_crypto
 
-from .registry import OPERATOR_REGISTRY, OperatorRule, get_rule, resolve_cost
+from .registry import (
+    OPERATOR_REGISTRY,
+    OperatorRule,
+    get_rule,
+    resolve_cost,
+    validate_protocol_for_operation,
+)
 
 
 @dataclass
@@ -177,6 +184,29 @@ class Planner:
         if not rule.has_jax_impl and rule.primary_backend == "PSI":
             reasons.append("PSI 族算子无 JAX 逐元素原语，JAX 代码生成阶段将标注为不具备实现")
 
+        # 算子 × 协议候选校验：不在候选清单的组合编译期拒绝，不等到 Runtime。
+        protocol_check = validate_protocol_for_operation(operation.op, protocol)
+        protocol_diagnostic: Diagnostic | None = None
+        if protocol_check.ok:
+            reasons.extend(protocol_check.notes)
+        else:
+            protocol_diagnostic = Diagnostic(
+                code=DIAG_PROTOCOL_UNSUPPORTED,
+                severity="error",
+                message="；".join(protocol_check.problems),
+                location=dict(operation.location) if operation.location else {},
+                cause=(
+                    f"所选协议 {protocol!r} 与算子 {operation.op} 的登记规则不匹配；"
+                    "若放到运行时再拒绝，错误会晚到，且可能与执行默认值混淆"
+                ),
+                suggestion=(
+                    "改用该算子的候选协议："
+                    f"{list(rule.protocol_candidates) or '（无）'}"
+                    "（DP 属带噪协议，显式选择可用但不能作为一致性验证依据）"
+                ),
+                estimated_cost=dict(cost),
+            )
+
         step = PlannedStep(
             operation=operation.op,
             representation=rule.representation,
@@ -193,7 +223,7 @@ class Planner:
             reasons=tuple(reasons),
             location=operation.location,
         )
-        return step, None
+        return step, protocol_diagnostic
 
     def _missing_backend_diagnostic(
         self, program: GeoProgram, operation: GeoOperation

@@ -1,0 +1,121 @@
+# CI（任务文档 §20）：
+#   Job A 基础编译器 —— Python 3.10 / 3.11，不装 SPU 原生库；
+#                         SPU / PSI 用例按原因 skip（不做假通过）
+#   Job B SPU / PSI    —— Ubuntu + Python 3.11 + spu 0.9.5，全量测试
+#   Job C RR22 专项    —— test_psi_backend / test_rr22_geosot / test_end_to_end
+#   Job D benchmark    —— 非阻断：只记录性能并与基线对比，不做阈值判定
+#
+# 版本矩阵与重验清单：docs/VERSION_COMPATIBILITY.md
+# 基线的口径与"非阻断"纪律：docs/BENCHMARK_PROTOCOL.md（§6/§8）
+
+name: tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  basic-compiler:
+    name: 基础编译器（Python ${{ matrix.python-version }}）
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements-jax.txt
+      - name: 安装 JAX 与 pytest（不装 SPU）
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "jax[cpu]==0.4.34" pytest
+      - name: pytest（无 SPU 环境：相关用例按原因 skip）
+        run: python -m pytest tests/ -q
+
+  spu-psi:
+    name: SPU / PSI（spu 0.9.5）
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-spu.txt
+      - name: 系统库（libgomp1 = libspu / libpsi 的 OpenMP 运行时）
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgomp1
+      - name: 安装 spu / jax / numpy（requirements-spu.txt）
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-spu.txt
+      - name: 能力核查
+        run: python -m geosecure.cli check
+      - name: pytest（全量，含真实 PSI / SPU 执行）
+        run: python -m pytest tests/ -q
+
+  rr22-focused:
+    name: RR22 专项
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-spu.txt
+      - name: 系统库（libgomp1）
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgomp1
+      - name: 安装 spu / jax / numpy（requirements-spu.txt）
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-spu.txt
+      - name: RR22 / PSI / 端到端（专项回归）
+        run: |
+          python -m pytest tests/test_psi_backend.py tests/test_rr22_geosot.py tests/test_end_to_end.py -q
+
+  benchmark:
+    name: benchmark（非阻断）
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-spu.txt
+      - name: 系统库（libgomp1）
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgomp1
+      - name: 安装 spu / jax / numpy（requirements-spu.txt）
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-spu.txt
+      - name: 快扫 + 对比基线（只提示，不阻断；基线为单次运行，阈值门禁未启用）
+        run: |
+          python tests/benchmarks/benchmark_psi.py --quick --no-json --no-csv \
+            --compare docs/psi_benchmark_baseline.json 2>&1 | tee /tmp/psi_benchmark.log
+      - name: 留存日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: psi-benchmark-log
+          path: /tmp/psi_benchmark.log
+          if-no-files-found: ignore

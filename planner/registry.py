@@ -339,3 +339,122 @@ def backend_capable_ops(backend: str) -> tuple[str, ...]:
         if backend.upper() in [b.upper() for b in rule.backends]:
             out.append(op)
     return tuple(out)
+
+
+# --------------------------------------------------------------------------
+# 算子 × 协议候选校验（编译期）
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ProtocolCheck:
+    """`validate_protocol_for_operation` 的结论。
+
+    `ok=False` 表示**编译期拒绝**：该组合不该等到 Runtime 才报错。
+    `notes` 是放行但必须披露的事实（如 DP 带噪）。
+    """
+
+    ok: bool
+    op: str
+    protocol: str | None
+    problems: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "ok": self.ok,
+            "op": self.op,
+            "protocol": self.protocol,
+            "problems": list(self.problems),
+            "notes": list(self.notes),
+        }
+
+
+def validate_protocol_for_operation(op: str, protocol: str | None) -> ProtocolCheck:
+    """校验"算子在所选协议下是否可以规划/执行"。
+
+    规则（与注册表同源，不另抄名单；协议清单/参与方数量取自 PSI 能力模块）：
+    - 未显式选协议（None）→ 放行（各算子用登记默认值）；
+    - 非 PSI 算子 + 协议 → 拒绝：该协议不会被这个算子使用，静默接受
+      等于容忍"设了但没生效"；
+    - PSI 族 + 候选清单内协议 → 放行；
+    - PSI 族 + DP → 放行但标记带噪；
+    - PSI 族 + 候选清单外协议 → 拒绝，并区分两种原因：
+      本链路参与方数量不满足（如 ECDH_3PC），或未登记为候选。
+
+    后端依赖用函数内导入：planner 不在导入期依赖 backends，保持分层无环。
+    """
+
+    from backends.psi_backend.capability import (
+        PSI_RUNTIME_WORLD_SIZE,
+        normalize_psi_protocol,
+        protocol_world_size,
+        runnable_protocols_hint,
+    )
+
+    if protocol is None:
+        return ProtocolCheck(ok=True, op=op, protocol=None)
+
+    rule = OPERATOR_REGISTRY.get(op)
+    if rule is None:
+        return ProtocolCheck(
+            ok=False,
+            op=op,
+            protocol=str(protocol),
+            problems=(f"算子 {op} 不在算子注册表中，无法校验协议 {protocol}",),
+        )
+
+    try:
+        name = normalize_psi_protocol(protocol)
+    except ValueError as exc:
+        return ProtocolCheck(
+            ok=False, op=op, protocol=str(protocol), problems=(str(exc),)
+        )
+
+    if rule.default_protocol is None:
+        return ProtocolCheck(
+            ok=False,
+            op=op,
+            protocol=name,
+            problems=(
+                f"算子 {op} 不经过 PSI 协议后端（表征 {rule.representation}，"
+                f"后端 {rule.backend}）；协议 {name} 不会被该算子使用",
+            ),
+        )
+
+    if name == "PROTOCOL_DP":
+        return ProtocolCheck(
+            ok=True,
+            op=op,
+            protocol=name,
+            notes=(
+                "PROTOCOL_DP 为差分隐私协议：允许显式选择，但结果带噪，"
+                "不能作为与明文一致的一致性验证依据",
+            ),
+        )
+
+    if name in rule.protocol_candidates:
+        return ProtocolCheck(ok=True, op=op, protocol=name)
+
+    required = protocol_world_size(name)
+    if required > PSI_RUNTIME_WORLD_SIZE:
+        return ProtocolCheck(
+            ok=False,
+            op=op,
+            protocol=name,
+            problems=(
+                f"协议 {name} 需要 {required} 个参与方，"
+                f"本链路固定 {PSI_RUNTIME_WORLD_SIZE} 方，无法执行该协议；"
+                f"请改用：{runnable_protocols_hint()}",
+            ),
+        )
+    return ProtocolCheck(
+        ok=False,
+        op=op,
+        protocol=name,
+        problems=(
+            f"协议 {name} 不在算子 {op} 的候选协议清单 "
+            f"{list(rule.protocol_candidates)}；未登记的协议组合不予放行"
+            "（若确需支持，请先登记候选并补测试）",
+        ),
+    )

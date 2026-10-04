@@ -26,7 +26,7 @@ from planner import plan_program
 from tests._helpers import has_psi
 
 needs_psi = pytest.mark.skipif(
-    not has_psi(), reason="当前环境不具备真实 PSI 执行能力(python3.11+spu+libgrad1)"
+    not has_psi(), reason="当前环境不具备真实 PSI 执行能力(python3.11+spu+libgomp1)"
 )
 
 

@@ -619,6 +619,51 @@ PSI simulation
 - 若上游版本没有 `Rr22Rarams`：能力探测如实报"不完整"；运行期显式请求
   `low_comm_mode=True` 会失败而不是静默忽略（详见 `docs/RR22_INTEGRATION.md`）。
 
+### 5.7 真实输入 / 链式执行 / 布局握手（本版新增）
+
+**真实输入**：`--input NAME=PATH`（可重复）把业务量绑定到真实格网集合；
+输入适配层（`backends/psi_backend/input_adapter.py`）支持：
+
+```text
+CSV（需 grid_code 列；缺表头直接报错，不静默丢码）
+JSON（[codes...] 或 {"grid_codes": [...], "layout": {...}}）
+CellSet / 代码序列
+```
+
+```bash
+geo-secure build examples/route_zone_chain.py \
+    --input route=examples/route_cells.csv \
+    --input no_fly_zone=examples/nofly_cells.csv \
+    --input sensitive_area=examples/sensitive_cells.csv
+```
+
+**链式执行**：`CellSetIntersect` 的真实 PSI 输出作为下游算子的运行时输入
+（不再读样例）。每个 run 的 notes 标注输入来源（`输入绑定` / `上一步 PSI 输出` /
+`样例兜底`）；链式上游失败时下游**不允许**回退样例，报"输入无法装配"。
+
+**布局握手**：`--input-layout NAME=PATH`（或 `Compiler(input_layouts=...)`）为每方
+声明 `ir.grid_code_layout_manifest()`；双方都声明且不一致 → **进入 PSI 前**以
+`LAYOUT_MISMATCH` 拒绝执行；只声明单方 = 无法核对（如实标注，不假装通过）。
+
+**配置闭环**：`psi_protocol_params`（`receiver_rank` / `broadcast_result` /
+`low_comm_mode` 等）沿 Planner → Compiler → Runtime → `PsiRunResult` 单链传递；
+编译 JSON 带 `psi_runtime_config` 与每步 `protocol_params`，四层可直接对拍。
+
+### 5.8 性能基线（本版新增）
+
+`tests/benchmarks/benchmark_psi.py`：确定性 GeoSOT-3D 测试集，真机测量
+ECDH / KKRT / RR22 / RR22+low_comm（N=2^10…2^24），输出
+`docs/psi_benchmark_baseline.json` / `.csv`。
+
+```bash
+/opt/miniconda3/envs/spu311/bin/python tests/benchmarks/benchmark_psi.py            # 标准扫描
+/opt/miniconda3/envs/spu311/bin/python tests/benchmarks/benchmark_psi.py --quick    # 快扫（2^10/2^12）
+```
+
+诚实规则：未实测的组合记 `unavailable`（不填数字）；重复键用例按**实测**记录
+（RR22/KKRT 报错、ECDH 计数含重复乘数）——这是"去重预处理是正确性前提"的证据，
+见 `docs/BENCHMARK_PROTOCOL.md` 与 `docs/GEO_RR22_DESIGN.md`。
+
 ---
 
 ## 6. 已验证算子
@@ -714,11 +759,17 @@ PSI 的 `empty-input`（空集合）与 `unavailable`（环境缺失）**都不�
 ### 6.4 测试覆盖
 
 ```
+tests/test_benchmark.py          28 项   基线生成器确定性/合法性、记录 schema、unavailable 诚实规则、写入器、真实 RR22 记录
 tests/test_ir.py                 38 项   类型系统、格网口径、算子/程序/关系
-tests/test_planner.py            36 项   注册表、五元组、敏感度策略、代价模型、无副作用、协议与协议参数（RR22）
+tests/test_planner.py            46 项   注册表、五元组、敏感度策略、代价模型、无副作用、协议与协议参数（RR22）、协议候选校验
 tests/test_jax_backend.py        37 项   生成器、可追踪性、原语核对、与明文对拍
 tests/test_spu_backend.py        31 项   协议/环宽规范化、能力门控、私有接口与共享库回归、SPU 实跑
 tests/test_psi_backend.py        80 项   PSI 能力/协议归一化/真实求交/空输入/泄漏面/诚实留空/日志卫生/带噪与精确披露/RR22 参数链路
+tests/test_psi_runtime_config.py 11 项   PsiRuntimeConfig 拆分/注入/单一配置源/非法 rank/曲线/协议
+tests/test_psi_capability.py     14 项   参数级校验（bool 型 rank 拒绝）、三层能力核查、RR22 低通信探测
+tests/test_geosot_layout.py       9 项   布局清单一致性、LAYOUT_MISMATCH 前置拒绝、单方声明=无法核对
+tests/test_input_adapter.py      18 项   CSV/JSON/CellSet 输入适配、错误定位到行、布局加载
+tests/test_execution_chain.py    15 项   链式执行使用上一步 PSI 输出、样例兜底披露、布局不一致阻断、CLI --input
 tests/test_subset_mpc.py         30 项   Contains 密态子集比较：电路原语与注册表一致、模式口径、逐点精确、只有基数进 MPC、退路披露
 tests/test_frontend.py           41 项   表达式级调用识别、输入可解析性、敏感度不降级、链式类型、语义
 tests/test_end_to_end.py         74 项   全流程、状态表、CLI（协议/曲线/子集/RR22 低通信开关与 DP 带噪）、六类失败报告、编译入口参数、诊断聚合、确定性
@@ -727,20 +778,21 @@ tests/test_height_materialize.py 50 项   height band 方言注册/别名/模块
 tests/test_height_planner.py     12 项   第 6 类失败模式、三维工作流、规划器的高度语义诚实性
 tests/test_rr22_geosot.py         8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
                                  ─────
-                                 480 通过 / 0 跳过
+                                 585 通过 / 0 跳过
 ```
 
 在 **WSL2 + Linux + Python 3.11.16 + jax 0.4.34 + spu 0.9.5** 上，
-**480 项全部通过，无跳过**。其中真实执行隐私协议的有：
+**585 项全部通过，无跳过**。真实执行隐私协议的用例：
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
 | SPU(MPC) 真跑 | 5 项 | `test_spu_backend` 3 项 + 子集比较电路 2 项；整数路径误差 0.0 |
-| PSI 真机求交 | 43 项 | 真的调用 `psi_execute`，非 mock（含 `Contains` 的 MPC 子集判定 11 项；本版新增 RR22 双模式与 GeoSOT-3D 链路 13 项） |
+| PSI 真机求交（`@needs_psi`） | 23 项函数 | 真调 `psi_execute`，非 mock；含链式执行 / 真实输入绑定 / 布局握手 / 配置闭环 / RR22 / benchmark 记录（grep 口径：`grep -rc needs_psi tests/*.py`） |
 | PSI 空输入路径 | 6 项 | 前置判定，不启动协议 |
 | PSI 原生日志卫生 | 4 项 | 真机执行 + 校验不落 CWD 日志 |
 
-在未装 SPU 的环境上，相关用例会明确 skip 并说明缺失项。
+在未装 SPU 的环境上，相关用例会明确 skip 并说明缺失项。性能基线另有独立运行器
+（`tests/benchmarks/benchmark_psi.py`，见 5.8）。
 
 ---
 
@@ -1090,8 +1142,7 @@ MPC 电路输出一个比特  k == n
 
 | 优先级 | 待办 | 说明 |
 |--------|------|------|
-| 高 | **Geo-RR22 优化** | RR22 接入闭环已完成（见 5.6）；下一步才是 64-bit GridCode 专用编码、排序/去重、前缀压缩、分层压缩、bucket 分区、地理候选集剪枝、通信代价估计等联合优化 |
-| 中 | PSI 结果链式传递 | `CellSetIntersect` 的交集本体尚未喂给下游算子 |
+| 高 | **Geo-RR22 输入预处理** | 接入闭环、性能基线、输入预处理均已完成（见 5.6 / 5.8）；去重（正确性前提）/ 排序 / 无损前缀压缩 / bucket 分区已实现并**默认接入** PSI 输入路径（`geosot_optimizer`，`GEOSOT_OPTIMIZER_VERSION = "0.1.0"`）；**仅剩候选集剪枝**（§10，先出覆盖关系判定实证，再谈实现）——设计见 `docs/GEO_RR22_DESIGN.md` |
 | 中 | 编译期按方案实算元素数 K | `resolve_cost` 已支持按 K 实例化，但 K 目前需显式传入 |
 | 低 | 三维示例接入真实 3D 码集 | `examples/vertical_conflict.py` 已跑通编译与 PSI 真实执行，但 `DEFAULT_EXAMPLE_INPUTS` 仍是二维码；换码集即可 |
 
@@ -1137,6 +1188,13 @@ MPC 电路输出一个比特  k == n
 > 运行结果 / 计划 / JSON / CLI 四处都带协议参数。RR22 仍走 PSI 后端（`spu.psi`），
 > JAX Backend 与 SPU MPC `ProtocolKind` 均未改动；新增 `tests/test_rr22_geosot.py`
 > 与 `examples/rr22_grid_intersection.py`。见 5.6 与 `docs/RR22_INTEGRATION.md`。
+
+> 已闭合（本版）：**下一阶段任务 Phase 1–5** —— 配置闭环（`PsiRuntimeConfig` 单一配置源 + 三层
+> 协议能力核查 + 协议候选校验）、真实 GeoSOT 输入（`--input` / InputAdapter）、链式执行
+> （CellSetIntersect 输出喂下游）、布局握手（LAYOUT_MISMATCH 前置拒绝）、性能基线
+> （`tests/benchmarks/benchmark_psi.py` → `docs/psi_benchmark_baseline.json`）。
+> 版本矩阵见 `docs/VERSION_COMPATIBILITY.md`；重复键实测（RR22/KKRT 报错）与新阶段设计
+> 见 `docs/GEO_RR22_DESIGN.md`。
 
 ### 8.1 接入新增隐私后端
 
@@ -1228,6 +1286,9 @@ backends/
   降级时会反映到状态词（`subset-plaintext`）与泄漏面文本（见 7.6）；
 - 切换后**协议语义也跟着变**：带噪协议（`DP`）会被降级为 `executed-noisy` 并
   在两个 PSI 阶段记 warning，替代协议清单里也带 `*` 标注（见 5.5）；
+- `geo-secure build --input NAME=PATH` / `--input-layout NAME=PATH` 已可绑定真实
+  格网集合与布局握手（见 5.7）；
+- PSI 性能基线：`tests/benchmarks/benchmark_psi.py`（见 5.8 与 `docs/BENCHMARK_PROTOCOL.md`）；
 - 可扩展：批量编译、代价报告导出、与 CI 集成（把 `geo-secure check` 作为前置门禁）。
 
 ---

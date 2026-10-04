@@ -58,6 +58,32 @@ GRID_CODE_LAYOUT = "|".join(f"{name}{width}" for name, width in GRID_CODE_BITS.i
 #: 该布局可编码的最高层级（L 位域全 1 对应的层级）
 MAX_ENCODABLE_LEVEL = (1 << GRID_CODE_BITS["L"]) - 1
 
+#: 布局身份：跨方核对用的稳定标识。PSI 走 CSV 交换这些 64 位码，
+#: 布局不同不会报错、只会静默算错——对齐必须靠显式握手，不能靠人看 README
+#: （见 backends.psi_backend.input_adapter.check_layout_agreement）。
+GRID_CODE_LAYOUT_ID = "geosot3d-v1-x17-y17-z7-l5-toff14-lt4"
+GRID_CODE_LAYOUT_VERSION = 1
+
+
+def grid_code_layout_manifest() -> dict[str, Any]:
+    """当前布局的机器可读清单（跨方核对手柄）。
+
+    每个字段都取自 GRID_CODE_BITS 本身，不是第二份手写常量：
+    布局漂移会在 tests/test_geosot_layout.py 的对拍里被抓住。
+    """
+
+    return {
+        "layout_id": GRID_CODE_LAYOUT_ID,
+        "version": GRID_CODE_LAYOUT_VERSION,
+        "bits": GRID_CODE_WIDTH,
+        "x_bits": GRID_CODE_BITS["X"],
+        "y_bits": GRID_CODE_BITS["Y"],
+        "z_bits": GRID_CODE_BITS["Z"],
+        "level_bits": GRID_CODE_BITS["L"],
+        "toff_bits": GRID_CODE_BITS["Toff"],
+        "lt_bits": GRID_CODE_BITS["Lt"],
+    }
+
 #: 时间树原点：Toff = 0 的锚点
 TIME_TREE_ORIGIN = _dt.datetime(
     2026, 9, 6, 22, 0, 0, tzinfo=_dt.timezone(_dt.timedelta(hours=8))

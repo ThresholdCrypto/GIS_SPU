@@ -638,3 +638,37 @@ X17|Y17|Z7|L5|Toff14|Lt4     层级上限 L31
 ```
 
 旧样例数据必须重算，否则两方对不上。
+
+## 5. 常用验证命令（本版新增：链式输入 / 性能基线）
+
+```bash
+cd /mnt/c/Users/DELL/Documents/Codex/2026-09-20/geosot-3d-dqg-4d-c-users-2/GIS_SPU
+
+# 全量测试（585 项，约 12 s）
+/opt/miniconda3/envs/spu311/bin/python -m pytest tests/ -q -p no:cacheprovider
+
+# 链式编译：真实 CSV 输入绑定 + 上一步 PSI 输出喂下游
+# 预期：CellSetIntersect / Intersects 两行均 verified；notes 里出现
+# "上一步 PSI 输出（CellSetIntersect）"
+/opt/miniconda3/envs/spu311/bin/geo-secure build examples/route_zone_chain.py \
+    --input route=examples/route_cells.csv \
+    --input no_fly_zone=examples/nofly_cells.csv \
+    --input sensitive_area=examples/sensitive_cells.csv
+
+# 性能基线：快扫（2^10/2^12，秒级）
+/opt/miniconda3/envs/spu311/bin/python tests/benchmarks/benchmark_psi.py --quick
+
+# 性能基线：标准扫描（输出 docs/psi_benchmark_baseline.json/.csv；
+# 原生日志量大，建议重定向）
+/opt/miniconda3/envs/spu311/bin/python tests/benchmarks/benchmark_psi.py \
+    > /tmp/bench_run.log 2>&1
+```
+
+基线注意事项：
+
+- 标准扫描里 `RR22/KKRT N=2^12 dup=0.25` 两行**预期**是 `error`
+  （重复键报错，~35 s 重试后失败）——它们不是意外，是"去重是正确性前提"
+  的证据；运行器退出码只看**预期外**记录；
+- `unavailable` 行（ECDH 2^22/2^24）是预算占位，不含任何数字；
+- 布局不一致时链式编译以 `LAYOUT_MISMATCH` 退出码 1 拒绝执行（不会算错）；
+- 手工复现基线数字前先看 `docs/BENCHMARK_PROTOCOL.md` 的字段口径（§3）。

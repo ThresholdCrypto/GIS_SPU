@@ -1,0 +1,98 @@
+case,protocol,low_comm_mode,curve,n_left,n_right,n_left_unique,n_right_unique,intersection_ratio,duplicate_ratio,high_bits,level,z,receiver_rank,status,psi_execute_ms,io_write_ms,io_read_ms,semantic_ms,total_ms,memory_mb,peak_rss_mb,agreement,intersection_count,note,error
+ECDH N=2^10,PROTOCOL_ECDH,false,CURVE_SM2,1024,1024,1024,1024,0.5,0.0,false,9,15,0,ok,185.46,0.424,0.341,0.001,186.502,24.2,209.3,true,512,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_ECDH）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+ECDH N=2^12,PROTOCOL_ECDH,false,CURVE_SM2,4096,4096,4096,4096,0.5,0.0,false,9,15,0,ok,374.873,1.562,0.717,0.001,377.626,14.9,224.2,true,2048,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_ECDH）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+ECDH N=2^14,PROTOCOL_ECDH,false,CURVE_SM2,16384,16384,16384,16384,0.5,0.0,false,9,15,0,ok,1299.416,6.615,3.394,0.001,1310.639,43.9,268.1,true,8192,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_ECDH）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+ECDH N=2^16,PROTOCOL_ECDH,false,CURVE_SM2,65536,65536,65536,65536,0.5,0.0,false,9,15,0,ok,5295.274,30.087,11.583,0.001,5341.699,174.1,442.2,true,32768,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_ECDH）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+ECDH N=2^18,PROTOCOL_ECDH,false,CURVE_SM2,262144,262144,262144,262144,0.5,0.0,false,9,15,0,ok,18768.377,111.017,103.424,0.001,19010.181,199.7,641.9,true,131072,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_ECDH）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+ECDH N=2^20,PROTOCOL_ECDH,false,CURVE_SM2,1048576,1048576,1048576,1048576,0.5,0.0,false,9,15,0,ok,76772.339,425.684,556.128,0.001,77952.645,228.6,884.1,true,524288,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_ECDH）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+KKRT N=2^10,PROTOCOL_KKRT,false,,1024,1024,1024,1024,0.5,0.0,false,9,15,0,ok,26.95,0.436,0.189,0.001,27.841,0.0,884.1,true,512,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_KKRT）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+KKRT N=2^12,PROTOCOL_KKRT,false,,4096,4096,4096,4096,0.5,0.0,false,9,15,0,ok,41.789,1.556,0.635,0.001,44.418,0.0,884.1,true,2048,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_KKRT）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+KKRT N=2^14,PROTOCOL_KKRT,false,,16384,16384,16384,16384,0.5,0.0,false,9,15,0,ok,86.283,9.099,2.31,0.001,98.958,0.0,884.1,true,8192,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_KKRT）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+KKRT N=2^16,PROTOCOL_KKRT,false,,65536,65536,65536,65536,0.5,0.0,false,9,15,0,ok,237.473,26.515,10.357,0.002,278.807,0.0,884.1,true,32768,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_KKRT）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+KKRT N=2^18,PROTOCOL_KKRT,false,,262144,262144,262144,262144,0.5,0.0,false,9,15,0,ok,1009.444,106.833,79.983,0.001,1220.531,0.0,884.1,true,131072,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_KKRT）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+KKRT N=2^20,PROTOCOL_KKRT,false,,1048576,1048576,1048576,1048576,0.5,0.0,false,9,15,0,ok,4189.773,429.419,496.705,0.001,5284.429,648.5,1532.6,true,524288,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_KKRT）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+KKRT N=2^22,PROTOCOL_KKRT,false,,4194304,4194304,4194304,4194304,0.5,0.0,false,9,15,0,ok,15521.97,1742.35,2691.799,0.002,21005.251,568.5,2101.1,true,2097152,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_KKRT）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+KKRT N=2^24,PROTOCOL_KKRT,false,,16777216,16777216,16777216,16777216,0.5,0.0,false,9,15,0,ok,60643.911,7038.189,12900.322,0.001,85289.278,2238.5,5093.8,true,8388608,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_KKRT）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^10,PROTOCOL_RR22,false,,1024,1024,1024,1024,0.5,0.0,false,9,15,0,ok,31.135,0.426,0.208,0.001,32.095,0.0,5093.8,true,512,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^12,PROTOCOL_RR22,false,,4096,4096,4096,4096,0.5,0.0,false,9,15,0,ok,40.66,1.531,0.676,0.001,43.271,0.0,5093.8,true,2048,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^14,PROTOCOL_RR22,false,,16384,16384,16384,16384,0.5,0.0,false,9,15,0,ok,69.099,6.246,2.326,0.001,78.924,0.0,5093.8,true,8192,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^16,PROTOCOL_RR22,false,,65536,65536,65536,65536,0.5,0.0,false,9,15,0,ok,171.874,26.586,12.517,0.001,216.013,0.0,5093.8,true,32768,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^18,PROTOCOL_RR22,false,,262144,262144,262144,262144,0.5,0.0,false,9,15,0,ok,577.1,108.766,55.283,0.002,765.521,0.0,5093.8,true,131072,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^20,PROTOCOL_RR22,false,,1048576,1048576,1048576,1048576,0.5,0.0,false,9,15,0,ok,2116.666,432.376,277.906,0.002,2996.596,0.0,5093.8,true,524288,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^22,PROTOCOL_RR22,false,,4194304,4194304,4194304,4194304,0.5,0.0,false,9,15,0,ok,6582.314,1724.006,2592.351,0.002,11797.833,0.0,5093.8,true,2097152,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^24,PROTOCOL_RR22,false,,16777216,16777216,16777216,16777216,0.5,0.0,false,9,15,0,ok,23944.663,7107.55,13822.114,0.002,49729.925,713.6,5807.4,true,8388608,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22+low_comm N=2^10,PROTOCOL_RR22,true,,1024,1024,1024,1024,0.5,0.0,false,9,15,0,ok,31.78,0.423,0.199,0.001,32.687,0.0,5807.4,true,512,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22+low_comm N=2^12,PROTOCOL_RR22,true,,4096,4096,4096,4096,0.5,0.0,false,9,15,0,ok,37.266,1.555,0.9,0.001,40.156,0.0,5807.4,true,2048,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22+low_comm N=2^14,PROTOCOL_RR22,true,,16384,16384,16384,16384,0.5,0.0,false,9,15,0,ok,70.169,6.687,2.601,0.001,80.641,0.0,5807.4,true,8192,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22+low_comm N=2^16,PROTOCOL_RR22,true,,65536,65536,65536,65536,0.5,0.0,false,9,15,0,ok,193.843,25.828,10.731,0.001,234.802,0.0,5807.4,true,32768,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22+low_comm N=2^18,PROTOCOL_RR22,true,,262144,262144,262144,262144,0.5,0.0,false,9,15,0,ok,707.754,105.788,46.608,0.001,884.923,0.0,5807.4,true,131072,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22+low_comm N=2^20,PROTOCOL_RR22,true,,1048576,1048576,1048576,1048576,0.5,0.0,false,9,15,0,ok,2933.352,423.182,236.813,0.001,3759.611,0.0,5807.4,true,524288,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22+low_comm N=2^22,PROTOCOL_RR22,true,,4194304,4194304,4194304,4194304,0.5,0.0,false,9,15,0,ok,8888.233,1692.076,1853.227,0.001,13405.114,0.0,5807.4,true,2097126,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22+low_comm N=2^24,PROTOCOL_RR22,true,,16777216,16777216,16777216,16777216,0.5,0.0,false,9,15,0,ok,31670.839,7026.719,14605.546,0.001,58026.425,163.5,5970.9,true,8388461,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+ECDH N=2^22,PROTOCOL_ECDH,false,,,,,,0.5,0.0,false,9,15,0,unavailable,,,,,,,,,,未实测：默认预算不含 ECDH 2^22/2^24（键数二次增长，N=2^20 已到分钟级）；需要时用 tests/benchmarks/benchmark_psi.py --sizes 显式补测,
+ECDH N=2^24,PROTOCOL_ECDH,false,,,,,,0.5,0.0,false,9,15,0,unavailable,,,,,,,,,,未实测：默认预算不含 ECDH 2^22/2^24（键数二次增长，N=2^20 已到分钟级）；需要时用 tests/benchmarks/benchmark_psi.py --sizes 显式补测,
+RR22 N=2^12 intr=0.0,PROTOCOL_RR22,false,,4096,4096,4096,4096,0.0,0.0,false,9,15,0,ok,33.502,1.637,0.069,0.001,35.661,0.0,5970.9,true,0,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^12 intr=1.0,PROTOCOL_RR22,false,,4096,4096,4096,4096,1.0,0.0,false,9,15,0,ok,24.629,1.522,1.112,0.001,27.687,0.0,5970.9,true,4096,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^12 high_bits,PROTOCOL_RR22,false,,4096,4096,4096,4096,0.5,0.0,true,9,15,0,ok,41.806,1.612,0.598,0.001,44.454,0.0,5970.9,true,2048,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^12 L=6,PROTOCOL_RR22,false,,4096,4096,4096,4096,0.5,0.0,false,6,15,0,ok,41.991,1.542,0.662,0.001,44.62,0.0,5970.9,true,2048,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^12 Z=5,PROTOCOL_RR22,false,,4096,4096,4096,4096,0.5,0.0,false,9,5,0,ok,38.511,1.574,0.702,0.001,41.259,0.0,5970.9,true,2048,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^12 recv=1,PROTOCOL_RR22,false,,4096,4096,4096,4096,0.5,0.0,false,9,15,1,ok,46.008,1.592,0.664,0.001,48.74,0.0,5970.9,true,2048,执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_RR22）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+ECDH N=2^12 dup=0.25,PROTOCOL_ECDH,false,CURVE_SM2,5120,5120,4096,4096,0.5,0.25,false,9,15,0,ok,480.072,1.892,0.896,0.001,483.342,0.0,5970.9,true,3072,重复键用例：ECDH 可完成，但 intersection_count 含重复乘数（N=2^12 实测 3072 vs 唯一 2048），不得按唯一集合预期解读；曾观察到紧邻失败用例后的偶发 AllGather 超时（复测通过）；执行路径：spu.libspu.link.create_mem + spu.psi.psi_execute（PROTOCOL_ECDH）；PSI 为文件接口，输入输出经临时目录中转（已自动清理）,
+RR22 N=2^12 dup=0.25,PROTOCOL_RR22,false,,5120,5120,4096,4096,0.5,0.25,false,9,15,0,error,35031.409,1.89,,,35033.522,0.0,5970.9,,,重复键用例：预期 error（Paxos duplicate keys）——去重预处理因此是正确性前提，见 docs/GEO_RR22_DESIGN.md,"PSI 执行失败（rank 0）：RuntimeError: what: 
+	[Enforce fail at external/psi~/psi/algorithm/rr22/okvs/paxos.cc:571] std::memcmp(&(dense_[main_rows.back()]), &(dense_[row_idx]), sizeof(uint128_t)) != 0. Paxos error, Duplicate keys were detected at idx 812 4908, key=261378732158120503467190217332389665316
+Stacktrace:
+#0 psi::rr22::okvs::Paxos<>::Triangulate()+0x73bd04336650
+#1 psi::rr22::okvs::Paxos<>::Encode()+0x73bd04337157
+#2 psi::rr22::okvs::Baxos::ImplParSolve<>()+0x73bd0430003c
+#3 psi::rr22::okvs::Baxos::Solve()+0x73bd042ef732
+#4 psi::rr22::okvs::Baxos::Solve()+0x73bd042ef803
+#5 psi::rr22::Rr22OprfReceiver::RecvFast()+0x73bd042ea2c4
+#6 psi::rr22::Rr22OprfReceiver::Recv()+0x73bd042eb20f
+#7 std::__future_base::_State_baseV2::_M_do_set()+0x73bd0429158e
+#8 std::once_flag::_Prepare_execution::_Prepare_execution<>()::{lambda()#1}::_FUN()+0x73bd04291158
+#9 (unknown)+0x73bd4a6a9514
+#10 __pthread_once+0x73bd4a6a9589
+#11 std::call_once<>()+0x73bd04291939
+#12 std::__future_base::_Async_state_impl<>::_M_run()+0x73bd042ce845
+#13 std::thread::_State_impl<>::_M_run()+0x73bd042cdbab
+#14 execute_native_thread_routine+0x73bd07472cf4
+#15 (unknown)+0x73bd4a7375cc
+
+stacktrace: 
+#0 psi::rr22::okvs::Paxos<>::Triangulate()+0x73bd04336650
+#1 psi::rr22::okvs::Paxos<>::Encode()+0x73bd04337157
+#2 psi::rr22::okvs::Baxos::ImplParSolve<>()+0x73bd0430003c
+#3 psi::rr22::okvs::Baxos::Solve()+0x73bd042ef732
+#4 psi::rr22::okvs::Baxos::Solve()+0x73bd042ef803
+#5 psi::rr22::Rr22OprfReceiver::RecvFast()+0x73bd042ea2c4
+#6 psi::rr22::Rr22OprfReceiver::Recv()+0x73bd042eb20f
+#7 std::__future_base::_State_baseV2::_M_do_set()+0x73bd0429158e
+#8 std::once_flag::_Prepare_execution::_Prepare_execution<>()::{lambda()#1}::_FUN()+0x73bd04291158
+#9 (unknown)+0x73bd4a6a9514
+#10 __pthread_once+0x73bd4a6a9589
+#11 std::call_once<>()+0x73bd04291939
+#12 std::__future_base::_Async_state_impl<>::_M_run()+0x73bd042ce845
+#13 std::thread::_State_impl<>::_M_run()+0x73bd042cdbab
+#14 execute_native_thread_routine+0x73bd07472cf4
+#15 (unknown)+0x73bd4a7375cc
+
+"
+KKRT N=2^12 dup=0.25,PROTOCOL_KKRT,false,,5120,5120,4096,4096,0.5,0.25,false,9,15,0,error,35019.532,1.911,,,35021.648,0.0,5970.9,,,重复键用例：预期 error（cuckoo stash 无空 bin）,"PSI 执行失败（rank 0）：RuntimeError: what: 
+	[external/psi~/psi/utils/cuckoo_index.cc:83] Cannot find empty bin in stash for input_idx=2153
+stacktrace: 
+#0 psi::CuckooIndex::PutToStash()+0x73bd04954306
+#1 psi::CuckooIndex::Insert()+0x73bd04955087
+#2 psi::kkrt::KkrtPsiRecv()+0x73bd0494d6a2
+#3 psi::kkrt::KkrtPsiReceiver::Online()::{lambda()#2}::operator()()+0x73bd042c3670
+#4 std::_Function_handler<>::_M_invoke()+0x73bd042c3a50
+#5 std::__future_base::_State_baseV2::_M_do_set()+0x73bd0429158e
+#6 std::once_flag::_Prepare_execution::_Prepare_execution<>()::{lambda()#1}::_FUN()+0x73bd04291158
+#7 (unknown)+0x73bd4a6a9514
+#8 __pthread_once+0x73bd4a6a9589
+#9 std::call_once<>()+0x73bd04291939
+#10 std::__future_base::_Async_state_impl<>::_M_run()+0x73bd042c2c87
+#11 std::thread::_State_impl<>::_M_run()+0x73bd042c1fe9
+#12 execute_native_thread_routine+0x73bd07472cf4
+#13 (unknown)+0x73bd4a7375cc
+
+"

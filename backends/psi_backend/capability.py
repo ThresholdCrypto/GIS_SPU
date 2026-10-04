@@ -32,20 +32,24 @@ import sys
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
+from . import protocol_registry as _registry
+from .protocol_registry import (
+    RESULT_SEMANTICS,
+    RESULT_SEMANTICS_APPROXIMATE,
+    RESULT_SEMANTICS_EXACT,
+    RESULT_SEMANTICS_NOISY,
+    PsiProtocolSpec,
+    get_protocol_spec,
+)
+
 # --------------------------------------------------------------------------
 # 从官方 libpsi.pyi / psi.py 核对的常量（不来自猜测）
 # --------------------------------------------------------------------------
 
-#: `spu.psi.PsiProtocol` 的成员（0.9.5 libpsi.pyi 实测）
-PSI_PROTOCOLS: tuple[str, ...] = (
-    "PROTOCOL_ECDH",
-    "PROTOCOL_KKRT",
-    "PROTOCOL_RR22",
-    "PROTOCOL_ECDH_3PC",
-    "PROTOCOL_ECDH_NPC",
-    "PROTOCOL_KKRT_NPC",
-    "PROTOCOL_DP",
-)
+#: `spu.psi.PsiProtocol` 的成员（0.9.5 libpsi.pyi 实测）。
+#: §12 起登记在 `protocol_registry.PROTOCOL_SPECS`（单一来源），这里只做派生——
+#: 两处各自维护名单的漂移风险就此消除。
+PSI_PROTOCOLS: tuple[str, ...] = _registry.PSI_PROTOCOL_NAMES
 
 #: 协议与椭圆曲线的关系（三分类；依据 = 上游 psi 仓库源码 + spu 0.9.5 实测）。
 #:
@@ -61,15 +65,7 @@ PSI_PROTOCOLS: tuple[str, ...] = (
 #: 早期实现把 `PROTOCOL_DP` 与 KKRT/RR22 并列进 `PSI_PROTOCOLS_WITHOUT_CURVE`，
 #: CLI 也随之告诉使用者"--psi-curve 不生效"。源码核对后这是**不成立的断言**：
 #: DP 是 ECDH 系协议，曲线是它的形参。宁可少说，不可说错。
-PSI_CURVE_RELATION: Mapping[str, str] = {
-    "PROTOCOL_ECDH": "required",
-    "PROTOCOL_KKRT": "ignored",
-    "PROTOCOL_RR22": "ignored",
-    "PROTOCOL_ECDH_3PC": "required",
-    "PROTOCOL_ECDH_NPC": "required",
-    "PROTOCOL_KKRT_NPC": "ignored",
-    "PROTOCOL_DP": "implicit",
-}
+PSI_CURVE_RELATION: Mapping[str, str] = dict(_registry.PSI_CURVE_RELATION)
 
 #: 不基于椭圆曲线的协议（由 `PSI_CURVE_RELATION` 派生，避免两张表各自漂移）
 PSI_PROTOCOLS_WITHOUT_CURVE: tuple[str, ...] = tuple(
@@ -93,15 +89,7 @@ PSI_PROTOCOLS_CURVE_REQUIRED: tuple[str, ...] = tuple(
 #: 登记这张表的目的，是让它在**进入协议之前**被拦下并给出可读原因，
 #: 而不是抛一段 C++ 栈回溯。这与 `ENUM_SENTINELS` 是同一条纪律：
 #: "看起来有这个选项"不等于"能用"。
-PSI_PROTOCOL_WORLD_SIZE: Mapping[str, int] = {
-    "PROTOCOL_ECDH": 2,
-    "PROTOCOL_KKRT": 2,
-    "PROTOCOL_RR22": 2,
-    "PROTOCOL_ECDH_NPC": 2,
-    "PROTOCOL_KKRT_NPC": 2,
-    "PROTOCOL_DP": 2,
-    "PROTOCOL_ECDH_3PC": 3,
-}
+PSI_PROTOCOL_WORLD_SIZE: Mapping[str, int] = dict(_registry.PSI_PROTOCOL_WORLD_SIZE)
 
 #: 本后端的进程内链路固定两方（`CellSetIntersect` 等算子均为两方求交）
 PSI_RUNTIME_WORLD_SIZE = 2
@@ -140,7 +128,7 @@ PSI_RUNTIME_WORLD_SIZE = 2
 #: 对禁飞区判定这是**安全事故级别**的语义变化——既可能把不冲突判成冲突，
 #: 也可能把冲突判成不冲突；而且**小交集（恰恰是偶发冲突、最需要警惕的那一类）
 #: 正是更容易被漏报的一类**。必须在选用时就说明，而不是等结果对不上再解释。
-PSI_PROTOCOLS_WITH_NOISE: tuple[str, ...] = ("PROTOCOL_DP",)
+PSI_PROTOCOLS_WITH_NOISE: tuple[str, ...] = _registry.PSI_PROTOCOLS_WITH_NOISE
 
 #: `spu.psi.EllipticCurveType` 的成员（0.9.5 libpsi.pyi 实测）
 PSI_CURVES: tuple[str, ...] = (
@@ -504,14 +492,31 @@ def psi_curve_relation(protocol: str) -> str:
     return PSI_CURVE_RELATION.get(normalize_psi_protocol(protocol), "required")
 
 
+def protocol_result_semantics(protocol: str) -> str:
+    """协议结果语义档：exact / approximate / noisy（任务书 §11）。
+
+    单一来源是 `protocol_registry.PROTOCOL_SPECS`；调用方按字符串判档，
+    将来新增近似 / 带噪协议时不需要再写协议专用的 if/else。
+    """
+
+    return get_protocol_spec(normalize_psi_protocol(protocol)).result_semantics
+
+
+def psi_protocol_spec(protocol: str) -> PsiProtocolSpec:
+    """取协议的完整元数据（名字归一化后从 protocol_registry 读取）。"""
+
+    return get_protocol_spec(normalize_psi_protocol(protocol))
+
+
 def protocol_is_exact(protocol: str) -> bool:
     """该协议是否给出**精确**交集（不向结果注入噪声）。
 
     返回 False 的协议仍可执行，但其结果**不能**拿来做与明文比对的一致性验证，
-    因此调用方不得据此报"已验证"。
+    因此调用方不得据此报"已验证"。实现已改为读 `result_semantics`
+    （exact / approximate / noisy，单一来源 protocol_registry）。
     """
 
-    return normalize_psi_protocol(protocol) not in PSI_PROTOCOLS_WITH_NOISE
+    return protocol_result_semantics(protocol) == RESULT_SEMANTICS_EXACT
 
 
 def protocol_world_size(protocol: str) -> int:
@@ -572,3 +577,227 @@ def resolve_psi_protocol(
     if not protocol_needs_curve(name):
         return name, None
     return name, chosen or PSI_DEFAULT_CURVE
+
+
+# --------------------------------------------------------------------------
+# 协议级能力：把"PSI 能不能跑"拆成三层（后端 / 协议 / 参数）
+#
+# 任务书 §2 的原话：不要再用一个总的 runnable 表示所有层次。
+# "PSI 总体 runnable = True" 不等于 "RR22 + low_comm_mode" 这条具体路径可用。
+# --------------------------------------------------------------------------
+
+#: 已登记的协议参数键。未登记键视为拼写错误直接报错——
+#: 静默忽略的代价是"设了但没生效"，错误不会浮出来，只会算错。
+PSI_PARAM_KEYS: tuple[str, ...] = (
+    "receiver_rank",
+    "broadcast_result",
+    "low_comm_mode",
+)
+
+
+@dataclass(frozen=True)
+class PsiParamValidation:
+    """协议参数的静态（不依赖环境的）校验结果。"""
+
+    ok: bool
+    protocol: str
+    problems: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "ok": self.ok,
+            "protocol": self.protocol,
+            "problems": list(self.problems),
+            "notes": list(self.notes),
+        }
+
+
+def validate_psi_protocol_params(
+    protocol: str, protocol_params: Mapping[str, Any] | None
+) -> PsiParamValidation:
+    """参数级静态校验：非法值在**编译期**失败，而不是等到 Runtime。
+
+    规则（两方链路）：
+    - `receiver_rank` ∈ {0, 1}，且必须是真 int（bool 不算）；
+    - `broadcast_result` / `low_comm_mode` 必须是 bool；
+    - 未登记的键直接报错；
+    - `low_comm_mode=True` 但协议不是 RR22：不算非法（协议族外的参数），
+      记为 note，由调用方决定如何披露（CLI / Runtime 都会如实说明）。
+    """
+
+    try:
+        name = normalize_psi_protocol(protocol)
+    except ValueError as exc:
+        return PsiParamValidation(
+            ok=False, protocol=str(protocol), problems=(str(exc),)
+        )
+
+    params = dict(protocol_params or {})
+    problems: list[str] = []
+    notes: list[str] = []
+
+    unknown = sorted(set(params) - set(PSI_PARAM_KEYS))
+    if unknown:
+        problems.append(
+            f"未登记的协议参数 {unknown}；已登记：{list(PSI_PARAM_KEYS)}"
+            "（若确需新参数，请先登记并补测试）"
+        )
+
+    if "receiver_rank" in params:
+        rank = params["receiver_rank"]
+        if isinstance(rank, bool) or not isinstance(rank, int):
+            problems.append(f"receiver_rank 必须是整数 0 或 1，实得 {rank!r}")
+        elif rank not in (0, 1):
+            problems.append(f"receiver_rank 必须是 0 或 1（两方链路），实得 {rank}")
+
+    for key in ("broadcast_result", "low_comm_mode"):
+        if key in params and not isinstance(params[key], bool):
+            problems.append(f"{key} 必须是布尔值，实得 {params[key]!r}")
+
+    if params.get("low_comm_mode") is True and name != "PROTOCOL_RR22":
+        notes.append(
+            f"low_comm_mode=True 但协议是 {name}：该参数不会注入（协议族外），"
+            "Runtime 会如实加注"
+        )
+
+    return PsiParamValidation(
+        ok=not problems, protocol=name, problems=tuple(problems), notes=tuple(notes)
+    )
+
+
+@dataclass
+class PsiProtocolCapability:
+    """协议级能力核查：三层结论**分开**报告。
+
+    - `backend_runnable` ：PSI 后端整体（libpsi / psi_execute / 两方链路 / 平台）；
+    - `protocol_runnable`：所选协议能否在这条链路上执行（协议清单 + 参与方数量）；
+    - `params_runnable`  ：所选参数组合能否真正注入（RR22 low_comm_mode、ECDH 曲线）。
+    """
+
+    protocol: str
+    backend_runnable: bool = False
+    protocol_runnable: bool = False
+    params_runnable: bool = False
+    curve: str | None = None
+    protocol_params: Mapping[str, Any] = field(default_factory=dict)
+    blockers: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+
+    @property
+    def runnable(self) -> bool:
+        return self.backend_runnable and self.protocol_runnable and self.params_runnable
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "protocol": self.protocol,
+            "backend_runnable": self.backend_runnable,
+            "protocol_runnable": self.protocol_runnable,
+            "params_runnable": self.params_runnable,
+            "runnable": self.runnable,
+            "curve": self.curve,
+            "protocol_params": dict(self.protocol_params),
+            "blockers": list(self.blockers),
+            "notes": list(self.notes),
+        }
+
+
+def check_psi_protocol_capability(
+    protocol: str,
+    protocol_params: Mapping[str, Any] | None = None,
+    report: PsiCapabilityReport | None = None,
+    *,
+    curve: str | None = None,
+) -> PsiProtocolCapability:
+    """核查"该协议 + 该参数组合"在当前环境能否真正执行。
+
+    与 `check_psi_capabilities()`（后端整体）的关系：
+    - 后端级回答"这台机器有没有 PSI"；
+    - 本函数回答"**这条具体执行路径**能不能走"——包括 RR22 的
+      `Rr22Rarams` / `rr22_params` 是否齐备、ECDH 族的曲线是否可用。
+    错误在进入 PSI 之前暴露，不必等到 Runtime 线程里再炸。
+    """
+
+    try:
+        name = normalize_psi_protocol(protocol)
+    except ValueError as exc:
+        return PsiProtocolCapability(protocol=str(protocol), blockers=(str(exc),))
+
+    report = report or check_psi_capabilities()
+    params = dict(protocol_params or {})
+    blockers: list[str] = []
+    notes: list[str] = []
+
+    backend_runnable = bool(report.runnable)
+    if not backend_runnable:
+        blockers.append("PSI 后端不可运行：见能力报告的 blockers（此处不重复展开）")
+
+    protocol_runnable = backend_runnable and name in report.protocols
+    if backend_runnable and name not in report.protocols:
+        blockers.append(
+            f"协议 {name} 不在当前 SPU 的协议清单：{list(report.protocols)}"
+        )
+
+    required = protocol_world_size(name)
+    if required > PSI_RUNTIME_WORLD_SIZE:
+        protocol_runnable = False
+        blockers.append(
+            f"协议 {name} 需要 {required} 个参与方，"
+            f"本链路固定 {PSI_RUNTIME_WORLD_SIZE} 方"
+        )
+
+    # ---- 参数层 ----
+    curve_name: str | None = None
+    params_runnable = True
+    relation = psi_curve_relation(name)
+    if relation == "required":
+        if curve is None:
+            params_runnable = False
+            blockers.append(
+                f"协议 {name} 必须显式指定曲线（缺省可用 {PSI_DEFAULT_CURVE}）"
+            )
+        else:
+            try:
+                curve_name = normalize_curve(curve)
+            except ValueError as exc:
+                params_runnable = False
+                blockers.append(str(exc))
+            else:
+                if curve_name not in report.curves:
+                    params_runnable = False
+                    blockers.append(
+                        f"曲线 {curve_name} 不在当前 SPU 的曲线清单："
+                        f"{list(report.curves)}"
+                    )
+    elif curve is not None:
+        if relation == "ignored":
+            notes.append(f"协议 {name} 不读曲线：curve 参数不会注入")
+        else:
+            notes.append(f"协议 {name} 自带默认曲线：本项目不覆盖调用方曲线")
+
+    if name == "PROTOCOL_RR22":
+        probe = report.rr22_params or probe_rr22_params()
+        requested_low_comm = bool(params.get("low_comm_mode", False))
+        probe_ok = bool(probe.get("runnable"))
+        if requested_low_comm and not probe_ok:
+            params_runnable = False
+            blockers.append(
+                "RR22 参数路径不完整（Rr22Rarams / rr22_params 缺失）："
+                "无法设置 low_comm_mode=True；"
+                + "；".join(probe.get("notes") or ("原因未记录",))
+            )
+        elif not probe_ok:
+            notes.append(
+                "RR22 参数类不完整：未请求 low_comm_mode，可按协议内部默认配置执行"
+            )
+
+    return PsiProtocolCapability(
+        protocol=name,
+        backend_runnable=backend_runnable,
+        protocol_runnable=protocol_runnable,
+        params_runnable=params_runnable,
+        curve=curve_name,
+        protocol_params=params,
+        blockers=tuple(blockers),
+        notes=tuple(notes),
+    )

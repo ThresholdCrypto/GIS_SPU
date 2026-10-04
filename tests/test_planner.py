@@ -16,6 +16,7 @@ from planner import (
     plan_program,
     plan_table_rows,
     registered_ops,
+    validate_protocol_for_operation,
 )
 
 
@@ -382,3 +383,81 @@ class TestProtocolPlanning:
         names = {f.name for f in dataclasses.fields(GeoOperation)}
         assert "protocol" not in names
         assert "protocol_params" not in names
+
+
+# --------------------------------------------------------------------------
+# 算子 × 协议候选校验：编译期拒绝（课题下一阶段 §13）
+# --------------------------------------------------------------------------
+
+
+class TestProtocolCandidateValidation:
+    """候选清单从"登记与提示"升级为"编译期强制"（DP 除外，放行但标记带噪）。"""
+
+    SOURCE = (
+        "from geo_privacy import geo\n"
+        "def f(route, no_fly_zone):\n"
+        "    return geo.intersects(route, no_fly_zone)\n"
+    )
+
+    def test_candidates_pass(self):
+        for op in ("Intersects", "Contains", "CellSetIntersect"):
+            for proto in ("PROTOCOL_ECDH", "PROTOCOL_KKRT", "PROTOCOL_RR22"):
+                check = validate_protocol_for_operation(op, proto)
+                assert check.ok, (op, proto, check.problems)
+
+    def test_dp_is_allowed_but_flagged_noisy(self):
+        check = validate_protocol_for_operation("Intersects", "PROTOCOL_DP")
+        assert check.ok
+        assert any("带噪" in note for note in check.notes)
+
+    def test_non_candidate_protocol_is_rejected(self):
+        check = validate_protocol_for_operation("Intersects", "PROTOCOL_ECDH_NPC")
+        assert not check.ok
+        assert "候选协议清单" in check.problems[0]
+
+    def test_three_party_rejection_keeps_readable_reason(self):
+        check = validate_protocol_for_operation("Intersects", "PROTOCOL_ECDH_3PC")
+        assert not check.ok
+        assert "需要 3 个参与方" in check.problems[0]
+        # 替换建议里仍要带出 DP 的带噪标记，不许把 DP 摆成等价替代
+        assert "PROTOCOL_DP*" in check.problems[0]
+
+    def test_unknown_protocol_is_rejected_with_available_list(self):
+        check = validate_protocol_for_operation("Intersects", "PROTOCOL_NOPE")
+        assert not check.ok
+        assert "未知 PSI 协议" in check.problems[0]
+
+    def test_non_psi_operator_with_protocol_is_rejected(self):
+        check = validate_protocol_for_operation("DistanceLE", "PROTOCOL_RR22")
+        assert not check.ok
+        assert "不经过 PSI" in check.problems[0]
+
+    def test_unknown_operator_is_rejected(self):
+        check = validate_protocol_for_operation("NotAnOp", "PROTOCOL_RR22")
+        assert not check.ok
+
+    def test_no_protocol_means_nothing_to_validate(self):
+        assert validate_protocol_for_operation("DistanceLE", None).ok
+
+    def test_planner_emits_compile_time_diagnostic_for_rejected_combo(self):
+        plan = plan_program(
+            parse_source(self.SOURCE).program, psi_protocol="PROTOCOL_ECDH_NPC"
+        )
+        assert plan.has_errors
+        codes = [d.code for d in plan.diagnostics]
+        assert "PROTOCOL_UNSUPPORTED" in codes
+        # 拒绝的是协议组合，不是算子本身：步骤保留，便于状态表定位
+        assert len(plan.steps) == 1
+        diagnostic = next(
+            d for d in plan.diagnostics if d.code == "PROTOCOL_UNSUPPORTED"
+        )
+        assert diagnostic.location  # 错误位置必须可定位
+
+    def test_dp_planning_carries_the_noise_disclosure(self):
+        plan = plan_program(
+            parse_source(self.SOURCE).program, psi_protocol="PROTOCOL_DP"
+        )
+        assert not plan.has_errors
+        step = plan.steps[0]
+        assert step.protocol == "PROTOCOL_DP"
+        assert any("带噪" in reason for reason in step.reasons)

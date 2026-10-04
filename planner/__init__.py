@@ -11,10 +11,12 @@ from .planner import (
 from .registry import (
     OPERATOR_REGISTRY,
     OperatorRule,
+    ProtocolCheck,
     backend_capable_ops,
     get_rule,
     jax_capable_ops,
     registered_ops,
+    validate_protocol_for_operation,
 )
 
 __all__ = [
@@ -22,6 +24,7 @@ __all__ = [
     "PLAN_TABLE_HEADERS",
     "OperatorRule",
     "PlannedStep",
+    "ProtocolCheck",
     "Planner",
     "PrivacyPlan",
     "backend_capable_ops",
@@ -30,4 +33,5 @@ __all__ = [
     "plan_program",
     "plan_table_rows",
     "registered_ops",
+    "validate_protocol_for_operation",
 ]

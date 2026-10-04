@@ -9,7 +9,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import json
+import os
+from dataclasses import dataclass, field, replace
 from typing import Any, Mapping, Sequence
 
 from backends.jax_backend import (
@@ -25,7 +27,13 @@ from backends.psi_backend import (
     PSI_RUNTIME_WORLD_SIZE,
     PsiCapabilityReport,
     PsiRunResult,
+    PsiRuntimeConfig,
+    PartyManager,
+    ResolvedCellInput,
     check_psi_capabilities,
+    check_psi_protocol_capability,
+    normalize_inputs,
+    normalize_psi_protocol,
     protocol_is_exact,
     protocol_world_size,
     psi_curve_relation,
@@ -33,6 +41,8 @@ from backends.psi_backend import (
     resolve_psi_protocol,
     runnable_protocols_hint,
     run_psi_operation,
+    same_party_both_sides,
+    validate_psi_protocol_params,
 )
 from backends.psi_backend.subset_mpc import SUBSET_MODE_MPC
 from backends.spu_backend import (
@@ -45,7 +55,13 @@ from backends.spu_backend import (
 from frontend import ParseResult, parse_source
 from frontend.analyzer import _coerce_geotype, _coerce_sensitivity
 from ir import GeoProgram, encode_grid_code, render_table
-from planner import PLAN_TABLE_HEADERS, PrivacyPlan, plan_program, plan_table_rows
+from planner import (
+    PLAN_TABLE_HEADERS,
+    PlannedStep,
+    PrivacyPlan,
+    plan_program,
+    plan_table_rows,
+)
 from validator import ValidationReport, validate_all
 
 # --------------------------------------------------------------------------
@@ -142,7 +158,16 @@ class CompileResult:
     #: 本次编译实际使用的协议级参数（如 RR22 的 low_comm_mode）
     psi_protocol_params: Mapping[str, Any] = field(default_factory=dict)
     psi_capability: PsiCapabilityReport | None = None
+    #: 协议级三层核查结论（PsiProtocolCapability.to_dict()）
+    psi_protocol_capability: dict[str, Any] | None = None
     psi_runs: dict[str, PsiRunResult] = field(default_factory=dict)
+    #: 本次 PSI 执行的运行时配置快照（PsiRuntimeConfig.to_dict()）。
+    #: 各 PSI 步骤配置一致时给出；不一致时为 None，逐 run 的 runtime_config 为准。
+    psi_runtime_config: Mapping[str, Any] | None = None
+    #: 已规范化的真实输入（名字 → ResolvedCellInput），未绑定输入时为空
+    resolved_inputs: dict[str, ResolvedCellInput] = field(default_factory=dict)
+    #: 参与方绑定快照（PartyManager.to_dict()）；没有绑定 party_id 时为 None
+    parties: dict[str, Any] | None = None
     operator_status: list[dict[str, Any]] = field(default_factory=list)
 
     @property
@@ -211,7 +236,15 @@ class CompileResult:
             "psi_curve": self.psi_curve,
             "psi_protocol_params": dict(self.psi_protocol_params),
             "psi_capability": self.psi_capability.to_dict() if self.psi_capability else None,
+            "psi_protocol_capability": self.psi_protocol_capability,
             "psi_runs": {op: run.to_dict() for op, run in self.psi_runs.items()},
+            "psi_runtime_config": (
+                dict(self.psi_runtime_config) if self.psi_runtime_config else None
+            ),
+            "inputs": {
+                name: value.to_dict() for name, value in self.resolved_inputs.items()
+            },
+            "parties": dict(self.parties) if self.parties else None,
             "operator_status": list(self.operator_status),
         }
 
@@ -231,6 +264,9 @@ class Compiler:
         psi_curve: str | None = None,
         psi_subset: str = SUBSET_MODE_MPC,
         psi_rr22_low_comm_mode: bool = False,
+        psi_protocol_params: Mapping[str, Any] | None = None,
+        inputs: Mapping[str, Any] | None = None,
+        input_layouts: Mapping[str, Any] | None = None,
         capability_report: CapabilityReport | None = None,
         psi_capability_report: PsiCapabilityReport | None = None,
         sensitivities: Mapping[str, Any] | None = None,
@@ -250,6 +286,46 @@ class Compiler:
         self.psi_protocol_params: dict[str, Any] = {}
         if self.psi_protocol == "PROTOCOL_RR22":
             self.psi_protocol_params["low_comm_mode"] = self.psi_rr22_low_comm_mode
+        # 显式协议参数通道（如审计演练 receiver_rank=1）。与 RR22 开关合并后
+        # 统一静态校验：未登记键/非法值在编译前拒绝，不静默忽略、不等到 Runtime。
+        self.psi_protocol_params.update(dict(psi_protocol_params or {}))
+        param_check = validate_psi_protocol_params(
+            self.psi_protocol, self.psi_protocol_params
+        )
+        if not param_check.ok:
+            raise ValueError("PSI 协议参数非法：" + "；".join(param_check.problems))
+        self._psi_param_notes = tuple(param_check.notes)
+        # 真实格网输入绑定（Phase 2）：名字 → CSV/JSON/CellSet/码序列。
+        # 构造期即解析：文件缺失/损坏立即失败（错误带具体位置），
+        # 不把坏数据拖到 PSI 执行阶段才炸。
+        self.inputs = dict(inputs or {})
+        self.input_layouts = {
+            str(name): _load_layout_manifest(value, name=str(name))
+            for name, value in (input_layouts or {}).items()
+        }
+        self._resolved_inputs: dict[str, ResolvedCellInput] = (
+            normalize_inputs(self.inputs) if self.inputs else {}
+        )
+        if self.input_layouts:
+            unknown = sorted(set(self.input_layouts) - set(self._resolved_inputs))
+            if unknown:
+                raise ValueError(
+                    f"input_layouts 指定的名字未绑定输入：{unknown}；"
+                    f"已绑定输入：{sorted(self._resolved_inputs)}"
+                )
+            # 显式布局清单覆盖输入自带清单：这是跨方握手用的声明面。
+            self._resolved_inputs = {
+                name: (
+                    replace(value, layout=self.input_layouts[name])
+                    if name in self.input_layouts
+                    else value
+                )
+                for name, value in self._resolved_inputs.items()
+            }
+        # 参与方绑定（§14 / §16）：把 PartyInput(party_id=...) 的标签登记成
+        # 两方抽象；超过两方在这里显式失败（不静默截断）。未标注 party_id 的
+        # 输入不登记；left / right 定位仍由算子输入顺序决定，不被标签改写。
+        self.parties = PartyManager.from_inputs(self._resolved_inputs)
         # `Contains` 的子集判定走哪条路。默认 MPC；显式选明文时也照做，
         # 但状态词会变成 subset-plaintext，不会被读成密态子集比较。
         self.psi_subset = resolve_subset_mode(psi_subset)
@@ -271,6 +347,10 @@ class Compiler:
         result.psi_protocol = self.psi_protocol
         result.psi_curve = self.psi_curve
         result.psi_protocol_params = dict(self.psi_protocol_params)
+        result.resolved_inputs = dict(self._resolved_inputs)
+        result.parties = (
+            self.parties.to_dict() if self.parties.descriptors() else None
+        )
 
         # ---- 阶段 1：Parsing ----
         parse_result = parse_source(
@@ -563,6 +643,26 @@ class Compiler:
         report = self._psi_capability
         result.psi_capability = report
 
+        # 三层能力核查（后端 / 协议 / 参数），一层一结论——不再用一个总
+        # runnable 表示所有层次。协议参数取**计划步骤**的合并结果
+        # （规则默认值 + 编译器参数），与 Runtime 真正注入的同源。
+        params = dict(psi_steps[0].protocol_params)
+        protocol_cap = check_psi_protocol_capability(
+            self.psi_protocol, params, report, curve=self.psi_curve
+        )
+        result.psi_protocol_capability = protocol_cap.to_dict()
+        detail = {
+            "report": report.to_dict(),
+            "protocol_capability": protocol_cap.to_dict(),
+        }
+        layers = (
+            f"分层核查：backend={'是' if protocol_cap.backend_runnable else '否'} / "
+            f"protocol={'是' if protocol_cap.protocol_runnable else '否'} / "
+            f"params={'是' if protocol_cap.params_runnable else '否'}"
+        )
+        notes = [*self._psi_param_notes, *protocol_cap.notes]
+        notes_suffix = ("；" + "；".join(notes)) if notes else ""
+
         # 选用的协议是否在这条链路上可执行。`ECDH_3PC` 这类三方协议
         # 属"枚举里有、这里跑不了"，必须在方案阶段就说清楚，
         # 而不是等运行时抛 libpsi 的 C++ 栈。
@@ -572,7 +672,7 @@ class Compiler:
                 StageResult(
                     "psi_capability",
                     "error",
-                    report.to_dict(),
+                    detail,
                     f"选用的 PSI 协议 {self.psi_protocol} 需要 {required} 个参与方，"
                     f"本链路固定 {PSI_RUNTIME_WORLD_SIZE} 方；"
                     f"可改用 {runnable_protocols_hint()}",
@@ -595,29 +695,35 @@ class Compiler:
                 StageResult(
                     "psi_capability",
                     "warning",
-                    report.to_dict(),
+                    detail,
                     f"{len(psi_steps)} 个算子需 PSI（{ops}）；{selection}；"
                     f"{self.psi_protocol} 为差分隐私协议，结果带噪，"
-                    "不能作为与明文一致的验证依据",
+                    f"不能作为与明文一致的验证依据；{layers}{notes_suffix}",
                 )
             )
             return
         result.stages.append(
             StageResult(
                 "psi_capability",
-                "ok" if report.runnable else "warning",
-                report.to_dict(),
-                f"{len(psi_steps)} 个算子需 PSI（{ops}）；{selection}；"
+                "ok" if protocol_cap.runnable else "warning",
+                detail,
+                f"{len(psi_steps)} 个算子需 PSI（{ops}）；{selection}；{layers}；"
                 + (
                     f"当前环境可执行（spu {report.version}）"
-                    if report.runnable
-                    else f"{len(report.blockers)} 项阻断，PSI 结果将留空"
-                ),
+                    if protocol_cap.runnable
+                    else f"{len(protocol_cap.blockers)} 项阻断，PSI 结果将留空"
+                )
+                + notes_suffix,
             )
         )
 
     def _stage_psi_simulation(self, result: CompileResult) -> None:
-        """对走 PSI 的算子做真实两方求交验证。"""
+        """对走 PSI 的算子做真实两方求交验证（真实输入 + 链式数据流）。
+
+        Phase 2/3：实参按**输入名**装配——用户绑定的真实数据（inputs=）
+        与上一步 PSI 输出优先；都取不到才回退样例默认值，并在 run.notes
+        如实披露来源。不再固定吃 DEFAULT_EXAMPLE_INPUTS。
+        """
 
         if result.plan is None or result.plan.has_errors:
             result.stages.append(
@@ -649,32 +755,93 @@ class Compiler:
             )
             return
 
-        for step in steps:
-            examples = self._example_inputs_for(step.operation)
-            if not examples:
-                continue
-            plain_inputs = self._plain_args(step.operation, examples)
-            reference = _plain_reference(step.operation, plain_inputs)
-            op = step.operation
+        # 运行时值表：输入名 → 值。真实输入与链式输出的唯一装配点。
+        runtime_values: dict[str, _RuntimeValue] = {
+            name: _RuntimeValue(
+                codes=value.codes,
+                origin=f"输入绑定（{value.source or '用户数据'}）",
+                layout=value.layout,
+                party_id=value.party_id,
+            )
+            for name, value in self._resolved_inputs.items()
+        }
 
-            # 与 SPU 侧同一条纪律：参考值必须经 PLAIN_ARG_BUILDERS 拆解，
-            # 否则 run_psi_operation 的命名参数取不到值，会被当成空输入。
-            def reference_fn(left: Any, right: Any, _op: str = op) -> Any:
-                return _plain_reference(_op, (left, right))
+        run_keys = _psi_run_keys(result.plan)
+        configs: dict[str, PsiRuntimeConfig] = {}
+        config_problems: list[str] = []
+        produced_names: set[str] = set()
+
+        for index, step in enumerate(result.plan.steps):
+            if step.operation not in PSI_OPS:
+                continue
+            op = step.operation
+            key = run_keys[index]
+            if step.output_name:
+                produced_names.add(step.output_name)
+            values = self._resolve_psi_inputs(step, runtime_values, produced_names)
+            if values is None:
+                result.psi_runs[key] = PsiRunResult(
+                    status="error",
+                    op=op,
+                    protocol=normalize_psi_protocol(step.protocol or self.psi_protocol),
+                    curve=self.psi_curve,
+                    world_size=PSI_RUNTIME_WORLD_SIZE,
+                    receiver_rank=0,
+                    error=(
+                        f"输入无法装配：{list(step.inputs)} 既不在绑定输入 "
+                        f"{sorted(self._resolved_inputs)}，也不是上一步输出；"
+                        "请用 inputs={...} 绑定数据或确认样例兜底存在"
+                    ),
+                    notes=("未执行 PSI：输入装配失败在进入运行时之前拦下",),
+                )
+                continue
+
+            config = PsiRuntimeConfig.from_params(
+                normalize_psi_protocol(step.protocol or self.psi_protocol),
+                self.psi_curve,
+                step.protocol_params,
+            )
+            configs[key] = config
+
+            left, right = values[0], values[1]
+            plain_inputs = (list(left.codes), list(right.codes))
+            reference = _plain_reference(op, plain_inputs)
+
+            def reference_fn(left_codes: Any, right_codes: Any, _op: str = op) -> Any:
+                return _plain_reference(_op, (left_codes, right_codes))
 
             if op == "Contains":
-                args = {"outer": list(examples[0]), "inner": list(examples[1])}
+                args = {"outer": plain_inputs[0], "inner": plain_inputs[1]}
             else:
-                args = {"left": list(examples[0]), "right": list(examples[1])}
+                args = {"left": plain_inputs[0], "right": plain_inputs[1]}
 
-            result.psi_runs[op] = run_psi_operation(
+            binding = tuple(
+                {
+                    "role": role,
+                    "name": name,
+                    "party_id": item.party_id,
+                }
+                for role, name, item in (
+                    (
+                        "left",
+                        step.inputs[0] if len(step.inputs) > 0 else None,
+                        left,
+                    ),
+                    (
+                        "right",
+                        step.inputs[1] if len(step.inputs) > 1 else None,
+                        right,
+                    ),
+                )
+            )
+            run = run_psi_operation(
                 op,
                 args,
+                config=config,
+                left_layout=left.layout,
+                right_layout=right.layout,
+                party_binding=binding,
                 reference_fn=reference_fn if reference is not None else None,
-                report=result.psi_capability,
-                protocol=self.psi_protocol,
-                curve=self.psi_curve,
-                rr22_low_comm_mode=self.psi_rr22_low_comm_mode,
                 subset_via=self.psi_subset,
                 # 子集判定这条 MPC 电路沿用编译器的协议/环宽，与其它 MPC 算子
                 # 共用同一套开关，不另开一个配置面。
@@ -683,6 +850,50 @@ class Compiler:
                 mpc_world_size=self.world_size,
                 mpc_report=self._capability,
             )
+
+            # 输入来源与参与方逐条披露：真实绑定 / 上一步 PSI 输出 / 样例兜底，
+            # 以及这份输入属于哪个参与方（§14：party_id 逐输入带出，不改装配）。
+            for name, value in zip(step.inputs, values):
+                note = f"输入 {name} 来源：{value.origin}"
+                if value.party_id:
+                    note += f"；参与方：{value.party_id}"
+                run.notes = run.notes + (note,)
+            if same_party_both_sides(left.party_id, right.party_id):
+                run.notes = run.notes + (
+                    f"两侧输入的 party_id 相同（{left.party_id}）：本步骤在语义上"
+                    "不是跨方求交，请核对 PartyInput 绑定",
+                )
+
+            # 配置闭环逐字段核对：Planner 的 protocol_params → Runtime 实际配置。
+            config_problems.extend(_check_config_closure(step, config, run))
+
+            result.psi_runs[key] = run
+
+            # 链式数据流：交集本体（CellSetIntersect 的输出）喂给下游算子，
+            # 而不是下游重新读样例。
+            if op == "CellSetIntersect" and step.output_name and run.value is not None:
+                runtime_values[step.output_name] = _RuntimeValue(
+                    codes=tuple(int(code) for code in run.value),
+                    origin=f"上一步 PSI 输出（{key}）",
+                    layout=None,
+                )
+
+        if configs:
+            first = next(iter(configs.values()))
+            if all(item.to_dict() == first.to_dict() for item in configs.values()):
+                result.psi_runtime_config = first.to_dict()
+
+        # ---------------- 阶段结论 ----------------
+        if config_problems:
+            result.stages.append(
+                StageResult(
+                    "psi_simulation",
+                    "error",
+                    result.psi_runs,
+                    "配置闭环核对失败：" + "；".join(config_problems),
+                )
+            )
+            return
 
         if any(run.status == "unavailable" for run in result.psi_runs.values()):
             status = "warning"
@@ -703,6 +914,24 @@ class Compiler:
             status = "error"
             message = f"{len(result.psi_runs)} 个算子 PSI 执行失败"
 
+        chained_keys = sorted(
+            key
+            for key, run in result.psi_runs.items()
+            if any("上一步 PSI 输出" in note for note in run.notes)
+        )
+        if chained_keys:
+            message += f"；链式输入：{', '.join(chained_keys)} 使用上一步 PSI 输出"
+        fallback_keys = sorted(
+            key
+            for key, run in result.psi_runs.items()
+            if any("样例兜底" in note for note in run.notes)
+        )
+        if fallback_keys:
+            message += (
+                f"；{', '.join(fallback_keys)} 的部分输入未绑定真实数据，"
+                "回退到样例默认值（见各 run 的 notes）"
+            )
+
         # 有算子的子集判定没走 MPC 时，阶段行不能说成单纯"求交验证"就完事。
         plaintext_subsets = sorted(
             run.op
@@ -716,6 +945,44 @@ class Compiler:
             )
 
         result.stages.append(StageResult("psi_simulation", status, result.psi_runs, message))
+
+    def _resolve_psi_inputs(
+        self,
+        step: PlannedStep,
+        runtime_values: Mapping[str, _RuntimeValue],
+        produced_names: set[str],
+    ) -> list[_RuntimeValue] | None:
+        """按**输入名**装配一步 PSI 的实参：绑定输入/链式输出优先，样例最后。
+
+        返回 None = 无法装配：调用方据此构造错误 run，绝不以空输入进入协议。
+        样例兜底只适用于**程序实体输入**（用户没绑定）；如果这个名字是上一步
+        算子的输出，用样例顶替等于把链路失败替换成样例结果——直接拒绝。
+        """
+
+        defaults = self._example_inputs_for(step.operation)
+        values: list[_RuntimeValue] = []
+        for index, name in enumerate(step.inputs):
+            if name in runtime_values:
+                values.append(runtime_values[name])
+            elif name in produced_names:
+                # 上一步输出未能产出可用值（执行失败/未产出集合）：不兜底。
+                return None
+            elif defaults and index < len(defaults):
+                suffix = (
+                    "——不得据此宣称真实数据验证" if self._resolved_inputs else ""
+                )
+                values.append(
+                    _RuntimeValue(
+                        codes=tuple(int(code) for code in defaults[index]),
+                        origin=f"样例兜底（{name} 未绑定真实输入）{suffix}",
+                        layout=None,
+                    )
+                )
+            else:
+                return None
+        if len(values) < 2:
+            return None
+        return values
 
     def _plain_args(self, op: str, examples: Sequence[Any]) -> tuple[Any, ...]:
         builder = PLAIN_ARG_BUILDERS.get(op)
@@ -749,7 +1016,8 @@ class Compiler:
             item["operation"] for item in (result.jax_generation.skipped if result.jax_generation else [])
         }
 
-        for step in plan.steps:
+        run_keys = _psi_run_keys(plan)
+        for index, step in enumerate(plan.steps):
             jax_ready = step.operation in result.jax_functions
             trace = result.trace_checks.get(step.operation)
             trace_ok = bool(trace.traceable) if trace is not None else None
@@ -759,7 +1027,8 @@ class Compiler:
                 else {}
             )
             spu_run = result.spu_runs.get(step.operation)
-            psi_run = result.psi_runs.get(step.operation)
+            key = run_keys.get(index)
+            psi_run = result.psi_runs.get(key) if key else None
 
             status = _status_word(
                 jax_ready=jax_ready,
@@ -784,6 +1053,18 @@ class Compiler:
                     "traceable": trace_ok,
                     "spu_status": spu_cap.get("status", "unknown"),
                     "psi_status": psi_run.status if psi_run is not None else None,
+                    "psi_run_key": key,
+                    "result_semantics": (
+                        psi_run.result_semantics if psi_run is not None else None
+                    ),
+                    "result_policy": (
+                        psi_run.result_policy.get("policy")
+                        if psi_run is not None and psi_run.result_policy
+                        else None
+                    ),
+                    "runtime_params": (
+                        dict(psi_run.protocol_params) if psi_run is not None else None
+                    ),
                     "reveals": psi_run.reveals if psi_run is not None else None,
                     "subset": (
                         psi_run.subset.to_dict()
@@ -798,6 +1079,29 @@ class Compiler:
         result.operator_status = rows
 
 
+def _load_layout_manifest(value: Any, *, name: str) -> Mapping[str, Any]:
+    """布局清单：直接给 Mapping，或给 JSON 文件路径。非法形态直接报错。"""
+
+    if isinstance(value, Mapping):
+        return dict(value)
+    if isinstance(value, (str, os.PathLike)):
+        path = os.fspath(value)
+        with open(path, encoding="utf-8-sig") as handle:
+            try:
+                payload = json.load(handle)
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    f"布局清单 JSON 解析失败：{path}: {exc}"
+                ) from exc
+        if not isinstance(payload, Mapping):
+            raise ValueError(f"布局清单必须是 JSON 对象：{path}")
+        return dict(payload)
+    raise TypeError(
+        f"不支持的布局清单形态 {type(value).__name__}（名字 {name}）："
+        "期望 Mapping 或 JSON 文件路径"
+    )
+
+
 def _is_plaintext_local(op: str) -> bool:
     """该算子是否只在本方明文执行（判据取自 planner 注册表，不另抄名单）。"""
 
@@ -805,6 +1109,74 @@ def _is_plaintext_local(op: str) -> bool:
 
     rule = get_rule(op)
     return rule is not None and rule.primary_backend == "Plaintext"
+
+
+@dataclass(frozen=True)
+class _RuntimeValue:
+    """PSI 执行装配用的一个实参值：码集合 + 来源标注 + 参与方标签（审计用）。"""
+
+    codes: tuple[int, ...]
+    origin: str
+    layout: Mapping[str, Any] | None = None
+    #: 该输入绑定的参与方（PartyInput.party_id）；未标注时为 None
+    party_id: str | None = None
+
+
+def _psi_run_keys(plan: PrivacyPlan) -> dict[int, str]:
+    """给每个 PSI 步骤分配结果键（步索引 → 键）。
+
+    首次出现用算子名（历史行为，测试与文档都依赖）；同一算子的后续步骤用
+    output_name 区分——键冲突会静默覆盖前一次执行结果，宁可长一点。
+    """
+
+    seen: dict[str, int] = {}
+    keys: dict[int, str] = {}
+    for index, step in enumerate(plan.steps):
+        if step.operation not in PSI_OPS:
+            continue
+        count = seen.get(step.operation, 0)
+        seen[step.operation] = count + 1
+        if count == 0:
+            keys[index] = step.operation
+        else:
+            label = step.output_name or f"#{count + 1}"
+            keys[index] = f"{step.operation}:{label}"
+    return keys
+
+
+def _check_config_closure(
+    step: PlannedStep, config: PsiRuntimeConfig, run: PsiRunResult
+) -> list[str]:
+    """核对"计划里的协议参数"与"运行实际注入的"是否逐字段一致（验收 A）。
+
+    单一配置源链：PlannedStep.protocol_params → PsiRuntimeConfig → Runtime。
+    这里做逐字段比对，任何一环漂移都必须显式失败而不是静默容忍。
+    """
+
+    problems: list[str] = []
+    actual = dict(run.runtime_config or {})
+    if actual != config.to_dict():
+        problems.append(
+            f"算子 {step.operation}：Runtime 记录配置 {actual!r} 与传入配置 "
+            f"{config.to_dict()!r} 不一致"
+        )
+    split_keys = ("receiver_rank", "broadcast_result")
+    planned_params = {
+        key: value
+        for key, value in step.protocol_params.items()
+        if key not in split_keys
+    }
+    if dict(config.protocol_params) != planned_params:
+        problems.append(
+            f"算子 {step.operation}：计划参数 {planned_params!r} 与配置参数 "
+            f"{dict(config.protocol_params)!r} 不一致"
+        )
+    if run.protocol != config.protocol:
+        problems.append(
+            f"算子 {step.operation}：运行协议 {run.protocol!r} 与配置协议 "
+            f"{config.protocol!r} 不一致"
+        )
+    return problems
 
 
 def curve_suffix(protocol: str, curve: str | None) -> str:
@@ -915,6 +1287,9 @@ _COMPILER_KEYS = {
     "psi_protocol",
     "psi_curve",
     "psi_rr22_low_comm_mode",
+    "psi_protocol_params",
+    "inputs",
+    "input_layouts",
     "psi_capability_report",
     "sensitivities",
     "type_hints",

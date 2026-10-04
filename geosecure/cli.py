@@ -186,6 +186,23 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
                 if noisy:
                     _emit(f"  带噪      : {', '.join(noisy)}（差分隐私：结果不与明文保证一致）")
                 _emit(f"  输入形态  : {'CSV 文件（无内存张量接口）' if report.file_io_only else '见报告'}")
+                if result.resolved_inputs:
+                    _emit("  输入绑定  :")
+                    for name, value in result.resolved_inputs.items():
+                        layout_id = (value.layout or {}).get("layout_id") or "未声明"
+                        party = f"；party={value.party_id}" if value.party_id else ""
+                        _emit(
+                            f"    - {name} ← {value.source or '用户数据'}"
+                            f"（{value.count} 个码；layout={layout_id}{party}）"
+                        )
+                if result.psi_protocol_capability:
+                    cap = result.psi_protocol_capability
+                    _emit(
+                        "  分层核查  : "
+                        f"backend={'是' if cap['backend_runnable'] else '否'} / "
+                        f"protocol={'是' if cap['protocol_runnable'] else '否'} / "
+                        f"params={'是' if cap['params_runnable'] else '否'}"
+                    )
                 # 密态交换的就是这些 64 位码：两方布局不一致不会报错，
                 # 只会静默算错。所以把布局打在跨方对象的能力块里。
                 _emit(f"  键布局    : {GRID_CODE_LAYOUT}（层级上限 L{MAX_ENCODABLE_LEVEL}；布局须与对端一致）")
@@ -230,10 +247,41 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
                             f"{key}={value}" for key, value in run.protocol_params.items()
                         )
                     )
+                if run.optimizer.get("applied"):
+                    left_meta = dict(run.optimizer.get("left") or {})
+                    right_meta = dict(run.optimizer.get("right") or {})
+                    _emit(
+                        "      preproc   : Geo-RR22 "
+                        f"v{run.optimizer.get('version')} 排序+去重"
+                        f"（dup left={left_meta.get('duplicate_count')},"
+                        f" right={right_meta.get('duplicate_count')}）"
+                    )
                 if run.status in ("ok", "empty-input"):
                     _emit(f"      |A|={run.original_count}  |A∩B|={run.intersection_count}")
                     _emit(f"      result    : {run.value}")
                     _emit(f"      reference : {run.reference}   agree={run.agreement}")
+                if run.result_semantics:
+                    _emit(f"      result-sems: {run.result_semantics}")
+                if run.result_policy:
+                    _emit(
+                        f"      policy    : {run.result_policy.get('policy')}"
+                        f"（业务层暴露 {run.result_policy.get('business_value')}；"
+                        "协议内部泄漏面不随策略改变：接收方仍获得交集本体）"
+                    )
+                if run.party_binding:
+                    roles = ", ".join(
+                        f"{item.get('role')}={item.get('party_id') or '未标注'}"
+                        + (f"[{item.get('name')}]" if item.get("name") else "")
+                        for item in run.party_binding
+                    )
+                    _emit(f"      parties   : {roles}")
+                if run.layout_agreement is not None:
+                    verdict = {
+                        True: "一致",
+                        False: "不一致（已拒绝执行）",
+                        None: "无法核对（仅单方声明）",
+                    }.get(run.layout_agreement.get("agreement"), "未知")
+                    _emit(f"      layout    : {verdict}")
                 if run.subset is not None:
                     where = (
                         f"{run.subset.protocol}/{run.subset.field}"
@@ -249,6 +297,8 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
                 if run.error:
                     _emit(f"      error     : {run.error}")
                 _emit(f"      leaks     : {run.reveals}")
+                for note in run.notes:
+                    _emit(f"      note      : {note}")
         else:
             stage = result.stage("psi_simulation")
             _emit(f"  （未执行：{stage.message if stage else 'n/a'}）")
@@ -291,6 +341,25 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
         _emit(f"编译未通过：{detail}（未修改任何用户代码，请按上方建议调整）。")
 
 
+def _parse_name_path_pairs(
+    pairs: Sequence[str] | None, *, flag: str
+) -> dict[str, str]:
+    """`NAME=PATH` 列表 → 字典；缺等号/空名/重复名给可读错误。"""
+
+    out: dict[str, str] = {}
+    for item in pairs or ():
+        name, sep, path = item.partition("=")
+        name = name.strip()
+        if not sep or not name or not path.strip():
+            raise ValueError(f"{flag} 需要 NAME=PATH 形式，实得 {item!r}")
+        if name in out:
+            raise ValueError(
+                f"{flag} 重复指定名字 {name!r}（前值 {out[name]!r}）"
+            )
+        out[name] = path.strip()
+    return out
+
+
 def build_command(args: argparse.Namespace) -> int:
     if args.protocol not in SPU_PROTOCOLS:
         _emit(f"警告：协议 {args.protocol} 不在 SPU 支持清单 {SPU_PROTOCOLS} 中，仍将尝试。")
@@ -325,17 +394,33 @@ def build_command(args: argparse.Namespace) -> int:
             f"协议 {psi_protocol} 不使用它。"
         )
 
-    compiler = Compiler(
-        protocol=args.protocol,
-        field=args.field,
-        world_size=args.world_size,
-        tolerance=args.tolerance,
-        run_simulation=not args.no_simulation,
-        psi_protocol=psi_protocol,
-        psi_curve=psi_curve,
-        psi_subset=args.psi_subset,
-        psi_rr22_low_comm_mode=args.psi_rr22_low_comm_mode,
-    )
+    # 真实输入绑定（--input NAME=PATH / --input-layout NAME=PATH）。
+    # 解析/校验失败在构造期就退出：坏输入不拖到执行阶段。
+    try:
+        bound_inputs = _parse_name_path_pairs(args.input, flag="--input")
+        bound_layouts = _parse_name_path_pairs(args.input_layout, flag="--input-layout")
+    except ValueError as exc:
+        _emit(f"错误：{exc}")
+        return 2
+
+    try:
+        compiler = Compiler(
+            protocol=args.protocol,
+            field=args.field,
+            world_size=args.world_size,
+            tolerance=args.tolerance,
+            run_simulation=not args.no_simulation,
+            psi_protocol=psi_protocol,
+            psi_curve=psi_curve,
+            psi_subset=args.psi_subset,
+            psi_rr22_low_comm_mode=args.psi_rr22_low_comm_mode,
+            inputs=bound_inputs or None,
+            input_layouts=bound_layouts or None,
+        )
+    except (ValueError, TypeError, FileNotFoundError) as exc:
+        # 参数非法 / 输入文件缺失或损坏：可读错误，不落 traceback。
+        _emit(f"错误：{exc}")
+        return 2
     try:
         result = compiler.compile_file(args.source, entry=args.entry)
     except FileNotFoundError:
@@ -453,6 +538,27 @@ def build_parser() -> argparse.ArgumentParser:
             "RR22 专用参数：设置 Rr22Rarams.low_comm_mode=True（低通信模式）。"
             "只对 --psi-protocol RR22 生效，不是通用 curve 参数；"
             "缺省 false，使用 RR22 默认通信模式"
+        ),
+    )
+    build.add_argument(
+        "--input",
+        action="append",
+        default=None,
+        metavar="NAME=PATH",
+        help=(
+            "绑定真实格网输入：NAME 为源码中的输入名，PATH 为 CSV（grid_code 列）"
+            "或 JSON（码数组 / {grid_codes:[...], layout:{...}}）。可重复。"
+            "未绑定的 PSI 输入会回退样例默认值并在结果中如实披露"
+        ),
+    )
+    build.add_argument(
+        "--input-layout",
+        action="append",
+        default=None,
+        metavar="NAME=PATH",
+        help=(
+            "声明某方输入的格网布局清单（JSON manifest，如 {layout_id, version, "
+            "bits, x_bits, ...}）。两方都声明且不一致时在进入 PSI 前拒绝执行"
         ),
     )
     build.add_argument("--world-size", type=int, default=None, help="参与方数量")
