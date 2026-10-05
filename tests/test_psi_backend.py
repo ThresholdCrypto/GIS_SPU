@@ -582,6 +582,29 @@ class TestRealPsiIntersection:
         assert run.status == "ok"
         assert run.value == EXPECTED_INTERSECTION
 
+    @pytest.mark.parametrize(
+        "protocol,curve",
+        [("PROTOCOL_ECDH_NPC", "CURVE_SM2"), ("PROTOCOL_KKRT_NPC", None)],
+    )
+    def test_npc_protocols_are_really_executed(self, protocol, curve):
+        """NPC 族：登记为两方、运行期允许，此前**没有真机用例**。
+
+        这里把它从"运行期允许但未执行"降级为"已执行"，并断言与明文一致——
+        覆盖镜像（tests/test_protocol_coverage.py）按此归类。
+        """
+
+        run = run_psi_intersection(
+            ROUTE,
+            ZONE,
+            op="Intersects",
+            protocol=protocol,
+            curve=curve,
+            reference_fn=lambda l, r: plain.plain_intersects(l, r).value,
+        )
+        assert run.status == "ok", run.error
+        assert run.value is True
+        assert run.agreement is True
+
 
 # --------------------------------------------------------------------------
 # 5. 空输入：显式判定，不以协议异常收场

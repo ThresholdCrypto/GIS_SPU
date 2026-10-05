@@ -20,6 +20,8 @@
 | RR22 参数注入 | `Rr22Rarams.low_comm_mode` 真注入（`PsiRunResult.protocol_params` 记录实际值） |
 | RR22 性能 | 见 `docs/psi_benchmark_baseline.json`（本阶段新增基线） |
 | `Contains` 密态子集判定 | MPC 基数等值（SPU），退路披露为 `plaintext-fallback` |
+| MPC 协议矩阵 | REF2K / SEMI2K / ABY3 / CHEETAH / SECURENN × 3 个 MPC 算子，逐条真跑（`tests/test_spu_backend.py::TestProtocolFieldSweep`、`tests/test_protocol_coverage.py`） |
+| MPC 代价基线 | 见 `docs/mpc_benchmark_baseline.json`（本阶段新增，规程 `docs/MPC_BENCHMARK_PROTOCOL.md`） |
 | 环境快照 | `docs/psi_capability_report_wsl.json` |
 
 ## 2. 已知的版本脆弱点（升级前先看）
@@ -66,9 +68,18 @@ cd GIS_SPU
 
 已按模板记录：
 
+> 2026-10-05 这一行的解释器是 `~/.spuenv/bin/python`（uv 建，Python 3.11.16；
+> 依赖同为 `spu==0.9.5` / `jax 0.4.34` / `numpy<2`），不是本文件其他段落写的
+> `/opt/miniconda3/envs/spu311`。两者可互换，能力核查结论一致。
+> 本轮同时记录两条**负面**结论（真机实测，不粉饰）：
+> `WeightedSum` 结尾的 `//` 在 SPU 上是近似且非确定的除法；
+> `WeightedSum × FM32` 因除法内部需要 64 位环而**不可用**（见
+> `docs/MPC_BENCHMARK_PROTOCOL.md` §4.2 / §4.3）。
+
 | 日期 | GIS_SPU commit | 平台 | Python | SPU | JAX | 真机项 | 结论 |
 |---|---|---|---|---|---|---|---|
 | 2026-10-04 | `5daf60e`（工作区含未提交改动） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | PSI 真机全协议 + SPU/MPC + 全量测试 | **verified**（`653 passed`，0 failed，0 skipped） |
+| 2026-10-05 | `423946d` + 工作区未提交改动（P0 MPC 协议入 planner / P1 MPC 代价基线 / P1.5 重复实验） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + MPC 协议矩阵（5 协议 × 3 算子 × 3 环宽）+ MPC 代价基线 + 重复实验（×5 / ×30） | **verified**（`748 passed`，0 failed，0 skipped） |
 
 > 同日第二验证（无 SPU 环境，Python 3.10 / 3.14）：`555 passed / 87 skipped / 11 failed`。
 > 11 项失败全部为"SPU 不可用"的环境门断言（期望 `error`、实得 `unavailable`），

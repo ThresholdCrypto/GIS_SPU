@@ -1,0 +1,86 @@
+case,op,protocol,field,k,predicted_bits,field_bits,bit_width_covered,status,wall_ms,memory_mb,peak_rss_mb,pphlo_bytes,output_bits,max_abs_error,tolerance,agreement,note,error,repeat,status_counts,value_runs,deviation_rate,wall_ms_p25,wall_ms_median,wall_ms_p75
+WeightedSum REF2K FM64 K=256,WeightedSum,REF2K,FM64,256,24,64,true,ok,67.92764549982166,41.04296875,279.16796875,2400,16,0.0,0.0,true,重复 30 次：{'ok': 30},,30,"{""ok"": 30}",30,0.0,,,
+WeightedSum SEMI2K FM64 K=256,WeightedSum,SEMI2K,FM64,256,24,64,true,ok,79.26588500004073,0.88671875,288.3046875,2400,16,0.0,0.0,true,重复 30 次：{'ok': 30},,30,"{""ok"": 30}",30,0.0,,,
+WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,76.25800199980404,0.94140625,292.76171875,2400,16,0.0,0.0,true,重复 30 次：{'ok': 30},,30,"{""ok"": 30}",30,0.0,,,
+WeightedSum CHEETAH FM64 K=256,WeightedSum,CHEETAH,FM64,256,24,64,true,ok,1149.8351975001242,758.0625,1052.23046875,2400,16,0.0,0.0,true,重复 30 次：{'ok': 30},,30,"{""ok"": 30}",30,0.0,,,
+WeightedSum SECURENN FM64 K=256,WeightedSum,SECURENN,FM64,256,24,64,true,ok,118.22587899996506,0.0,1090.92578125,2400,16,0.0,0.0,true,重复 30 次：{'ok': 30},,30,"{""ok"": 30}",30,0.0,,,
+WeightedSum ABY3 FM32 K=256,WeightedSum,ABY3,FM32,256,24,32,true,error,65.77156100001957,0.0,1090.92578125,,,,,,"SPU 模拟执行失败：RuntimeError: what: 
+	[Enforce fail at external/spulib~/libspu/core/encoding.cc:106] (sizeof(ring2k_t) >= sizeof(Integer)). integer encoding failed, ring=FM32 could not represent PT_I64
+Stacktrace:
+#0 spu::encodeToRing()+0x748c02073a9b
+#1 spu::kernel::hal::constant()+0x748c02065271
+#2 spu::kernel::hal::detail::maskNumberOfBits()+0x748c0204c34d
+#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x748c0204f050
+#4 spu::kernel::hal::detail::div_goldschmidt()+0x748c02050ed7
+#5 spu::kernel::hal::f_div()+0x748c02051438
+#6 spu::kernel::hal::div()+0x748c02035bc5
+#7 spu::kernel::hal::idiv()+0x748c0203606d
+#8 spu::kernel::hal::div()+0x748c02035b8e
+#9 spu::kernel::hlo::Remainder()+0x748c01fd7fb1
+#10 spu::device::pphlo::dispatchOp<>()+0x748c00c515d7
+#11 spu::device::pphlo::dispatchOp<>()+0x748c00c541e6
+#12 spu::device::pphlo::dispatchOp<>()+0x748c00c56738
+#13 spu::device::pphlo::dispatchOp<>()+0x748c00c593c9
+#14 spu::device::pphlo::dispatchOp<>()+0x748c00c5b71d
+#15 spu::device::pphlo::dispatchOp<>()+0x748c00c5e272
+
+stacktrace: 
+#0 spu::encodeToRing()+0x748c02073a9b
+#1 spu::kernel::hal::constant()+0x748c02065271
+#2 spu::kernel::hal::detail::maskNumberOfBits()+0x748c0204c34d
+#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x748c0204f050
+#4 spu::kernel::hal::detail::div_goldschmidt()+0x748c02050ed7
+#5 spu::kernel::hal::f_div()+0x748c02051438
+#6 spu::kernel::hal::div()+0x748c02035bc5
+#7 spu::kernel::hal::idiv()+0x748c0203606d
+#8 spu::kernel::hal::div()+0x748c02035b8e
+#9 spu::kernel::hlo::Remainder()+0x748c01fd7fb1
+#10 spu::device::pphlo::dispatchOp<>()+0x748c00c515d7
+#11 spu::device::pphlo::dispatchOp<>()+0x748c00c541e6
+#12 spu::device::pphlo::dispatchOp<>()+0x748c00c56738
+#13 spu::device::pphlo::dispatchOp<>()+0x748c00c593c9
+#14 spu::device::pphlo::dispatchOp<>()+0x748c00c5b71d
+#15 spu::device::pphlo::dispatchOp<>()+0x748c00c5e272；已知限制：WeightedSum 的定点除法需要 64 位环内部表示（ring=FM32 could not represent PT_I64）；预测位宽 b(K) 只算数据位宽，未覆盖该下限 ⇒ FM32 下本组合不可用，与预测位宽是否被环宽覆盖无关；重复 30 次：{'error': 30}","SPU 模拟执行失败：RuntimeError: what: 
+	[Enforce fail at external/spulib~/libspu/core/encoding.cc:106] (sizeof(ring2k_t) >= sizeof(Integer)). integer encoding failed, ring=FM32 could not represent PT_I64
+Stacktrace:
+#0 spu::encodeToRing()+0x748c02073a9b
+#1 spu::kernel::hal::constant()+0x748c02065271
+#2 spu::kernel::hal::detail::maskNumberOfBits()+0x748c0204c34d
+#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x748c0204f050
+#4 spu::kernel::hal::detail::div_goldschmidt()+0x748c02050ed7
+#5 spu::kernel::hal::f_div()+0x748c02051438
+#6 spu::kernel::hal::div()+0x748c02035bc5
+#7 spu::kernel::hal::idiv()+0x748c0203606d
+#8 spu::kernel::hal::div()+0x748c02035b8e
+#9 spu::kernel::hlo::Remainder()+0x748c01fd7fb1
+#10 spu::device::pphlo::dispatchOp<>()+0x748c00c515d7
+#11 spu::device::pphlo::dispatchOp<>()+0x748c00c541e6
+#12 spu::device::pphlo::dispatchOp<>()+0x748c00c56738
+#13 spu::device::pphlo::dispatchOp<>()+0x748c00c593c9
+#14 spu::device::pphlo::dispatchOp<>()+0x748c00c5b71d
+#15 spu::device::pphlo::dispatchOp<>()+0x748c00c5e272
+
+stacktrace: 
+#0 spu::encodeToRing()+0x748c02073a9b
+#1 spu::kernel::hal::constant()+0x748c02065271
+#2 spu::kernel::hal::detail::maskNumberOfBits()+0x748c0204c34d
+#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x748c0204f050
+#4 spu::kernel::hal::detail::div_goldschmidt()+0x748c02050ed7
+#5 spu::kernel::hal::f_div()+0x748c02051438
+#6 spu::kernel::hal::div()+0x748c02035bc5
+#7 spu::kernel::hal::idiv()+0x748c0203606d
+#8 spu::kernel::hal::div()+0x748c02035b8e
+#9 spu::kernel::hlo::Remainder()+0x748c01fd7fb1
+#10 spu::device::pphlo::dispatchOp<>()+0x748c00c515d7
+#11 spu::device::pphlo::dispatchOp<>()+0x748c00c541e6
+#12 spu::device::pphlo::dispatchOp<>()+0x748c00c56738
+#13 spu::device::pphlo::dispatchOp<>()+0x748c00c593c9
+#14 spu::device::pphlo::dispatchOp<>()+0x748c00c5b71d
+#15 spu::device::pphlo::dispatchOp<>()+0x748c00c5e272",30,"{""error"": 30}",0,,,,
+WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,76.45994049994442,0.0,1090.92578125,2400,16,0.0,0.0,true,重复 30 次：{'ok': 30},,30,"{""ok"": 30}",30,0.0,,,
+WeightedSum ABY3 FM128 K=256,WeightedSum,ABY3,FM128,256,24,128,true,ok,80.0837095002862,0.0,1090.92578125,2400,16,0.0,0.0,true,重复 30 次：{'ok': 30},,30,"{""ok"": 30}",30,0.0,,,
+WeightedSum ABY3 FM64 K=64,WeightedSum,ABY3,FM64,64,22,64,true,ok,76.26325749993157,0.0,1090.92578125,2395,14,0.0,0.0,true,重复 30 次：{'ok': 30},,30,"{""ok"": 30}",30,0.0,,,
+WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,76.02666399975533,0.0,1090.92578125,2400,16,0.0,0.0,true,重复 30 次：{'ok': 30},,30,"{""ok"": 30}",30,0.0,,,
+WeightedSum ABY3 FM64 K=1024,WeightedSum,ABY3,FM64,1024,26,64,true,mixed,76.97313949984164,0.0,1090.92578125,2405,18,1.0,0.0,,"已知偏差（**非确定**）：生成代码的 `acc // scale` 在 SPU 上为近似除法（scale==1 亦然）；同一组合重跑可能逐位一致、也可能偏 1–4，本轮实测见 `max_abs_error`；不代表该组合可作稳定通过；重复 30 次：{'ok': 17, 'error': 13}；多次运行结果不一致（非确定路径），不能当稳定通过；偏差率 43%（30 次得出数值）",结果超出容差：max_abs_error=1.0 > tolerance=0.0,30,"{""error"": 13, ""ok"": 17}",30,0.43333333333333335,,,
+WeightedSum ABY3 FM64 K=4096,WeightedSum,ABY3,FM64,4096,28,64,true,mixed,77.45020249990375,0.0,1090.92578125,2405,20,4.0,0.0,,"已知偏差（**非确定**）：生成代码的 `acc // scale` 在 SPU 上为近似除法（scale==1 亦然）；同一组合重跑可能逐位一致、也可能偏 1–4，本轮实测见 `max_abs_error`；不代表该组合可作稳定通过；重复 30 次：{'ok': 2, 'error': 28}；多次运行结果不一致（非确定路径），不能当稳定通过；偏差率 93%（30 次得出数值）",结果超出容差：max_abs_error=4.0 > tolerance=0.0,30,"{""error"": 28, ""ok"": 2}",30,0.9333333333333333,,,
+WeightedSum ABY3 FM32 K=1048576,WeightedSum,ABY3,FM32,1048576,36,32,false,unavailable,,,,,,,,,未实测：planner 预测 b(K=1048576)=36 > FM32=32，属越界组合；模 2^32 回绕的结果不能当有效数据（不伪造数字）；重复 30 次：{'unavailable': 30},,30,"{""unavailable"": 30}",0,,,,

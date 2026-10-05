@@ -53,6 +53,12 @@ class OperatorRule:
     protocol_candidates: tuple[str, ...] = ()
     #: 协议级默认参数（receiver_rank / broadcast_result 等）；曲线不在此列
     protocol_params: Mapping[str, Any] = field(default_factory=dict)
+    #: MPC（SPU）族算子的默认协议；None = 该算子不走 SPU 协议化后端。
+    #: 与 PSI 的 default_protocol 分开登记：两者命名空间不同（PROTOCOL_* vs
+    #: REF2K/SEMI2K/...），合用一个字段会让两种协议互相被当成"未知协议"。
+    default_mpc_protocol: str | None = None
+    #: 该算子被允许显式选择的 MPC 协议清单（编译期强制，见 validate_mpc_protocol_for_operation）
+    mpc_protocol_candidates: tuple[str, ...] = ()
     notes: str = ""
     #: 位宽随元素数 K 变化的算子在此登记公式；None 表示位宽与 K 无关
     bit_width_formula: Callable[[int], int] | None = None
@@ -94,6 +100,8 @@ class OperatorRule:
             "default_protocol": self.default_protocol,
             "protocol_candidates": list(self.protocol_candidates),
             "protocol_params": dict(self.protocol_params),
+            "default_mpc_protocol": self.default_mpc_protocol,
+            "mpc_protocol_candidates": list(self.mpc_protocol_candidates),
             "notes": self.notes,
         }
 
@@ -170,6 +178,23 @@ PSI_PROTOCOL_CANDIDATES: tuple[str, ...] = (
 #: 真实 RR22 跑通并完成性能/正确性验证前**不把默认改成 RR22**（课题要求）。
 PSI_RULE_DEFAULT_PROTOCOL = "PROTOCOL_ECDH"
 
+#: MPC（SPU）族算子共享的协议候选。理由与 PSI 侧相同：planner 不能在导入期
+#: 依赖 backends（模块级互导成环），故此处仍是字面量登记；与
+#: backends.spu_backend.capability.SPU_PROTOCOLS 的一致性由交叉断言锁定
+#: （tests/test_planner.py 与 tests/test_protocol_registry.py）。
+MPC_PROTOCOL_CANDIDATES: tuple[str, ...] = (
+    "REF2K",
+    "SEMI2K",
+    "ABY3",
+    "CHEETAH",
+    "SECURENN",
+)
+
+#: MPC 族算子的默认协议。与 backends.spu_backend.run_spu_simulation 的缺省值
+#: （ABY3）是同一个值的两处独立成文（tests 有交叉断言防漂移）。
+#: SECURENN 需要 3 方、CHEETAH 属半诚实 2PC，均不作默认。
+MPC_RULE_DEFAULT_PROTOCOL = "ABY3"
+
 OPERATOR_REGISTRY: dict[str, OperatorRule] = {
     "Intersects": OperatorRule(
         op="Intersects",
@@ -233,6 +258,8 @@ OPERATOR_REGISTRY: dict[str, OperatorRule] = {
         ),
         has_jax_impl=True,
         has_spu_protocol_support=True,
+        default_mpc_protocol=MPC_RULE_DEFAULT_PROTOCOL,
+        mpc_protocol_candidates=MPC_PROTOCOL_CANDIDATES,
         notes="量化整数向量；d 由元素乘法 + 求和决定",
     ),
     "WeightedSum": OperatorRule(
@@ -249,8 +276,15 @@ OPERATOR_REGISTRY: dict[str, OperatorRule] = {
         ),
         has_jax_impl=True,
         has_spu_protocol_support=True,
+        default_mpc_protocol=MPC_RULE_DEFAULT_PROTOCOL,
+        mpc_protocol_candidates=MPC_PROTOCOL_CANDIDATES,
         bit_width_formula=weighted_sum_bit_width,
-        notes="位宽随属性数 K 上升：b(K) = 8 + 8 + ceil(log2 K)",
+        notes=(
+            "位宽随属性数 K 上升：b(K) = 8 + 8 + ceil(log2 K)；"
+            "另需环宽 ≥ FM64——定点除法路径内部要求 64 位环，"
+            "FM32 下该算子起不来（预测位宽 b(K) 只算数据位宽，覆盖不了这个下限，"
+            "见 docs/MPC_BENCHMARK_PROTOCOL.md §4.3）"
+        ),
     ),
     "TemporalOverlap": OperatorRule(
         op="TemporalOverlap",
@@ -266,6 +300,8 @@ OPERATOR_REGISTRY: dict[str, OperatorRule] = {
         ),
         has_jax_impl=True,
         has_spu_protocol_support=True,
+        default_mpc_protocol=MPC_RULE_DEFAULT_PROTOCOL,
+        mpc_protocol_candidates=MPC_PROTOCOL_CANDIDATES,
         notes="区间重叠判定；节点必须按 2^Lt 对齐（见课题审计发现 F3）",
     ),
     "CellSetIntersect": OperatorRule(
@@ -455,6 +491,84 @@ def validate_protocol_for_operation(op: str, protocol: str | None) -> ProtocolCh
         problems=(
             f"协议 {name} 不在算子 {op} 的候选协议清单 "
             f"{list(rule.protocol_candidates)}；未登记的协议组合不予放行"
+            "（若确需支持，请先登记候选并补测试）",
+        ),
+    )
+
+
+def validate_mpc_protocol_for_operation(op: str, protocol: str | None) -> ProtocolCheck:
+    """校验"算子在所选 **SPU/MPC** 协议下是否可以规划/执行"。
+
+    与 `validate_protocol_for_operation` 的分工：
+    - 那个走 **PSI 命名空间**（`PROTOCOL_ECDH` / `PROTOCOL_RR22` / ...）；
+    - 这个走 **SPU 命名空间**（`REF2K` / `SEMI2K` / `ABY3` / `CHEETAH` / `SECURENN`）。
+
+    两者协议名不重叠，因此**不能合并成一个入口**：此前 MPC 协议只能走 PSI
+    入口，结果 `CHEETAH` / `SEMI2K` 会被报成"未知 PSI 协议"——即"MPC 协议根本
+    进不了规划层"。本函数就是补上这条入口。
+
+    规则：
+    - 未显式选协议（None）→ 放行（各算子用登记默认值）；
+    - 非 MPC 算子 + 协议 → 拒绝（设了却不生效，等于容忍静默失效）；
+    - MPC 族 + 候选清单内协议 → 放行，并披露该协议的最少参与方数量；
+    - MPC 族 + 候选清单外协议 → 拒绝。
+
+    后端依赖用函数内导入：planner 不在导入期依赖 backends，保持分层无环。
+    """
+
+    from backends.spu_backend.capability import (
+        normalize_protocol,
+        protocol_min_world_size,
+    )
+
+    if protocol is None:
+        return ProtocolCheck(ok=True, op=op, protocol=None)
+
+    rule = OPERATOR_REGISTRY.get(op)
+    if rule is None:
+        return ProtocolCheck(
+            ok=False,
+            op=op,
+            protocol=str(protocol),
+            problems=(f"算子 {op} 不在算子注册表中，无法校验协议 {protocol}",),
+        )
+
+    try:
+        name = normalize_protocol(protocol)
+    except ValueError as exc:
+        return ProtocolCheck(
+            ok=False, op=op, protocol=str(protocol), problems=(str(exc),)
+        )
+
+    if rule.default_mpc_protocol is None:
+        return ProtocolCheck(
+            ok=False,
+            op=op,
+            protocol=name,
+            problems=(
+                f"算子 {op} 不经由 SPU/MPC 协议后端（表征 {rule.representation}，"
+                f"后端 {rule.backend}）；协议 {name} 不会被该算子使用"
+                "（PSI 族协议请走 validate_protocol_for_operation）",
+            ),
+        )
+
+    if name in rule.mpc_protocol_candidates:
+        return ProtocolCheck(
+            ok=True,
+            op=op,
+            protocol=name,
+            notes=(
+                f"MPC 协议 {name}（最少 {protocol_min_world_size(name)} 方）",
+            ),
+        )
+
+    return ProtocolCheck(
+        ok=False,
+        op=op,
+        protocol=name,
+        problems=(
+            f"协议 {name} 不在算子 {op} 的 MPC 候选协议清单 "
+            f"{list(rule.mpc_protocol_candidates)}；未登记的协议组合不予放行"
             "（若确需支持，请先登记候选并补测试）",
         ),
     )

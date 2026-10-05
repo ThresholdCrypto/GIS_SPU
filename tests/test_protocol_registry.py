@@ -25,10 +25,13 @@ from backends.psi_backend import (
 )
 from backends.psi_backend.protocol_registry import PsiProtocolSpec
 from planner.registry import (
+    MPC_PROTOCOL_CANDIDATES,
+    MPC_RULE_DEFAULT_PROTOCOL,
     OPERATOR_REGISTRY,
     PSI_PROTOCOL_CANDIDATES,
     PSI_RULE_DEFAULT_PROTOCOL,
 )
+from backends.spu_backend import SPU_PROTOCOLS
 
 
 class TestRegistryIsSingleSource:
@@ -143,3 +146,42 @@ class TestPlannerCrossCheck:
             "PROTOCOL_RR22",
         )
         assert candidate_protocols_for("HeightBand") == ()
+
+
+class TestMpcProtocolCrossCheck:
+    """MPC（SPU）协议：planner 字面量 vs 后端真源，防漂移。
+
+    与 PSI 侧同理——planner 不能在导入期依赖 backends，所以候选清单在 planner
+    侧是字面量；一致性必须由这里逐项锁定，否则"登记了却没接线"会静默通过。
+    """
+
+    def test_mpc_candidates_match_the_spu_registry(self):
+        assert MPC_PROTOCOL_CANDIDATES == SPU_PROTOCOLS
+
+    def test_default_mpc_protocol_is_a_candidate(self):
+        assert MPC_RULE_DEFAULT_PROTOCOL in MPC_PROTOCOL_CANDIDATES
+
+    def test_default_mpc_protocol_matches_the_runtime_default(self):
+        import inspect
+
+        from backends.spu_backend import run_spu_simulation
+
+        default = inspect.signature(run_spu_simulation).parameters["protocol"].default
+        assert default == MPC_RULE_DEFAULT_PROTOCOL
+
+    def test_mpc_and_psi_namespaces_do_not_overlap(self):
+        """两套命名空间必须互斥，否则同一个名字会有两种含义。"""
+
+        assert set(MPC_PROTOCOL_CANDIDATES) & set(PSI_PROTOCOLS) == set()
+
+    def test_every_mpc_operator_registers_the_shared_candidates(self):
+        for op in ("DistanceLE", "WeightedSum", "TemporalOverlap"):
+            rule = OPERATOR_REGISTRY[op]
+            assert rule.mpc_protocol_candidates == MPC_PROTOCOL_CANDIDATES, op
+            assert rule.default_mpc_protocol == MPC_RULE_DEFAULT_PROTOCOL, op
+
+    def test_psi_family_operators_declare_no_mpc_protocol(self):
+        for op in PSI_CANDIDATE_OPS:
+            rule = OPERATOR_REGISTRY[op]
+            assert rule.default_mpc_protocol is None, op
+            assert rule.mpc_protocol_candidates == (), op

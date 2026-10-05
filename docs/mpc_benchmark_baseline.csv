@@ -1,0 +1,109 @@
+case,op,protocol,field,k,predicted_bits,field_bits,bit_width_covered,status,wall_ms,memory_mb,peak_rss_mb,pphlo_bytes,output_bits,max_abs_error,tolerance,agreement,note,error
+DistanceLE REF2K FM64 K=256,DistanceLE,REF2K,FM64,256,8,64,true,ok,77.73354400001153,39.49609375,277.01953125,1526,0,0.0,0.0,true,,
+DistanceLE SEMI2K FM64 K=256,DistanceLE,SEMI2K,FM64,256,8,64,true,ok,53.56134499993459,1.35546875,278.375,1526,0,0.0,0.0,true,,
+DistanceLE ABY3 FM64 K=256,DistanceLE,ABY3,FM64,256,8,64,true,ok,52.2455909999735,2.01953125,280.39453125,1526,0,0.0,0.0,true,,
+DistanceLE CHEETAH FM64 K=256,DistanceLE,CHEETAH,FM64,256,8,64,true,ok,210.6895809999969,116.51953125,396.9140625,1526,0,0.0,0.0,true,,
+DistanceLE SECURENN FM64 K=256,DistanceLE,SECURENN,FM64,256,8,64,true,ok,49.80641100007688,0.0,396.9140625,1526,0,0.0,0.0,true,,
+WeightedSum REF2K FM64 K=256,WeightedSum,REF2K,FM64,256,24,64,true,ok,79.19903399999839,0.0,396.9140625,2400,16,0.0,0.0,true,,
+WeightedSum SEMI2K FM64 K=256,WeightedSum,SEMI2K,FM64,256,24,64,true,ok,83.56710600003225,0.0,396.9140625,2400,16,0.0,0.0,true,,
+WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,83.0725099999654,0.0,396.9140625,2400,16,0.0,0.0,true,,
+WeightedSum CHEETAH FM64 K=256,WeightedSum,CHEETAH,FM64,256,24,64,true,ok,1263.4947150000926,649.27734375,1046.19140625,2400,16,0.0,0.0,true,,
+WeightedSum SECURENN FM64 K=256,WeightedSum,SECURENN,FM64,256,24,64,true,ok,126.30742300007114,0.0,1046.19140625,2400,16,0.0,0.0,true,,
+TemporalOverlap REF2K FM64 K=32,TemporalOverlap,REF2K,FM64,32,18,64,true,ok,77.79622600003222,0.0,1046.19140625,2653,1,0.0,0.0,true,,
+TemporalOverlap SEMI2K FM64 K=32,TemporalOverlap,SEMI2K,FM64,32,18,64,true,ok,102.39937200003624,0.0,1046.19140625,2653,1,0.0,0.0,true,,
+TemporalOverlap ABY3 FM64 K=32,TemporalOverlap,ABY3,FM64,32,18,64,true,ok,99.30256600000575,0.0,1046.19140625,2653,1,0.0,0.0,true,,
+TemporalOverlap CHEETAH FM64 K=32,TemporalOverlap,CHEETAH,FM64,32,18,64,true,ok,1334.3897850000985,12.0234375,1058.21484375,2653,1,0.0,0.0,true,,
+TemporalOverlap SECURENN FM64 K=32,TemporalOverlap,SECURENN,FM64,32,18,64,true,ok,733.030635000091,0.0,1058.21484375,2653,1,0.0,0.0,true,,
+DistanceLE ABY3 FM32 K=256,DistanceLE,ABY3,FM32,256,8,32,true,ok,52.835441000070205,0.0,1058.21484375,1526,0,0.0,0.0,true,,
+DistanceLE ABY3 FM64 K=256,DistanceLE,ABY3,FM64,256,8,64,true,ok,51.76022800003466,0.0,1058.21484375,1526,0,0.0,0.0,true,,
+DistanceLE ABY3 FM128 K=256,DistanceLE,ABY3,FM128,256,8,128,true,ok,49.12276599998222,0.0,1058.21484375,1526,0,0.0,0.0,true,,
+WeightedSum ABY3 FM32 K=256,WeightedSum,ABY3,FM32,256,24,32,true,error,183.51378500005922,0.0,1058.21484375,,,,,,"SPU 模拟执行失败：RuntimeError: what: 
+	[Enforce fail at external/spulib~/libspu/core/encoding.cc:106] (sizeof(ring2k_t) >= sizeof(Integer)). integer encoding failed, ring=FM32 could not represent PT_I64
+Stacktrace:
+#0 spu::encodeToRing()+0x7f18fa073a9b
+#1 spu::kernel::hal::constant()+0x7f18fa065271
+#2 spu::kernel::hal::detail::maskNumberOfBits()+0x7f18fa04c34d
+#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x7f18fa04f050
+#4 spu::kernel::hal::detail::div_goldschmidt()+0x7f18fa050ed7
+#5 spu::kernel::hal::f_div()+0x7f18fa051438
+#6 spu::kernel::hal::div()+0x7f18fa035bc5
+#7 spu::kernel::hal::idiv()+0x7f18fa03606d
+#8 spu::kernel::hal::div()+0x7f18fa035b8e
+#9 spu::kernel::hlo::Remainder()+0x7f18f9fd7fb1
+#10 spu::device::pphlo::dispatchOp<>()+0x7f18f8c515d7
+#11 spu::device::pphlo::dispatchOp<>()+0x7f18f8c541e6
+#12 spu::device::pphlo::dispatchOp<>()+0x7f18f8c56738
+#13 spu::device::pphlo::dispatchOp<>()+0x7f18f8c593c9
+#14 spu::device::pphlo::dispatchOp<>()+0x7f18f8c5b71d
+#15 spu::device::pphlo::dispatchOp<>()+0x7f18f8c5e272
+
+stacktrace: 
+#0 spu::encodeToRing()+0x7f18fa073a9b
+#1 spu::kernel::hal::constant()+0x7f18fa065271
+#2 spu::kernel::hal::detail::maskNumberOfBits()+0x7f18fa04c34d
+#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x7f18fa04f050
+#4 spu::kernel::hal::detail::div_goldschmidt()+0x7f18fa050ed7
+#5 spu::kernel::hal::f_div()+0x7f18fa051438
+#6 spu::kernel::hal::div()+0x7f18fa035bc5
+#7 spu::kernel::hal::idiv()+0x7f18fa03606d
+#8 spu::kernel::hal::div()+0x7f18fa035b8e
+#9 spu::kernel::hlo::Remainder()+0x7f18f9fd7fb1
+#10 spu::device::pphlo::dispatchOp<>()+0x7f18f8c515d7
+#11 spu::device::pphlo::dispatchOp<>()+0x7f18f8c541e6
+#12 spu::device::pphlo::dispatchOp<>()+0x7f18f8c56738
+#13 spu::device::pphlo::dispatchOp<>()+0x7f18f8c593c9
+#14 spu::device::pphlo::dispatchOp<>()+0x7f18f8c5b71d
+#15 spu::device::pphlo::dispatchOp<>()+0x7f18f8c5e272；已知限制：WeightedSum 的定点除法需要 64 位环内部表示（ring=FM32 could not represent PT_I64）；预测位宽 b(K) 只算数据位宽，未覆盖该下限 ⇒ FM32 下本组合不可用，与预测位宽是否被环宽覆盖无关","SPU 模拟执行失败：RuntimeError: what: 
+	[Enforce fail at external/spulib~/libspu/core/encoding.cc:106] (sizeof(ring2k_t) >= sizeof(Integer)). integer encoding failed, ring=FM32 could not represent PT_I64
+Stacktrace:
+#0 spu::encodeToRing()+0x7f18fa073a9b
+#1 spu::kernel::hal::constant()+0x7f18fa065271
+#2 spu::kernel::hal::detail::maskNumberOfBits()+0x7f18fa04c34d
+#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x7f18fa04f050
+#4 spu::kernel::hal::detail::div_goldschmidt()+0x7f18fa050ed7
+#5 spu::kernel::hal::f_div()+0x7f18fa051438
+#6 spu::kernel::hal::div()+0x7f18fa035bc5
+#7 spu::kernel::hal::idiv()+0x7f18fa03606d
+#8 spu::kernel::hal::div()+0x7f18fa035b8e
+#9 spu::kernel::hlo::Remainder()+0x7f18f9fd7fb1
+#10 spu::device::pphlo::dispatchOp<>()+0x7f18f8c515d7
+#11 spu::device::pphlo::dispatchOp<>()+0x7f18f8c541e6
+#12 spu::device::pphlo::dispatchOp<>()+0x7f18f8c56738
+#13 spu::device::pphlo::dispatchOp<>()+0x7f18f8c593c9
+#14 spu::device::pphlo::dispatchOp<>()+0x7f18f8c5b71d
+#15 spu::device::pphlo::dispatchOp<>()+0x7f18f8c5e272
+
+stacktrace: 
+#0 spu::encodeToRing()+0x7f18fa073a9b
+#1 spu::kernel::hal::constant()+0x7f18fa065271
+#2 spu::kernel::hal::detail::maskNumberOfBits()+0x7f18fa04c34d
+#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x7f18fa04f050
+#4 spu::kernel::hal::detail::div_goldschmidt()+0x7f18fa050ed7
+#5 spu::kernel::hal::f_div()+0x7f18fa051438
+#6 spu::kernel::hal::div()+0x7f18fa035bc5
+#7 spu::kernel::hal::idiv()+0x7f18fa03606d
+#8 spu::kernel::hal::div()+0x7f18fa035b8e
+#9 spu::kernel::hlo::Remainder()+0x7f18f9fd7fb1
+#10 spu::device::pphlo::dispatchOp<>()+0x7f18f8c515d7
+#11 spu::device::pphlo::dispatchOp<>()+0x7f18f8c541e6
+#12 spu::device::pphlo::dispatchOp<>()+0x7f18f8c56738
+#13 spu::device::pphlo::dispatchOp<>()+0x7f18f8c593c9
+#14 spu::device::pphlo::dispatchOp<>()+0x7f18f8c5b71d
+#15 spu::device::pphlo::dispatchOp<>()+0x7f18f8c5e272"
+WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,89.98745700000654,0.0,1058.21484375,2400,16,0.0,0.0,true,,
+WeightedSum ABY3 FM128 K=256,WeightedSum,ABY3,FM128,256,24,128,true,ok,81.39568999990843,0.0,1058.21484375,2400,16,0.0,0.0,true,,
+TemporalOverlap ABY3 FM32 K=32,TemporalOverlap,ABY3,FM32,32,18,32,true,ok,85.97112500001458,0.0,1058.21484375,2653,1,0.0,0.0,true,,
+TemporalOverlap ABY3 FM64 K=32,TemporalOverlap,ABY3,FM64,32,18,64,true,ok,103.35234100000434,0.0,1058.21484375,2653,1,0.0,0.0,true,,
+TemporalOverlap ABY3 FM128 K=32,TemporalOverlap,ABY3,FM128,32,18,128,true,ok,106.32695000003878,0.0,1058.21484375,2653,1,0.0,0.0,true,,
+DistanceLE ABY3 FM64 K=64,DistanceLE,ABY3,FM64,64,8,64,true,ok,58.23685399991518,0.0,1058.21484375,1517,0,0.0,0.0,true,,
+DistanceLE ABY3 FM64 K=256,DistanceLE,ABY3,FM64,256,8,64,true,ok,52.64770899998439,0.0,1058.21484375,1526,0,0.0,0.0,true,,
+DistanceLE ABY3 FM64 K=1024,DistanceLE,ABY3,FM64,1024,8,64,true,ok,58.45848499996009,0.0,1058.21484375,1535,0,0.0,0.0,true,,
+DistanceLE ABY3 FM64 K=4096,DistanceLE,ABY3,FM64,4096,8,64,true,ok,57.778767999934644,0.0,1058.21484375,1535,0,0.0,0.0,true,,
+WeightedSum ABY3 FM64 K=64,WeightedSum,ABY3,FM64,64,22,64,true,ok,83.88088200001675,0.0,1058.21484375,2395,14,0.0,0.0,true,,
+WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,82.40159399997538,0.0,1058.21484375,2400,16,0.0,0.0,true,,
+WeightedSum ABY3 FM64 K=1024,WeightedSum,ABY3,FM64,1024,26,64,true,ok,86.2118059999375,0.0,1058.21484375,2405,18,0.0,0.0,true,已知偏差（**非确定**）：生成代码的 `acc // scale` 在 SPU 上为近似除法（scale==1 亦然）；同一组合重跑可能逐位一致、也可能偏 1–4，本轮实测见 `max_abs_error`；不代表该组合可作稳定通过,
+WeightedSum ABY3 FM64 K=4096,WeightedSum,ABY3,FM64,4096,28,64,true,error,85.1199579999502,0.0,1058.21484375,2405,20,4.0,0.0,,结果超出容差：max_abs_error=4.0 > tolerance=0.0；已知偏差（**非确定**）：生成代码的 `acc // scale` 在 SPU 上为近似除法（scale==1 亦然）；同一组合重跑可能逐位一致、也可能偏 1–4，本轮实测见 `max_abs_error`；不代表该组合可作稳定通过,结果超出容差：max_abs_error=4.0 > tolerance=0.0
+TemporalOverlap ABY3 FM64 K=8,TemporalOverlap,ABY3,FM64,8,18,64,true,ok,110.2677289999292,0.0,1058.21484375,2593,1,0.0,0.0,true,,
+TemporalOverlap ABY3 FM64 K=16,TemporalOverlap,ABY3,FM64,16,18,64,true,ok,103.26629099995444,0.0,1058.21484375,2653,1,0.0,0.0,true,,
+TemporalOverlap ABY3 FM64 K=32,TemporalOverlap,ABY3,FM64,32,18,64,true,ok,86.9544480000286,0.0,1058.21484375,2653,1,0.0,0.0,true,,
+WeightedSum ABY3 FM32 K=1048576,WeightedSum,ABY3,FM32,1048576,36,32,false,unavailable,,,,,,,,,未实测：planner 预测 b(K=1048576)=36 > FM32=32，属越界组合；模 2^32 回绕的结果不能当有效数据（不伪造数字）,

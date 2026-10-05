@@ -21,6 +21,7 @@ from .registry import (
     OperatorRule,
     get_rule,
     resolve_cost,
+    validate_mpc_protocol_for_operation,
     validate_protocol_for_operation,
 )
 
@@ -40,6 +41,10 @@ class PlannedStep:
     #: 协议级参数（如 RR22 的 low_comm_mode）。协议属于规划/后端层，
     #: 不进入 Geo-IR 的任何数据模型。
     protocol_params: Mapping[str, Any] = field(default_factory=dict)
+    #: MPC（SPU）族算子选用的协议（来自算子规则 default_mpc_protocol，或编译器
+    #: 显式指定）。命名空间与上面的 PSI `protocol` 不同，故单列一个字段。
+    #: None = 该算子不走 SPU 协议化后端。
+    mpc_protocol: str | None = None
     inputs: tuple[str, ...] = ()
     output_name: str | None = None
     sensitivity: Sensitivity = Sensitivity.INTERNAL
@@ -67,6 +72,7 @@ class PlannedStep:
             "security_level": self.security_level,
             "protocol": self.protocol,
             "protocol_params": dict(self.protocol_params),
+            "mpc_protocol": self.mpc_protocol,
             "inputs": list(self.inputs),
             "output_name": self.output_name,
             "sensitivity": str(self.sensitivity),
@@ -128,12 +134,15 @@ class Planner:
         *,
         psi_protocol: str | None = None,
         psi_protocol_params: Mapping[str, Any] | None = None,
+        mpc_protocol: str | None = None,
     ) -> None:
         self.registry = dict(registry or OPERATOR_REGISTRY)
         #: 编译器显式选择的 PSI 协议；None = 各算子用规则里的默认协议
         self.psi_protocol = psi_protocol
         #: 随协议变化的协议级参数（如 RR22 的 low_comm_mode）
         self.psi_protocol_params = dict(psi_protocol_params or {})
+        #: 编译器显式选择的 MPC（SPU）协议；None = 各算子用规则里的默认协议
+        self.mpc_protocol = mpc_protocol
 
     def plan(self, program: GeoProgram) -> PrivacyPlan:
         plan = PrivacyPlan(program_name=program.name)
@@ -171,6 +180,11 @@ class Planner:
             protocol_params = dict(rule.protocol_params)
             protocol_params.update(self.psi_protocol_params)
 
+        # MPC（SPU）协议与 PSI 协议是两套命名空间，分开登记与校验。
+        mpc_protocol: str | None = None
+        if rule.default_mpc_protocol is not None:
+            mpc_protocol = self.mpc_protocol or rule.default_mpc_protocol
+
         reasons = [
             f"算子 {operation.op} 的默认表征为 {rule.representation}",
             f"首选后端 {rule.primary_backend}，安全级别 {rule.security_level}",
@@ -207,6 +221,28 @@ class Planner:
                 estimated_cost=dict(cost),
             )
 
+        # 算子 × MPC 协议候选校验：同一道编译期闸门，走 SPU 命名空间。
+        mpc_check = validate_mpc_protocol_for_operation(operation.op, mpc_protocol)
+        mpc_diagnostic: Diagnostic | None = None
+        if mpc_check.ok:
+            reasons.extend(mpc_check.notes)
+        else:
+            mpc_diagnostic = Diagnostic(
+                code=DIAG_PROTOCOL_UNSUPPORTED,
+                severity="error",
+                message="；".join(mpc_check.problems),
+                location=dict(operation.location) if operation.location else {},
+                cause=(
+                    f"所选 MPC 协议 {mpc_protocol!r} 与算子 {operation.op} 的登记规则不匹配；"
+                    "若放到运行时再拒绝，错误会晚到，且可能与执行默认值混淆"
+                ),
+                suggestion=(
+                    "改用该算子的候选 MPC 协议："
+                    f"{list(rule.mpc_protocol_candidates) or '（无）'}"
+                ),
+                estimated_cost=dict(cost),
+            )
+
         step = PlannedStep(
             operation=operation.op,
             representation=rule.representation,
@@ -215,6 +251,7 @@ class Planner:
             security_level=rule.security_level,
             protocol=protocol,
             protocol_params=protocol_params,
+            mpc_protocol=mpc_protocol,
             inputs=operation.inputs,
             output_name=operation.output_name,
             sensitivity=sensitivity,
@@ -223,7 +260,7 @@ class Planner:
             reasons=tuple(reasons),
             location=operation.location,
         )
-        return step, protocol_diagnostic
+        return step, protocol_diagnostic or mpc_diagnostic
 
     def _missing_backend_diagnostic(
         self, program: GeoProgram, operation: GeoOperation
@@ -259,17 +296,21 @@ def plan_program(
     *,
     psi_protocol: str | None = None,
     psi_protocol_params: Mapping[str, Any] | None = None,
+    mpc_protocol: str | None = None,
 ) -> PrivacyPlan:
     """便捷入口。
 
     `psi_protocol` / `psi_protocol_params` 是编译器对 PSI 族算子的协议选择；
     给了就覆盖算子规则的默认协议，并把参数并进每个 PSI 步骤的 protocol_params。
+    `mpc_protocol` 是编译器对 MPC（SPU）族算子的协议选择；给了就覆盖这些算子
+    的 default_mpc_protocol（命名空间是 REF2K/SEMI2K/...，与 PSI 不通用）。
     """
 
     return Planner(
         registry,
         psi_protocol=psi_protocol,
         psi_protocol_params=psi_protocol_params,
+        mpc_protocol=mpc_protocol,
     ).plan(program)
 
 

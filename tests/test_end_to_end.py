@@ -760,6 +760,29 @@ class TestCli:
         cli_main(["build", example("route_conflict.py")])
         assert "编译完成。" in capsys.readouterr().out
 
+    def test_mpc_protocol_choice_reaches_execution(self):
+        """`--protocol` 进规划层后仍要一路贯到执行：换成 CHEETAH 必须真跑通。
+
+        本用例同时锁住"MPC 协议不再只在运行时才被认得"——编译期校验放行的
+        协议，执行期必须真的能执行（否则就是两道闸门口径不一致）。
+        """
+
+        from geosecure import Compiler
+        from tests._helpers import has_spu
+
+        result = Compiler(protocol="CHEETAH").compile_file(
+            example("distance_check.py")
+        )
+        assert result.ok, [s.message for s in result.stages if s.status == "error"]
+
+        step = result.plan.steps[0]
+        assert step.mpc_protocol == "CHEETAH"
+
+        if has_spu():
+            run = result.spu_runs["DistanceLE"]
+            assert run.protocol == "CHEETAH"
+            assert run.status == "ok", run.error
+
     def test_contains_subset_defaults_to_the_mpc_round(self, capsys):
         """默认走 MPC：状态词仍是 verified，且子集判定的模式与设置在输出里可见。"""
 

@@ -80,6 +80,20 @@ SourceIRType : XLA | STABLEHLO
 
 参与方数量下限（按协议定义）：`ABY3 = 3`、`SECURENN = 3`、`SEMI2K = 2`、`CHEETAH = 2`、`REF2K = 2`。
 
+> **实测补充（2026-10-05，P1）**：5 个协议 × 3 个环宽（FM32 / FM64 / FM128）
+> 已逐条真跑（`DistanceLE` / `WeightedSum` / `TemporalOverlap`，
+> 数据见 `docs/mpc_benchmark_baseline.json`）。两条**平台侧限制**（真机实测，
+> 不粉饰）：
+>
+> 1. `WeightedSum` 的定点整除（生成代码的 `acc // scale`）在 SPU 上是
+>    **迭代近似**实现（栈里是 `div_goldschmidt`）：`scale == 1` 也不保证恒等映射，
+>    K=4096 实测偏差最大 4，且**非确定**——同一组合重跑可能恰好逐位一致；
+> 2. `WeightedSum × FM32` **起不来**：除法路径内部需要 64 位环
+>    （`integer encoding failed, ring=FM32 could not represent PT_I64`）。
+>    即该算子的环宽下限是 **FM64**，这与 planner 的位宽预测 b(K) 是两件事。
+>
+> 规程、扫描策略与全部数据：`docs/MPC_BENCHMARK_PROTOCOL.md`。
+
 ### 2.5 没有 `run_spu_simulation`
 
 **SPU 0.9.5 不存在 `run_spu_simulation` 这个函数。** 官方执行入口是：

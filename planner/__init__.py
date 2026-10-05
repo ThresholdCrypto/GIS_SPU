@@ -9,6 +9,8 @@ from .planner import (
     plan_table_rows,
 )
 from .registry import (
+    MPC_PROTOCOL_CANDIDATES,
+    MPC_RULE_DEFAULT_PROTOCOL,
     OPERATOR_REGISTRY,
     OperatorRule,
     ProtocolCheck,
@@ -16,10 +18,13 @@ from .registry import (
     get_rule,
     jax_capable_ops,
     registered_ops,
+    validate_mpc_protocol_for_operation,
     validate_protocol_for_operation,
 )
 
 __all__ = [
+    "MPC_PROTOCOL_CANDIDATES",
+    "MPC_RULE_DEFAULT_PROTOCOL",
     "OPERATOR_REGISTRY",
     "PLAN_TABLE_HEADERS",
     "OperatorRule",
@@ -33,5 +38,6 @@ __all__ = [
     "plan_program",
     "plan_table_rows",
     "registered_ops",
+    "validate_mpc_protocol_for_operation",
     "validate_protocol_for_operation",
 ]

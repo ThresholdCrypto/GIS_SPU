@@ -12,7 +12,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from backends.jax_backend import generate_distance_le, generate_weighted_sum, load_generated_function
+from backends.jax_backend import (
+    generate_distance_le,
+    generate_temporal_overlap,
+    generate_weighted_sum,
+    load_generated_function,
+)
 from backends.spu_backend import (
     OP_HLO_PRIMITIVES,
     PROTOCOL_MIN_WORLD_SIZE,
@@ -333,3 +338,82 @@ class TestRealSpuSimulation:
         )
         assert run.ok, run.describe()
         assert bool(run.outputs) == expected
+
+
+def _sweep_case(op_name: str):
+    """按算子名构造 (jax_fn, inputs, plain_reference)，供协议 × 环宽扫描复用。"""
+
+    from backends.plain import run_plain
+
+    if op_name == "DistanceLE":
+        function = generate_distance_le("f")
+        fn = load_generated_function(function.source, function.name)
+        args = [np.array([1, 2, 3]), np.array([1, 3, 3]), np.array(2)]
+        reference = lambda a, b, t: run_plain(  # noqa: E731
+            "DistanceLE", list(a), list(b), int(t)
+        ).value
+    elif op_name == "WeightedSum":
+        function = generate_weighted_sum("f")
+        fn = load_generated_function(function.source, function.name)
+        args = [np.array([10, 20, 30]), np.array([1, 2, 1]), np.array(1)]
+        reference = lambda v, w, s: run_plain(  # noqa: E731
+            "WeightedSum", list(v), list(w), int(s)
+        ).value
+    elif op_name == "TemporalOverlap":
+        # 段式节点 (Toff, Lt) → 4 个数组；判据见 backends/plain.plain_temporal_overlap
+        function = generate_temporal_overlap("f")
+        fn = load_generated_function(function.source, function.name)
+        left_nodes, right_nodes = ((0, 3),), ((4, 3),)
+        args = [
+            np.array([n[0] for n in left_nodes], np.int32),
+            np.array([n[1] for n in left_nodes], np.int32),
+            np.array([n[0] for n in right_nodes], np.int32),
+            np.array([n[1] for n in right_nodes], np.int32),
+        ]
+        reference = lambda lt, llt, rt, rlt: run_plain(  # noqa: E731
+            "TemporalOverlap",
+            [(int(a), int(b)) for a, b in zip(lt, llt)],
+            [(int(a), int(b)) for a, b in zip(rt, rlt)],
+        ).value
+    else:
+        raise AssertionError(f"未登记的扫描算子 {op_name!r}")
+    return fn, args, reference
+
+
+@requires_spu
+class TestProtocolFieldSweep:
+    """协议 × 算子 × 环宽的参数化对拍（矩阵扫描）。
+
+    这是一条"接入新协议"的固定入口：SPU 升级后新增协议、或本项目放宽某个
+    协议的支持范围时，只在 `SPU_PROTOCOLS` / `SPU_FIELDS` 里加一项，
+    这里就会自动多跑一例真实对拍——不必为每个协议手写一个用例函数，
+    也不存在"登记了却没接线"的静默通过。
+
+    基线（2026-10-04，WSL2 + SPU 0.9.5）：`SPU_PROTOCOLS` 全 5 个协议在
+    `DistanceLE` / `WeightedSum` / `TemporalOverlap` 上与明文逐位一致
+    （整数路径 `max_abs_error == 0`），`FM32` / `FM64` / `FM128` 三个环宽同样一致。
+    """
+
+    @pytest.mark.parametrize(
+        "op_name", ("DistanceLE", "WeightedSum", "TemporalOverlap")
+    )
+    @pytest.mark.parametrize("protocol", SPU_PROTOCOLS)
+    def test_each_protocol_matches_plain(self, op_name, protocol):
+        fn, args, reference = _sweep_case(op_name)
+
+        run = run_spu_simulation(
+            fn, args, protocol=protocol, field=64, reference_fn=reference, tolerance=0.0
+        )
+        assert run.ok, f"{protocol} / {op_name}: {run.describe()}"
+        assert run.within_tolerance is True, f"{protocol} / {op_name}"
+        assert run.max_abs_error == 0.0, f"{protocol} / {op_name}"
+
+    @pytest.mark.parametrize("field", SPU_FIELDS)
+    def test_each_field_matches_plain(self, field):
+        fn, args, reference = _sweep_case("DistanceLE")
+
+        run = run_spu_simulation(
+            fn, args, protocol="ABY3", field=field, reference_fn=reference, tolerance=0.0
+        )
+        assert run.ok, f"{field}: {run.describe()}"
+        assert run.within_tolerance is True, field

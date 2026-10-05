@@ -7,6 +7,8 @@ import pytest
 from frontend import parse_source
 from ir import GeoOperation, GeoProgram, GeoType, Sensitivity
 from planner import (
+    MPC_PROTOCOL_CANDIDATES,
+    MPC_RULE_DEFAULT_PROTOCOL,
     OPERATOR_REGISTRY,
     Planner,
     PrivacyPlan,
@@ -16,6 +18,7 @@ from planner import (
     plan_program,
     plan_table_rows,
     registered_ops,
+    validate_mpc_protocol_for_operation,
     validate_protocol_for_operation,
 )
 
@@ -461,3 +464,98 @@ class TestProtocolCandidateValidation:
         step = plan.steps[0]
         assert step.protocol == "PROTOCOL_DP"
         assert any("带噪" in reason for reason in step.reasons)
+
+
+# --------------------------------------------------------------------------
+# MPC（SPU）协议：第二套命名空间，此前完全没有进入规划层
+# --------------------------------------------------------------------------
+
+
+class TestMpcProtocolValidation:
+    """MPC 协议（REF2K/SEMI2K/...）与 PSI 协议（PROTOCOL_*）是两套命名空间。
+
+    回归背景：此前 MPC 协议只能走 PSI 入口，`CHEETAH` / `SEMI2K` 会被报成
+    "未知 PSI 协议"——即 MPC 协议根本进不了规划层，`--protocol` 也无人校验。
+    """
+
+    SOURCE = (
+        "from geo_privacy import geo\n"
+        "def f(p1, p2, threshold):\n"
+        "    return geo.distance_le(p1, p2, threshold)\n"
+    )
+
+    def test_candidates_pass_for_every_mpc_operator(self):
+        for op in ("DistanceLE", "WeightedSum", "TemporalOverlap"):
+            for proto in MPC_PROTOCOL_CANDIDATES:
+                check = validate_mpc_protocol_for_operation(op, proto)
+                assert check.ok, (op, proto, check.problems)
+
+    def test_notes_disclose_the_minimum_party_count(self):
+        check = validate_mpc_protocol_for_operation("DistanceLE", "ABY3")
+        assert check.ok
+        assert any("3 方" in note for note in check.notes)
+        assert any("2 方" in note for note in validate_mpc_protocol_for_operation("DistanceLE", "SEMI2K").notes)
+
+    def test_unknown_mpc_protocol_is_rejected(self):
+        check = validate_mpc_protocol_for_operation("DistanceLE", "SPDZ2K")
+        assert not check.ok
+        assert "SPDZ2K" in check.problems[0]
+        # 报的是 SPU 命名空间的支持清单，不是 PSI 的
+        assert "REF2K" in check.problems[0]
+        assert "PROTOCOL_ECDH" not in check.problems[0]
+
+    def test_psi_protocol_on_mpc_operator_is_rejected_as_unknown(self):
+        """PSI 协议名不属于 SPU 命名空间：报"未知协议"并列出 SPU 支持清单。"""
+
+        check = validate_mpc_protocol_for_operation("DistanceLE", "PROTOCOL_RR22")
+        assert not check.ok
+        assert "未知协议" in check.problems[0]
+        assert "REF2K" in check.problems[0]
+
+    def test_psi_operator_rejects_mpc_protocol(self):
+        check = validate_mpc_protocol_for_operation("Intersects", "ABY3")
+        assert not check.ok
+        assert "不经由 SPU/MPC" in check.problems[0]
+
+    def test_no_protocol_means_nothing_to_validate(self):
+        assert validate_mpc_protocol_for_operation("DistanceLE", None).ok
+
+    def test_planner_fills_the_default_mpc_protocol(self):
+        plan = plan_program(parse_source(self.SOURCE).program)
+        assert not plan.has_errors
+        step = plan.steps[0]
+        assert step.mpc_protocol == MPC_RULE_DEFAULT_PROTOCOL
+        # PSI 字段保持为空：两套命名空间不许互相污染
+        assert step.protocol is None
+        assert "mpc_protocol" in step.to_dict()
+
+    def test_explicit_mpc_protocol_overrides_the_default(self):
+        plan = plan_program(
+            parse_source(self.SOURCE).program, mpc_protocol="CHEETAH"
+        )
+        assert not plan.has_errors
+        assert plan.steps[0].mpc_protocol == "CHEETAH"
+
+    def test_planner_emits_compile_time_diagnostic_for_bad_mpc_protocol(self):
+        plan = plan_program(
+            parse_source(self.SOURCE).program, mpc_protocol="SPDZ2K"
+        )
+        assert plan.has_errors
+        diagnostic = next(
+            d for d in plan.diagnostics if d.code == "PROTOCOL_UNSUPPORTED"
+        )
+        assert diagnostic.location
+        assert "SPDZ2K" in diagnostic.message
+        assert "MPC" in diagnostic.cause
+
+    def test_psi_steps_are_untouched_by_the_mpc_selector(self):
+        source = (
+            "from geo_privacy import geo\n"
+            "def f(route, no_fly_zone):\n"
+            "    return geo.intersects(route, no_fly_zone)\n"
+        )
+        plan = plan_program(parse_source(source).program, mpc_protocol="CHEETAH")
+        assert not plan.has_errors
+        step = plan.steps[0]
+        assert step.mpc_protocol is None
+        assert step.protocol == "PROTOCOL_ECDH"

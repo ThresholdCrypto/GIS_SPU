@@ -553,6 +553,23 @@ geo-secure build examples/vertical_conflict.py --psi-subset plaintext
    状态表记 `executed-noisy`，且**不得**出现"经真实 PSI 求交验证"这类字样。
 
 
+**MPC（SPU）协议开关（P0，本版新增）**
+
+`--protocol` 作用于 SPU/MPC 阶段（两者是**不同的协议命名空间**：
+PSI 侧是 `PROTOCOL_ECDH` / `RR22`，MPC 侧是 `REF2K` / `SEMI2K` / `ABY3` /
+`CHEETAH` / `SECURENN`，合用一个字段会让两种协议互相被当成"未知协议"）。
+
+```bash
+geo-secure build examples/distance_check.py --protocol CHEETAH   # 合法，且真跑验证
+geo-secure build examples/distance_check.py --protocol SPDZ2K    # 规划期即拒（退出码 1）
+```
+
+规划期校验（`planner.registry.validate_mpc_protocol_for_operation`）：
+每个算子登记 `default_mpc_protocol`（`ABY3`）与 `mpc_protocol_candidates`
+（5 个协议）；显式选的协议不在该清单里 → 产出 `PROTOCOL_UNSUPPORTED`
+编译期诊断，**不再等到运行时才崩**。`PlannedStep.mpc_protocol` 与编译 JSON
+都带该值，可逐层对拍。
+
 **四个实测坑**（详见 `docs/PSI_CAPABILITY.md`）：
 
 1. `PROTOCOL_ECDH` 不显式给 `curve` → `RuntimeError: Curve type is not specified.`
@@ -664,6 +681,52 @@ ECDH / KKRT / RR22 / RR22+low_comm（N=2^10…2^24），输出
 （RR22/KKRT 报错、ECDH 计数含重复乘数）——这是"去重预处理是正确性前提"的证据，
 见 `docs/BENCHMARK_PROTOCOL.md` 与 `docs/GEO_RR22_DESIGN.md`。
 
+**MPC 侧基线（P1 新增）**：`tests/benchmarks/benchmark_mpc.py` 把
+`DistanceLE / WeightedSum / TemporalOverlap` × 5 个 SPU 协议
+（REF2K / SEMI2K / ABY3 / CHEETAH / SECURENN）× 3 个环宽实测，
+输出 `docs/mpc_benchmark_baseline.json` / `.csv`。
+对账轴是**预测位宽 b(K) ↔ 平台环宽**，**不**给"预测时间 ↔ 实测时间"误差
+（planner 不预测时间，硬凑口径等于伪造）。
+
+```bash
+export LD_LIBRARY_PATH="$HOME/.local/lib"                      # libgomp.so.1 所在
+~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py         # 标准扫描
+~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py --quick # 快扫
+```
+
+两条实测结论（不粉饰）：
+
+- `WeightedSum` 的定点整除 `acc // scale` 在 SPU 上是**近似且非确定**的
+  （`scale == 1` 亦然；K=4096 偏差最大 4），故大 K 行登记为"非确定偏差"
+  而不是"稳定通过"；
+- `WeightedSum × FM32` **完全起不来**（定点除法路径内部需要 64 位环：
+  `ring=FM32 could not represent PT_I64`），而 planner 的位宽预测
+  b(K=256)=24 ≤ 32 会判"够用"——这是本阶段找到的**预测 ≠ 实测**实例。
+- `TemporalOverlap` 的电路是 N×M 两两比较（二次），规模上限只能是 K≈32。
+
+**重复实验（P1.5）**：单次运行不足以支撑排序结论，故补两个重复产物。
+
+```bash
+~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py --repeat 5 \
+    --json docs/mpc_repeat_baseline.json --csv docs/mpc_repeat_baseline.csv
+~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py --ops WeightedSum --repeat 30 \
+    --json docs/mpc_deviation_repeat.json --csv docs/mpc_deviation_repeat.csv
+```
+
+拿到的判断标尺：
+
+- 同一会话内 `p75/p25` 多数 ≤ 1.05 ⇒ **只认差异大于 5% 的协议排序**；
+- 4 个非 CHEETAH 协议在 `DistanceLE` / `TemporalOverlap` 上差异与抖动同量级，
+  **本基线不支持给它们排序**；`WeightedSum` 上 REF2K 低约 16%（本机观察值，
+  不能只按这一个数字选型）；
+- CHEETAH 慢一个数量级，但 SPU 模拟器**不含真实网络**，省通信量的优势
+  在带宽受限部署下**不可外推**；
+- `WeightedSum` 整除偏差的实测偏差率：K≤256 = 0/30，K=1024 = 13/30，
+  K=4096 = 28/30——偏差随 K 上升，但**偏差率不是稳定常数**（两个批次 60% vs 93%，
+  差异超出抽样噪声），对外不给精确概率。
+
+详见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8。
+
 ---
 
 ## 6. 已验证算子
@@ -747,7 +810,7 @@ PSI 的 `empty-input`（空集合）与 `unavailable`（环境缺失）**都不�
 | 算子 | 容差 | 说明 |
 |---|---|---|
 | DistanceLE | 0.0 | 整数平方和与阈值平方比较，精确 |
-| WeightedSum | 0.0 | 定点整数乘加，精确 |
+| WeightedSum | 0.0 | 定点整数乘加**精确；但结尾的 `// scale` 在 SPU 上是近似除法**——K<1024 实测逐位一致，K≥1024 可能偏 1–4（非确定，见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.2） |
 | TemporalOverlap | 0.0 | 整数区间比较，精确 |
 
 三份实现（明文 / JAX / SPU）在**整数路径下要求完全一致**，容差 0 是刻意选择：
@@ -1259,9 +1322,12 @@ backends/
 - 在 WSL2 / Linux + Python 3.11 环境下接通真实 SPU 模拟，
   把 `tests/test_spu_backend.py::TestRealSpuSimulation` 从 skip 变为通过。
 - 补 `FM128` 路径测试（64 位键的溢出场景）。
-- 补不同协议的代价实测（`semi2k` / `aby3` / `cheetah`），
-  把 planner 的**预测代价**与平台**实测代价**对账——
-  这正是课题里"接入层预测、平台回填实测，作为联调验收条款"的落点。
+- ~~补不同协议的代价实测（`semi2k` / `aby3` / `cheetah`）~~ ——**已闭合（本版 P1）**：
+  `tests/benchmarks/benchmark_mpc.py` 已把 3 个 MPC 算子 × 5 个 SPU 协议 × 3 个环宽
+  实测入库，并与 planner 的**预测位宽**对账（`docs/MPC_BENCHMARK_PROTOCOL.md`）。
+  对账同时找出两处真实缺口：近似除法（非确定偏差）与 `WeightedSum × FM32`
+  的环宽下限；重复实验（×5 / ×30）与方差标尺已完成（见 5.8「重复实验（P1.5）」）。
+  **未闭合的余项**：通信量测量、偏差率跨批次不一致的定位、环宽下限进入 planner 约束。
 
 ### 8.4 位平面与打包布局（D3）
 

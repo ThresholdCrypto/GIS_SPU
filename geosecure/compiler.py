@@ -415,6 +415,9 @@ class Compiler:
             parse_result.program,
             psi_protocol=self.psi_protocol,
             psi_protocol_params=self.psi_protocol_params,
+            # MPC（SPU）协议同样进规划层：让"算子 × 协议"在编译期就被校验，
+            # 而不是等到 SPU 模拟阶段才以运行期错误的形式晚到。
+            mpc_protocol=self.protocol,
         )
         result.plan = plan
         result.stages.append(
