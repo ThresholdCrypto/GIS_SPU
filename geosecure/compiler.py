@@ -58,6 +58,7 @@ from ir import GeoProgram, encode_grid_code, render_table
 from planner import (
     MPC_RULE_DEFAULT_PROTOCOL,
     PLAN_TABLE_HEADERS,
+    LayoutShape,
     PlannedStep,
     PrivacyPlan,
     plan_program,
@@ -274,11 +275,14 @@ class Compiler:
         psi_capability_report: PsiCapabilityReport | None = None,
         sensitivities: Mapping[str, Any] | None = None,
         type_hints: Mapping[str, Any] | None = None,
+        #: 位平面布局（D3）的规模形状；None = 只做轴向决策、不预测条数
+        layout_shape: LayoutShape | None = None,
     ) -> None:
         #: 编译器**显式**指定的 MPC 协议；None = 让规划器按实测代价选。
         #: 执行期真正使用的具体值见 `protocol_in_use`（规划完一次性定型）。
         self.protocol = protocol
         self._protocol_in_use: str | None = None
+        self.layout_shape = layout_shape
         self.field = field
         self.world_size = world_size
         self.tolerance = tolerance
@@ -438,6 +442,7 @@ class Compiler:
             # MPC（SPU）协议同样进规划层：让"算子 × 协议"在编译期就被校验，
             # 而不是等到 SPU 模拟阶段才以运行期错误的形式晚到。
             mpc_protocol=self.protocol,
+            layout_shape=self.layout_shape,
         )
         result.plan = plan
         result.stages.append(

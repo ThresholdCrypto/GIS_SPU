@@ -16,6 +16,7 @@ from frontend.analyzer import (
 )
 from ir import GeoOperation, GeoProgram, Sensitivity, requires_crypto
 
+from .layout import LayoutShape, plan_layout
 from .registry import (
     OPERATOR_REGISTRY,
     SELECTION_BASIS_EXPLICIT,
@@ -144,6 +145,7 @@ class Planner:
         psi_protocol: str | None = None,
         psi_protocol_params: Mapping[str, Any] | None = None,
         mpc_protocol: str | None = None,
+        layout_shape: LayoutShape | None = None,
     ) -> None:
         self.registry = dict(registry or OPERATOR_REGISTRY)
         #: 编译器显式选择的 PSI 协议；None = 各算子用规则里的默认协议
@@ -153,6 +155,9 @@ class Planner:
         #: 编译器显式选择的 MPC（SPU）协议；None = 该算子按实测代价自动选择
         #: （`select_mpc_protocol`），没有实测依据时退回登记默认值。
         self.mpc_protocol = mpc_protocol
+        #: 位平面布局的规模形状（D3）。None = 只做轴向决策、不预测条数：
+        #: 没有形状就没有条数，硬凑一个"默认规模"等于编数字。
+        self.layout_shape = layout_shape
 
     def plan(self, program: GeoProgram) -> PrivacyPlan:
         plan = PrivacyPlan(program_name=program.name)
@@ -180,6 +185,11 @@ class Planner:
         # 代价按本方案实际的元素数实例化：位宽 b(K) 必须算出来，
         # 不能沿用档案里那个与自身公式矛盾的静态值。
         cost = resolve_cost(rule, k=operation.params.get("K"))
+        # 位平面布局（D3）：按归约轴选 L1 / L2，并把条数下降写回 estimated_cost。
+        # 只对"经 MPC 值布局"的算子加键（PSI 集合运算 / 明文物化不加，避免噪声）。
+        layout = plan_layout(operation.op, self.layout_shape)
+        if layout.applies:
+            cost = {**cost, **layout.to_cost_keys()}
 
         # 协议配置只对登记了默认协议的算子（PSI 族）生效。协议是规划层面的
         # 选择，不是地理语义——Geo-IR 的算子模型不因 RR22 增加任何字段。
@@ -330,6 +340,7 @@ def plan_program(
     psi_protocol: str | None = None,
     psi_protocol_params: Mapping[str, Any] | None = None,
     mpc_protocol: str | None = None,
+    layout_shape: LayoutShape | None = None,
 ) -> PrivacyPlan:
     """便捷入口。
 
@@ -337,6 +348,7 @@ def plan_program(
     给了就覆盖算子规则的默认协议，并把参数并进每个 PSI 步骤的 protocol_params。
     `mpc_protocol` 是编译器对 MPC（SPU）族算子的协议选择；给了就覆盖这些算子
     的 default_mpc_protocol（命名空间是 REF2K/SEMI2K/...，与 PSI 不通用）。
+    `layout_shape` 是位平面布局（D3）的规模形状；不给就只做轴向决策、不预测条数。
     """
 
     return Planner(
@@ -344,6 +356,7 @@ def plan_program(
         psi_protocol=psi_protocol,
         psi_protocol_params=psi_protocol_params,
         mpc_protocol=mpc_protocol,
+        layout_shape=layout_shape,
     ).plan(program)
 
 

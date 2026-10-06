@@ -1,5 +1,15 @@
 """planner：算子注册表与隐私计算方案生成。"""
 
+from .layout import (
+    LAYOUT_L1,
+    LAYOUT_L2,
+    LAYOUT_NAIVE,
+    REDUCTION_AXIS,
+    LayoutPlan,
+    LayoutShape,
+    layout_shape_from_mapping,
+    plan_layout,
+)
 from .planner import (
     PLAN_TABLE_HEADERS,
     PlannedStep,
@@ -31,15 +41,21 @@ from .registry import (
 )
 
 __all__ = [
+    "LAYOUT_L1",
+    "LAYOUT_L2",
+    "LAYOUT_NAIVE",
     "MPC_PROTOCOL_CANDIDATES",
     "MPC_RULE_DEFAULT_PROTOCOL",
     "OPERATOR_REGISTRY",
     "PLAN_TABLE_HEADERS",
+    "REDUCTION_AXIS",
     "SELECTION_BASIS_DECLARED_DEFAULT",
     "SELECTION_BASIS_EXPLICIT",
     "SELECTION_BASIS_MEASURED",
     "MpcProtocolCandidate",
     "MpcProtocolSelection",
+    "LayoutPlan",
+    "LayoutShape",
     "OperatorRule",
     "PlannedStep",
     "ProtocolCheck",
@@ -48,8 +64,10 @@ __all__ = [
     "backend_capable_ops",
     "get_rule",
     "jax_capable_ops",
+    "layout_shape_from_mapping",
     "mpc_protocol_candidates_for",
     "mpc_protocol_ranking_hint",
+    "plan_layout",
     "plan_program",
     "plan_table_rows",
     "registered_ops",

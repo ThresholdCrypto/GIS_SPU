@@ -78,7 +78,8 @@ GIS_SPU/
 │   ├── operations.py       GeoOperation / GeoProgram
 │   └── render.py           可读渲染
 ├── planner/                隐私计算方案
-│   ├── registry.py         Operator Registry（算子→表征→后端）
+│   ├── registry.py         Operator Registry（算子→表征→后端）+ MPC 协议候选与选择
+│   ├── layout.py           位平面布局（D3）：归约轴 → L1 / L2
 │   └── planner.py          Planner，输出五元组
 ├── backends/
 │   ├── plain/              明文参考实现（语义基准）
@@ -99,6 +100,7 @@ GIS_SPU/
 ├── tests/                  十个测试文件
 └── docs/
     ├── SPU_CAPABILITY.md   SPU 核对结论（含证据出处）
+    ├── BITPLANE_LAYOUT.md  位平面布局（D3）的口径出处、模型与边界
     └── PSI_CAPABILITY.md   PSI 核对结论 + 实测坑与泄漏面
 ```
 
@@ -356,6 +358,12 @@ render_operations_table(ops) # 算子表
 
 每条规则都带 `basis`，说明代价是怎么推出来的（例如"避 sqrt：比较距离平方与阈值平方，d=1"），
 以及 `notes` 说明该表征的约束。
+
+经 MPC 值布局的算子（`DistanceLE` / `WeightedSum` / `TemporalOverlap`）还会在
+`estimated_cost` 里多带位平面布局键（`layout` / `layout_axis` / `layout_basis`，
+给了规模形状时再加 `N_ct_naive` / `N_ct_layout` / `layout_reduction`）——
+它与四量并存、**不覆盖** `N_ct`：`N_ct` 是"每元素条数"的描述串，布局键给的是**总条数**。
+见 8.4 与 `docs/BITPLANE_LAYOUT.md`。
 
 ### 4.3 敏感度对规划的影响
 
@@ -959,30 +967,41 @@ P2-1 把 `scale` 改成编译期常量后，该算子生成代码里**不再有�
 ### 6.4 测试覆盖
 
 ```
-tests/test_benchmark.py          28 项   基线生成器确定性/合法性、记录 schema、unavailable 诚实规则、写入器、真实 RR22 记录
-tests/test_ir.py                 38 项   类型系统、格网口径、算子/程序/关系
-tests/test_planner.py            46 项   注册表、五元组、敏感度策略、代价模型、无副作用、协议与协议参数（RR22）、协议候选校验
-tests/test_jax_backend.py        37 项   生成器、可追踪性、原语核对、与明文对拍
-tests/test_spu_backend.py        31 项   协议/环宽规范化、能力门控、私有接口与共享库回归、SPU 实跑
-tests/test_psi_backend.py        80 项   PSI 能力/协议归一化/真实求交/空输入/泄漏面/诚实留空/日志卫生/带噪与精确披露/RR22 参数链路
-tests/test_psi_runtime_config.py 11 项   PsiRuntimeConfig 拆分/注入/单一配置源/非法 rank/曲线/协议
-tests/test_psi_capability.py     14 项   参数级校验（bool 型 rank 拒绝）、三层能力核查、RR22 低通信探测
-tests/test_geosot_layout.py       9 项   布局清单一致性、LAYOUT_MISMATCH 前置拒绝、单方声明=无法核对
-tests/test_input_adapter.py      18 项   CSV/JSON/CellSet 输入适配、错误定位到行、布局加载
-tests/test_execution_chain.py    15 项   链式执行使用上一步 PSI 输出、样例兜底披露、布局不一致阻断、CLI --input
-tests/test_subset_mpc.py         30 项   Contains 密态子集比较：电路原语与注册表一致、模式口径、逐点精确、只有基数进 MPC、退路披露
-tests/test_frontend.py           41 项   表达式级调用识别、输入可解析性、敏感度不降级、链式类型、语义
-tests/test_end_to_end.py         74 项   全流程、状态表、CLI（协议/曲线/子集/RR22 低通信开关与 DP 带噪）、六类失败报告、编译入口参数、诊断聚合、确定性
-tests/test_geosot.py             43 项   国标附录 A/B 特征值、层号与层区间互逆、Z/L 位域容量、低空可分辨性、高度带集合语义
-tests/test_height_materialize.py 50 项   height band 方言注册/别名/模块级遍历/参数形式/materialize 诊断/明文一致/示例
-tests/test_height_planner.py     12 项   第 6 类失败模式、三维工作流、规划器的高度语义诚实性
-tests/test_rr22_geosot.py         8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
-                                 ─────
-                                 585 通过 / 0 跳过
+tests/test_ir.py                  38 项   类型系统、格网口径、算子/程序/关系
+tests/test_frontend.py            41 项   表达式级调用识别、输入可解析性、敏感度不降级、链式类型、语义
+tests/test_planner.py             56 项   注册表、五元组、敏感度策略、代价模型、无副作用、PSI/MPC 两套协议候选校验
+tests/test_bitplane_layout.py     23 项   位平面布局（D3）：课题产物逐项复算、归约轴决策、不给形状不给数字、与实测前提对账
+tests/test_protocol_registry.py   18 项   协议元数据单一来源、结果语义、Planner 与后端交叉一致
+tests/test_protocol_coverage.py   12 项   协议覆盖镜像：登记协议必须显式归类（已验证/不可执行/无密码学保护），不许静默滑过
+tests/test_protocol_selection.py  21 项   MPC 协议按实测代价选择、REF2K 不自动选中、拒绝信息可操作、排序第二协议真跑
+tests/test_jax_backend.py         48 项   生成器、可追踪性、原语核对、与明文对拍、TemporalOverlap 两套电路等价
+tests/test_spu_backend.py         52 项   协议/环宽规范化、能力门控、私有接口与共享库回归、SPU 实跑、sweep 电路真机
+tests/test_spu_profile.py         13 项   SPU 通信量剖析：pphlo 日志解析与 fd 级捕获（P2-2）
+tests/test_benchmark_mpc.py       65 项   MPC 基线：用例构造、协议×算子×环宽矩阵、通信量采集、策略 A/B、诚实留空
+tests/test_benchmark.py           33 项   PSI 基线生成器确定性/合法性、记录 schema、unavailable 诚实规则、写入器、真实 RR22 记录
+tests/test_psi_backend.py         82 项   PSI 能力/协议归一化/真实求交/空输入/泄漏面/诚实留空/日志卫生/带噪与精确披露/RR22 参数链路
+tests/test_psi_runtime_config.py  11 项   PsiRuntimeConfig 拆分/注入/单一配置源/非法 rank/曲线/协议
+tests/test_psi_capability.py      14 项   参数级校验（bool 型 rank 拒绝）、三层能力核查、RR22 低通信探测
+tests/test_subset_mpc.py          30 项   Contains 密态子集比较：电路原语与注册表一致、模式口径、逐点精确、只有基数进 MPC、退路披露
+tests/test_result_policy.py       10 项   结果策略（§15）：业务层暴露与协议内部泄漏分开登记，拒绝伪造
+tests/test_party_manager.py        9 项   两方抽象（§16）：WorldConfig / PartyManager 确定性 + 显式拒绝多方
+tests/test_party_binding.py        5 项   Party Binding（§14）：PartyInput → notes / JSON；两方上限（§16）
+tests/test_runtime_hardening.py    8 项   临时 CSV 工程化（§18）：文件权限 / 规模与磁盘检查 / 清理登记
+tests/test_geosot.py              43 项   国标附录 A/B 特征值、层号与层区间互逆、Z/L 位域容量、低空可分辨性、高度带集合语义
+tests/test_geosot_layout.py        9 项   GridCode 布局身份：manifest 字段与跨方握手（Phase 4 / 验收 D）
+tests/test_geosot_optimizer.py    19 项   Geo-RR22 预处理（§8/§9）：排序 / 去重 / 前缀压缩 / 分桶 + 真实 PSI 对拍
+tests/test_height_materialize.py  50 项   height band 方言注册/别名/模块级遍历/参数形式/materialize 诊断/明文一致/示例
+tests/test_height_planner.py      12 项   第 6 类失败模式、三维工作流、规划器的高度语义诚实性
+tests/test_input_adapter.py       18 项   CSV/JSON/CellSet 输入适配、错误定位到行、布局加载
+tests/test_execution_chain.py     15 项   链式执行使用上一步 PSI 输出、样例兜底披露、布局不一致阻断、CLI --input
+tests/test_rr22_geosot.py          8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
+tests/test_end_to_end.py          75 项   全流程、状态表、CLI（协议/曲线/子集/RR22/布局形状/MPC 协议）、六类失败报告、编译入口参数、诊断聚合、确定性
+                                  ─────
+                                  838 通过 / 0 跳过
 ```
 
 在 **WSL2 + Linux + Python 3.11.16 + jax 0.4.34 + spu 0.9.5** 上，
-**585 项全部通过，无跳过**。真实执行隐私协议的用例：
+**838 项全部通过，无跳过**。真实执行隐私协议的用例：
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
@@ -1403,6 +1422,13 @@ MPC 电路输出一个比特  k == n
 > 选择依据落到 `PlannedStep.mpc_protocol_basis` 与 CLI 输出；拒绝信息带
 > "能用什么、多贵、为什么排除"。见 5.5 与 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.5。
 
+> 已闭合（本版）：**位平面布局（D3）的预测层**。`planner/layout.py` 按算子归约轴
+> 选 L1 / L2，条数公式与课题交付物（`outputs/格网数据样例_明文与密态映射_v5.json`
+> 的 `cost_prediction`）逐项复算一致（196000 / 49000 / 192 / 1020.8×）；
+> `estimated_cost` 增补 `layout*` 键；CLI 增 `--layout-shape`。
+> **未落地的是打包电路本身**——本项只调整密文条数，不是实测通信量。见 8.4 与
+> `docs/BITPLANE_LAYOUT.md`。
+
 ### 8.1 接入新增隐私后端
 
 `planner.registry.OperatorRule` 的 `backend` 字段是自由字符串，
@@ -1482,10 +1508,31 @@ backends/
 ### 8.4 位平面与打包布局（D3）
 
 课题的 D3 决策是"位平面双布局：L1（同格网跨属性）与 L2（跨格网位平面）按算子归约方向选择"。
-当前 MVP 只覆盖了单算子层面的表征选择，尚未实现布局优化。
 
-扩展点：在 `backends/jax_backend/codegen.py` 之上增加一个 **layout planner**，
-按归约轴决定 L1/L2，再把 `N_ct` 的下降量写回 `estimated_cost`。
+**已落地（本版 P5，预测层）**：`planner/layout.py` 按算子归约轴选布局，
+并把条数下降写回 `estimated_cost`。口径来自课题交付物、并由本仓库逐项复算：
+
+| 项 | 课题记载 | 公式 | 复算（1000 候选 × 49 格网 × 4 属性 × b=8） |
+|---|---|---|---|
+| 逐点条数 | 196000 | `candidates × cells × attributes` | 196000 ✓ |
+| L1（同格网跨属性） | 49000 | `ceil(values / attributes)` | 49000 ✓ |
+| L2（跨格网位平面） | 192 | `ceil(values / slots) × b`，`slots = 2^ceil(log2 候选) × b` | 192 ✓ |
+| L2 下降 | 1020.8× | `values / L2` | 1020.8 ✓ |
+
+```bash
+geo-secure build examples/distance_check.py \
+    --layout-shape candidates=1000,cells=49,attributes=4,bits=8
+#   MPC 协议: DistanceLE → ABY3（按实测代价自动选择）
+#   位平面布局: DistanceLE → L2（逐点 196000 条 → 192 条，1020.8×）
+```
+
+三条边界（都有测试守着）：**不给形状就不给数字**（只做轴向决策）；
+**没收益就退回逐点**（不报小于 1 的"收益"）；**未登记归约轴的算子不替它猜**。
+
+**未落地**：打包电路本身。JAX 生成器与 SPU 执行路径一行未改，因此本项
+**只是密文条数的结构调整，不是实测通信量**——"通信量 ∝ 条数"这个前提有
+§8.4 结论 3 的实测支持（ABY3 × `DistanceLE` 约 16 B/元素），但据此外推打包后的
+通信量属未验证。详见 `docs/BITPLANE_LAYOUT.md`。
 
 ### 8.5 关系稀疏表示与 ZKP
 

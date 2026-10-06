@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 from backends.psi_backend import (
     PSI_DEFAULT_CURVE,
@@ -35,6 +35,7 @@ from planner import (
     SELECTION_BASIS_DECLARED_DEFAULT,
     SELECTION_BASIS_EXPLICIT,
     SELECTION_BASIS_MEASURED,
+    layout_shape_from_mapping,
     plan_table_rows,
 )
 
@@ -67,6 +68,17 @@ def _stage_line(index: int, total: int, result: CompileResult, name: str) -> Non
     if stage is None:
         return
     _emit(f"[{index}/{total}] {stage.title:<22} {stage.icon} {stage.status.upper():<8} {stage.message}")
+
+
+def _layout_note(cost: Mapping[str, Any]) -> str:
+    """位平面布局的可读后缀（D3）；没预测条数就如实说"不预测"。"""
+
+    if cost.get("N_ct_layout") is None:
+        return "（未给布局形状，不预测条数）"
+    return (
+        f"（逐点 {cost.get('N_ct_naive')} 条 → {cost.get('N_ct_layout')} 条，"
+        f"{float(cost.get('layout_reduction') or 1):.1f}×）"
+    )
 
 
 def _mpc_basis_note(basis: str | None) -> str:
@@ -134,6 +146,14 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
         ]
         if picks:
             _emit(f"  MPC 协议: {'; '.join(picks)}")
+        layouts = [
+            f"{step.operation} → {step.estimated_cost['layout']}"
+            f"{_layout_note(step.estimated_cost)}"
+            for step in result.plan.steps
+            if step.estimated_cost.get("layout")
+        ]
+        if layouts:
+            _emit(f"  位平面布局: {'; '.join(layouts)}")
     else:
         _emit("  （无方案）")
     _emit()
@@ -364,6 +384,27 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
         _emit(f"编译未通过：{detail}（未修改任何用户代码，请按上方建议调整）。")
 
 
+def _parse_layout_shape(text: str):
+    """解析 `--layout-shape candidates=1000,cells=49,attributes=4,bits=8`（D3）。
+
+    形状缺省不传：不给形状就不预测条数，而不是拿一个"默认规模"顶替。
+    """
+
+    values: dict[str, str] = {}
+    for part in text.replace(";", ",").split(","):
+        item = part.strip()
+        if not item:
+            continue
+        key, sep, raw = item.partition("=")
+        key = key.strip()
+        if not sep or not key:
+            raise ValueError(f"--layout-shape 需要 KEY=VALUE 形式，实得 {item!r}")
+        if key in values:
+            raise ValueError(f"--layout-shape 重复指定键 {key!r}")
+        values[key] = raw.strip()
+    return layout_shape_from_mapping(values)
+
+
 def _parse_name_path_pairs(
     pairs: Sequence[str] | None, *, flag: str
 ) -> dict[str, str]:
@@ -422,6 +463,9 @@ def build_command(args: argparse.Namespace) -> int:
     try:
         bound_inputs = _parse_name_path_pairs(args.input, flag="--input")
         bound_layouts = _parse_name_path_pairs(args.input_layout, flag="--input-layout")
+        layout_shape = (
+            _parse_layout_shape(args.layout_shape) if args.layout_shape else None
+        )
     except ValueError as exc:
         _emit(f"错误：{exc}")
         return 2
@@ -439,6 +483,7 @@ def build_command(args: argparse.Namespace) -> int:
             psi_rr22_low_comm_mode=args.psi_rr22_low_comm_mode,
             inputs=bound_inputs or None,
             input_layouts=bound_layouts or None,
+            layout_shape=layout_shape,
         )
     except (ValueError, TypeError, FileNotFoundError) as exc:
         # 参数非法 / 输入文件缺失或损坏：可读错误，不落 traceback。
@@ -538,6 +583,15 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     build.add_argument("--field", default="64", help="环宽：32/64/128 或 FM32/FM64/FM128")
+    build.add_argument(
+        "--layout-shape",
+        default=None,
+        help=(
+            "位平面布局（D3）的规模形状，形式 "
+            "candidates=1000,cells=49,attributes=4,bits=8；缺省不预测条数"
+            "（只做轴向决策），不给形状时绝不臆造规模"
+        ),
+    )
     build.add_argument(
         "--psi-protocol",
         default=None,
