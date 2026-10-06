@@ -117,6 +117,16 @@ cd GIS_SPU
 > 打包电路**未实现**，故不对打包后的通信量或墙钟作任何断言。
 > 见 `docs/BITPLANE_LAYOUT.md` 与 `README.md` §8.4。
 
+> 2026-10-06 末行（P6）的要点：**打包前提实测**。探针
+> `backends/spu_backend/packing_probe.py`（产物 `docs/mpc_packing_probe.json`，
+> 跑法 `tests/benchmarks/benchmark_mpc.py --packing-probe`）用"秘密 × 秘密"
+> 逐元素乘法实测：int8 / int32 / int64 在**同一元素数**（N=4096）下通信量之比全为
+> 1.000（唯一通信原语 `multiply`），**16 B/元素** 在 512 / 1024 / 4096 元素上恒定
+> ——SPU 按**环元素**计费、与输入位宽无关。**本轮仍不是打包电路的实测**：
+> 槽内归约未测，收益只作上界。第一版探针用 `x * 2`（乘公开常数）实测恒为 0 字节，
+> 已换掉并写进回归测试。见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.6、
+> `docs/BITPLANE_LAYOUT.md` §5 与 `README.md` §8.4。
+
 > 同日第二验证（无 SPU 环境，Python 3.10 / 3.14）：`555 passed / 87 skipped / 11 failed`。
 > 11 项失败全部为"SPU 不可用"的环境门断言（期望 `error`、实得 `unavailable`），
 > 非功能缺陷；SPU/PSI 用例 skip 并说明缺失项。

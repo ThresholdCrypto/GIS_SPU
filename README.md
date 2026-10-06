@@ -90,6 +90,8 @@ GIS_SPU/
 │   │   └── spu_bridge.py   HLO 降级（SPU 编译前端第一步，无需 libspu）
 │   ├── spu_backend/
 │   │   ├── capability.py   能力探测与原语核查
+│   │   ├── cost_baseline.py 读实测通信量基线（docs/mpc_comm_baseline.json）
+│   │   ├── packing_probe.py 打包前提探针（按环元素计费？）与收益上界
 │   │   └── runtime.py      run_spu_simulation
 │   └── psi_backend/        PSI（官方 spu.psi.psi_execute 两方求交）
 │       ├── capability.py   协议/曲线/IO 形态探测（运行期，不预设版本）
@@ -97,7 +99,7 @@ GIS_SPU/
 ├── validator/              编译前验证 + 六类失败模式报告
 ├── geosecure/              编译器主流程与 CLI（八阶段）
 ├── examples/               五个示例（含三维 vertical_conflict.py / altitude_band.py）
-├── tests/                  十个测试文件
+├── tests/                  三十个测试文件
 └── docs/
     ├── SPU_CAPABILITY.md   SPU 核对结论（含证据出处）
     ├── BITPLANE_LAYOUT.md  位平面布局（D3）的口径出处、模型与边界
@@ -971,6 +973,7 @@ tests/test_ir.py                  38 项   类型系统、格网口径、算子/
 tests/test_frontend.py            41 项   表达式级调用识别、输入可解析性、敏感度不降级、链式类型、语义
 tests/test_planner.py             56 项   注册表、五元组、敏感度策略、代价模型、无副作用、PSI/MPC 两套协议候选校验
 tests/test_bitplane_layout.py     23 项   位平面布局（D3）：课题产物逐项复算、归约轴决策、不给形状不给数字、与实测前提对账
+tests/test_packing_probe.py       30 项   打包前提探针（P6）：位宽扫描/规模扫描、按环元素计费、收益上界、缺数诚实留空、真机位宽等价
 tests/test_protocol_registry.py   18 项   协议元数据单一来源、结果语义、Planner 与后端交叉一致
 tests/test_protocol_coverage.py   12 项   协议覆盖镜像：登记协议必须显式归类（已验证/不可执行/无密码学保护），不许静默滑过
 tests/test_protocol_selection.py  21 项   MPC 协议按实测代价选择、REF2K 不自动选中、拒绝信息可操作、排序第二协议真跑
@@ -997,15 +1000,15 @@ tests/test_execution_chain.py     15 项   链式执行使用上一步 PSI 输�
 tests/test_rr22_geosot.py          8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
 tests/test_end_to_end.py          75 项   全流程、状态表、CLI（协议/曲线/子集/RR22/布局形状/MPC 协议）、六类失败报告、编译入口参数、诊断聚合、确定性
                                   ─────
-                                  838 通过 / 0 跳过
+                                  868 通过 / 0 跳过
 ```
 
 在 **WSL2 + Linux + Python 3.11.16 + jax 0.4.34 + spu 0.9.5** 上，
-**838 项全部通过，无跳过**。真实执行隐私协议的用例：
+**868 项全部通过，无跳过**。真实执行隐私协议的用例：
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
-| SPU(MPC) 真跑 | 5 项 | `test_spu_backend` 3 项 + 子集比较电路 2 项；整数路径误差 0.0 |
+| SPU(MPC) 真跑 | 8 项 | `test_spu_backend` 3 项 + 子集比较电路 2 项 + 打包探针 3 项；整数路径误差 0.0 |
 | PSI 真机求交（`@needs_psi`） | 23 项函数 | 真调 `psi_execute`，非 mock；含链式执行 / 真实输入绑定 / 布局握手 / 配置闭环 / RR22 / benchmark 记录（grep 口径：`grep -rc needs_psi tests/*.py`） |
 | PSI 空输入路径 | 6 项 | 前置判定，不启动协议 |
 | PSI 原生日志卫生 | 4 项 | 真机执行 + 校验不落 CWD 日志 |
@@ -1429,6 +1432,14 @@ MPC 电路输出一个比特  k == n
 > **未落地的是打包电路本身**——本项只调整密文条数，不是实测通信量。见 8.4 与
 > `docs/BITPLANE_LAYOUT.md`。
 
+> 已闭合（本版）：**打包收益的前提实测（P6 探针）**。位平面布局的条数模型有一个
+> 此前只能标"未验证"的前提——"通信量按环元素计费、与输入位宽无关"。现在用
+> "秘密 × 秘密"的逐元素乘法实测：int8 / int32 / int64 在**同一元素数**下通信量之比
+> 全为 1.000（唯一通信原语是 `multiply`），**16 B/元素** 在 512 / 1024 / 4096 元素上
+> 恒定。产物 `docs/mpc_packing_probe.json`，跑法 `--packing-probe`。
+> **仍不是打包收益的实测**：探针不是打包电路，槽内归约未测，收益只作上界。
+> 见 8.4 与 `docs/BITPLANE_LAYOUT.md` §5。
+
 ### 8.1 接入新增隐私后端
 
 `planner.registry.OperatorRule` 的 `backend` 字段是自由字符串，
@@ -1530,9 +1541,26 @@ geo-secure build examples/distance_check.py \
 **没收益就退回逐点**（不报小于 1 的"收益"）；**未登记归约轴的算子不替它猜**。
 
 **未落地**：打包电路本身。JAX 生成器与 SPU 执行路径一行未改，因此本项
-**只是密文条数的结构调整，不是实测通信量**——"通信量 ∝ 条数"这个前提有
-§8.4 结论 3 的实测支持（ABY3 × `DistanceLE` 约 16 B/元素），但据此外推打包后的
-通信量属未验证。详见 `docs/BITPLANE_LAYOUT.md`。
+**只是密文条数的结构调整**。
+
+打包的**前提**已在 P6 实测（产物 `docs/mpc_packing_probe.json`，跑法
+`tests/benchmarks/benchmark_mpc.py --packing-probe --repeat 3`，ABY3 / FM64）：
+用"秘密 × 秘密"的逐元素乘法（第一版用 `x * 2`——乘公开常数，实测通信量恒为
+0 字节，什么也测不出）分别扫位宽与规模——
+
+| 用例 | 元素数 | 通信量 | B/元素 |
+|---|---|---|---|
+| `mul_ss int8 / int32 / int64 N=4096` | 4096 | 65 536 B（三者相同） | 16.00 |
+| `mul_ss int64 N=512` | 512 | 8 192 B | 16.00 |
+| `mul_ss int64 N=1024` | 1024 | 16 384 B | 16.00 |
+
+即 **SPU 按环元素计费、与输入位宽无关**（8 位值装进 64 位环元素不额外收费），
+且通信量对元素数线性。"8 个 8 位值挤进 1 个环元素"因此省下 8 倍条数，
+上界通信量 65 536 B → 8 192 B。
+
+**仍然不是打包收益的实测**：探针跑的是逐元素乘法，**不是打包电路**；槽内归约
+（L1 的加权和、L2 的跨候选聚合）要额外通信，那部分必须另行实测。所以
+`planner/layout.py` 给出的收益一律标注为**上界**。详见 `docs/BITPLANE_LAYOUT.md` §5。
 
 ### 8.5 关系稀疏表示与 ZKP
 

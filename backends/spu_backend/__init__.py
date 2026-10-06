@@ -32,6 +32,19 @@ from .capability import (
     protocol_min_world_size,
 )
 from .cost_baseline import MeasuredComm, measured_comm_table
+from .packing_probe import (
+    PACKING_CSV_COLUMNS,
+    PACKED_VALUES_PER_ELEMENT,
+    PROBE_OP,
+    PackingProbeCase,
+    format_packing_summary,
+    packing_probe_cases,
+    run_packing_probe_case,
+    run_packing_probe_cases,
+    summarize_packing,
+    write_packing_probe_csv,
+    write_packing_probe_json,
+)
 from .runtime import SpuRunResult, TripleResult, run_spu_simulation
 from .benchmark import (
     EXPECT_DEVIATION,
@@ -63,7 +76,11 @@ __all__ = [
     "OP_HLO_PRIMITIVES",
     "OP_HLO_PRIMITIVES_BY_STRATEGY",
     "OP_PRIMITIVES",
+    "PACKING_CSV_COLUMNS",
+    "PACKED_VALUES_PER_ELEMENT",
+    "PROBE_OP",
     "OpCapability",
+    "PackingProbeCase",
     "PROTOCOL_MIN_WORLD_SIZE",
     "SPU_ADAPTED_HLO_PRIMITIVES",
     "SPU_ADAPTED_PRIMITIVES",
@@ -92,8 +109,15 @@ __all__ = [
     "run_benchmark_case",
     "run_benchmark_cases",
     "run_spu_simulation",
+    "format_packing_summary",
     "format_summary",
     "MIXED_STATUS",
+    "packing_probe_cases",
+    "run_packing_probe_case",
+    "run_packing_probe_cases",
+    "summarize_packing",
+    "write_packing_probe_csv",
+    "write_packing_probe_json",
     "summarize_repeats",
     "standard_cases",
     "temporal_ab_cases",

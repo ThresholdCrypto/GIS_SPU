@@ -19,6 +19,11 @@ stdout/stderr，不影响本脚本产出的 JSON/CSV。建议重定向日志：
   **同规模成对** A/B 对照，输出 `docs/mpc_temporal_ab.json`（见 §4.1）。
   单独开一个模式是因为"谁更省、在哪交叉"只在成对比较下成立，混进主扫描
   会被不同 K 的行稀释掉。
+- `--packing-probe`：只跑"打包收益上界"探针（P6）——用**秘密×秘密**逐元素
+  乘法测位宽扫描（int8/int32/int64，同一元素数）与规模扫描（512/1024/4096），
+  回答"SPU 按环元素还是按输入位计费"，并据此给出打包 8 值/元素的上界收益。
+  默认写 `docs/mpc_packing_probe.json`；自带用例集，不与 `--ops/--protocols`
+  组合（见 `docs/BITPLANE_LAYOUT.md` §5）。
 - `--comm`：打开 SPU 的 pphlo profiling，采集**通信量**（send/recv bytes、
   逐原语明细）。两个必读注意（见 §8.4）：(a) profiling 有开销，
   **开了 profiling 的墙钟不能与没开的比**；(b) 通信量有 ~1–2% 批间抖动，
@@ -58,6 +63,14 @@ from backends.spu_backend.benchmark import (  # noqa: E402
     write_benchmark_json,
 )
 from backends.spu_backend import SPU_PROTOCOLS, check_capabilities  # noqa: E402
+from backends.spu_backend.packing_probe import (  # noqa: E402
+    format_packing_summary,
+    packing_probe_cases,
+    run_packing_probe_cases,
+    summarize_packing,
+    write_packing_probe_csv,
+    write_packing_probe_json,
+)
 
 
 def _resolve(path: str) -> str:
@@ -83,6 +96,14 @@ def parse_args(argv=None):
         help=(
             "只跑 TemporalOverlap 两套电路的同规模 A/B 对照"
             "（pairwise vs sweep，ABY3/FM64）；默认写 docs/mpc_temporal_ab.json"
+        ),
+    )
+    parser.add_argument(
+        "--packing-probe",
+        action="store_true",
+        help=(
+            "只跑打包收益上界探针（秘密×秘密逐元素乘法；位宽扫描 + 规模扫描）；"
+            "默认写 docs/mpc_packing_probe.json"
         ),
     )
     parser.add_argument(
@@ -118,7 +139,12 @@ def _split(value: str) -> set[str]:
 def resolve_output_paths(args) -> tuple[str | None, str | None]:
     """把 `--json` / `--csv` 解析成绝对路径（未给则按模式取默认名）。"""
 
-    stem = "mpc_temporal_ab" if args.temporal_ab else "mpc_benchmark_baseline"
+    if args.packing_probe:
+        stem = "mpc_packing_probe"
+    elif args.temporal_ab:
+        stem = "mpc_temporal_ab"
+    else:
+        stem = "mpc_benchmark_baseline"
     json_path = None if args.no_json else _resolve(args.json or f"docs/{stem}.json")
     csv_path = None if args.no_csv else _resolve(args.csv or f"docs/{stem}.csv")
     return json_path, csv_path
@@ -126,6 +152,13 @@ def resolve_output_paths(args) -> tuple[str | None, str | None]:
 
 def build_cases(args):
     repeats = max(1, int(args.repeat))
+    if args.packing_probe:
+        clash = sorted(_split(args.ops) | _split(args.protocols))
+        if clash:
+            raise SystemExit(
+                f"--packing-probe 自带用例集，不与 --ops/--protocols 组合（收到 {clash}）"
+            )
+        return packing_probe_cases(repeats=repeats)
     if args.temporal_ab:
         # A/B 模式自带用例集：与 --ops / --protocols 组合会得到"半张对照表"
         # （只有一侧电路），比报错更坏。这里直接拒绝组合。
@@ -153,12 +186,54 @@ def build_cases(args):
     return cases
 
 
+def _run_packing_probe(args, cases, out_json: str | None, out_csv: str | None) -> int:
+    """`--packing-probe` 分支：跑探针 → 写 JSON/CSV → 打印结论。"""
+
+    report = check_capabilities()
+    print(
+        f"打包探针：{len(cases)} 条用例 × {max(1, int(args.repeat))} 次"
+        f"（capture_comm=on）；json={out_json}；csv={out_csv}",
+        flush=True,
+    )
+    if not report.runnable:
+        print(f"  环境不具备真实 SPU 执行能力：{'; '.join(report.blockers)}", flush=True)
+
+    def progress(record) -> None:
+        comm = record.get("comm_total_bytes")
+        per = record.get("comm_per_element")
+        print(
+            f"  {record['case']}: {record['status']}"
+            f"  comm={'-' if comm is None else round(comm)} B"
+            f"  B/元素={'-' if per is None else round(per, 2)}"
+            f"  wall={'-' if record['wall_ms'] is None else round(record['wall_ms'], 1)} ms",
+            flush=True,
+        )
+
+    records = run_packing_probe_cases(cases, report=report, progress=progress)
+    if out_json:
+        write_packing_probe_json(records, out_json)
+    if out_csv:
+        write_packing_probe_csv(records, out_csv)
+
+    print()
+    print(format_packing_summary(records))
+    errors = sum(1 for record in records if record["status"] == "error")
+    unavailable = sum(1 for record in records if record["status"] == "unavailable")
+    print(f"\n汇总：{len(records)} 条；error={errors}；unavailable={unavailable}")
+    summary = summarize_packing(records)
+    for note in summary.get("notes") or ():
+        print(f"  说明：{note}")
+    return 1 if errors else 0
+
+
 def main(argv=None) -> int:
     args = parse_args(argv)
     cases = build_cases(args)
     if not cases:
         raise SystemExit("筛选后没有用例（检查 --ops / --protocols）")
     out_json, out_csv = resolve_output_paths(args)
+    if args.packing_probe:
+        return _run_packing_probe(args, cases, out_json, out_csv)
 
     report = check_capabilities()
     repeats = max(1, int(args.repeat))
