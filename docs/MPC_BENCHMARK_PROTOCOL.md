@@ -1,10 +1,12 @@
-# MPC 性能基线规程与结果（P1：预测代价 ↔ 实测代价对账；P2-2：通信量入基线）
+# MPC 性能基线规程与结果（P1：预测代价 ↔ 实测代价对账；P2-2：通信量入基线；P3：电路形态 A/B）
 
 > 状态：已执行，并在 P2-1 / P2-2 后重跑（2026-10-06）。产物：
 > `docs/mpc_benchmark_baseline.json` / `.csv`（单次扫描）、
 > `docs/mpc_repeat_baseline.json` / `.csv`（全量 ×5）、
 > `docs/mpc_exactness_repeat.json` / `.csv`（`WeightedSum` ×30，精确性）、
-> `docs/mpc_comm_baseline.json` / `.csv`（全量 ×5，**带 profiling 的通信量**，见 §8.4）。
+> `docs/mpc_comm_baseline.json` / `.csv`（全量 ×5，**带 profiling 的通信量**，见 §8.4）、
+> `docs/mpc_temporal_ab.json` / `.csv`（`TemporalOverlap` 两套电路的**同规模成对**
+> A/B，×5，见 §4.1）。
 >
 > **P2-1（2026-10-06）**：`WeightedSum` 的定点 scale 改为编译期常量，
 > 生成代码不再含除法 ⇒ §4.2 的近似除法与 §4.3 的 FM32 崩溃**均已闭合**，
@@ -45,11 +47,14 @@ JSON/CSV 产物不受影响。退出码：`0` = 无预期外记录；`1` = 存�
 |---|---|
 | 主扫描 | `DistanceLE` / `WeightedSum` / `TemporalOverlap` × 5 协议（REF2K / SEMI2K / ABY3 / CHEETAH / SECURENN） |
 | 环宽矩阵 | 三算子 × FM32 / FM64 / FM128（协议固定 ABY3） |
-| 规模扫描 | `DistanceLE` / `WeightedSum` 到 K=4096；`TemporalOverlap` 只到 K=32（二次电路，见 §4.1） |
+| 规模扫描 | `DistanceLE` / `WeightedSum` 到 K=4096；`TemporalOverlap` 的 pairwise 电路只到 K=32，`sweep` 电路到 K=1024（见 §4.1） |
+| 电路 A/B | `TemporalOverlap` 两套电路的同规模成对对照（`--temporal-ab`，单独产物，不进主扫描） |
 | 位宽对账 | K ∈ {1, 8, 2^20} 的预测位宽探针；预测 b(K) > 环宽的组合**不实测** |
 
-规模上限**按算子给**，不强行统一量纲：`TemporalOverlap` 的电路是 N×M 两两比较
-（`generate_temporal_overlap` 的 `[:, None] < [None, :]`），对节点数是**二次**的。
+规模上限**按算子给**，不强行统一量纲：`TemporalOverlap` 的默认（pairwise）电路是
+N×M 两两比较（`generate_temporal_overlap` 的 `[:, None] < [None, :]`），对节点数是
+**二次**的，故上限压低；`sweep` 电路另按 `_TEMPORAL_SWEEP_SIZES` 扫描，两套电路的
+成对比价走 §4.1 的 A/B 产物。
 
 ## 3. 对账轴与字段口径
 
@@ -77,9 +82,10 @@ planner 预测的是**结构代价**（`N_ct` / `b` / `d` / `R`），**不是墙
 
 ## 4. 实测发现（本阶段新增证据）
 
-### 4.1 `TemporalOverlap` 的电路是二次的
+### 4.1 `TemporalOverlap` 的电路形态：两套电路 + 实测交叉点（P3 已闭合）
 
-生成代码把两段式区间比较展开成 N×M 两两比较，节点数（元素数）∝ K²：
+**问题**（P2 之前）：生成代码把两段式区间比较展开成 N×M 两两比较，
+元素数 ∝ K²：
 
 | K | 元素数 | 实测 |
 |---:|---:|---|
@@ -87,8 +93,54 @@ planner 预测的是**结构代价**（`N_ct` / `b` / `d` / `R`），**不是墙
 | 256 | 65 536 | **CHEETAH 单条 > 90 s 不返回**（未完成，不计入基线） |
 | 4096 | 16 777 216 | 展开即拖死进程 |
 
-结论：`TemporalOverlap` 的规模上限必须单独压低（本基线取 K=32）；要往上走，
-先改生成电路的形态（分段扫描 / 排序归并），而不是调大规模参数。
+**做法**：新增第二套电路 `sweep`——把每个节点的起止点打包成事件
+（`(pos<<2) | (is_start<<1) | side`）、**排序归并**后做前缀扫描，
+两侧活跃数同时 > 0 即存在重叠。代价 O((N+M)·log(N+M))，不物化 [N, M] 矩阵。
+起终点占**高位**，保证同一位置上终点排在起点之前（半开区间 [0,2) 与 [2,4)
+不重叠）。两套电路**逐位等价**：532 组输入（含**非对齐** dyadic、空洞、
+半开相邻边界、穷举小区间对）与逐对版、明文三方全一致（
+`tests/test_jax_backend.py::TestTemporalOverlapSweepStrategy`）。
+
+**但排序在 MPC 里很贵**，所以它不是无条件的替换。为此把两套电路做成
+**同规模成对的 A/B 对照**（`--temporal-ab`，产物 `docs/mpc_temporal_ab.json` /
+`.csv`）；**单次运行不足以支撑排序结论**（§6），所以 A/B 同样重复 5 次，
+报中位数并给出区间（ABY3 / FM64，带 profiling，所以墙钟含 profiling 开销）：
+
+```bash
+~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py --temporal-ab --comm     --repeat 5 --json docs/mpc_temporal_ab.json --csv docs/mpc_temporal_ab.csv
+```
+
+| K | pairwise 通信量（区间） | sweep 通信量（区间） | 通信量谁省 | pairwise 墙钟 | sweep 墙钟 |
+|---:|---:|---:|---|---:|---:|
+| 8 | 95 872 B（93 952–104 064） | 317 968 B（316 176–349 584） | pairwise | 85 ms | 219 ms |
+| 32 | 496 896 B（480 000–540 416） | 1 265 424 B（1 249 296–1 381 392） | pairwise | 92 ms | 234 ms |
+| 64 | 1 296 896 B（1 224 704–1 320 960） | 2 497 552 B（2 490 896–2 514 960） | pairwise | 132 ms | 239 ms |
+| 128 | 3 853 312 B（3 756 032–3 883 008） | 5 438 480 B（4 938 768–5 561 360） | pairwise | 116 ms | 279 ms |
+| 256 | 12 546 048 B（12 503 040–12 722 176） | **10 889 232 B**（9 627 664–11 180 048） | **sweep**（区间不重叠） | 177 ms | 354 ms |
+| 1024 | （逐对版跑不动） | 43 702 288 B（单次探针，未入 A/B） | sweep（唯一可跑） | — | 1 843 ms |
+
+> K=1024 一行**不在 A/B 产物里**：逐对版在该规模上起不来，凑不出成对比较。
+> 它只有单次探针数（§6：单次不足以排序，故只作"能跑"的存在性证据，不参与比价）。
+
+结论（**不夸大成"换电路更快"**）：
+
+- **交叉点在 K=128 与 K=256 之间**，且 K=256 上**同一次运行内**两侧的通信量
+  区间不重叠（sweep 上界 11.18 MB < pairwise 下界 12.50 MB）——这一条是排序
+  结论，不是"看着差不多"；
+- 但**跨运行要留折扣**：sweep 是排序电路，抖动明显更大（本次 A/B 内极差
+  14.3%，另一次全量基线上同一组合中位 10.07 MB，与这里的 10.89 MB 差 8%）。
+  因此交叉点只能说到"K=128 与 256 之间"，**不能**把 256 说成精确门限；
+  `generate_temporal_overlap` 的 `strategy="auto"` 取 **K=256** 为阈值
+  （`TEMPORAL_OVERLAP_SWEEP_MIN_SIZE`）是个**保守的整数量级选择**，且
+  **拿不到规模时退回 pairwise**——不擅自改动既有成本口径；
+- **墙钟在 K=256 上 sweep 仍偏慢**（354 vs 177 ms，区间同样不重叠），
+  换电路省的是**通信量**，与 §8.1"墙钟不能替代通信量"是同一个道理；
+- **真正的收益是"能跑"**：K≥256 逐对版直接拖死进程，sweep 在 K=1024 真机跑通
+  （1.8 s / 43.7 MB）。"K 上限被锁死在 32"这条限制因此**解除**，
+  但它换来的是可运行区间，不是免费的性能；
+- 代价：`sort` 依赖 SPU frontend 的 float→int 补丁（跨 jax 版本易碎，
+  见 `docs/SPU_CAPABILITY.md` §2.6），所以两套电路**都保留**——
+  sweep 出问题时不至于没有退路。
 
 ### 4.2 `WeightedSum` 的定点整除在 SPU 上是**近似且非确定**的
 
@@ -255,8 +307,10 @@ integer encoding failed, ring=FM32 could not represent PT_I64
    (a) `OperatorRule` 增加 `min_field_bits`，(b) 只写文档。
    当前**没有**已知实例，建议**不先实现**，等第二个实例出现再抽公共机制；
 4. ~~重复实验~~ ——**已完成（P1.5 + P2-1 重跑）**：见 §8；
-5. **`TemporalOverlap` 电路改造**：把 N×M 两两比较换成分段扫描 / 排序归并，
-   否则 K 上限被锁死在 32 量级（P2-1 的经验说明：电路形态比协议选择更能决定代价）。
+5. ~~`TemporalOverlap` 电路改造~~ ——**已完成（P3）**：新增 `sweep` 电路
+   （排序归并 + 前缀扫描，O((N+M)·log(N+M))），K=1024 真机跑通，"上限锁死在 32
+   量级"解除。但**排序在 MPC 里贵**，所以默认 `auto` 以实测交叉点 K=256 为阈值，
+   拿不到规模时退回 pairwise——两套电路都保留，见 §4.1。
 
 ## 8. 重复实验（P1.5 起，P2-1 后重跑）
 
@@ -434,30 +488,30 @@ SEMI2K 同一组合 2 方 8 192 B、3 方 16 384 B（同样 `WeightedSum` K=256 
 | 协议 | DistanceLE K=256 | WeightedSum K=256 | TemporalOverlap K=32 |
 |---|---:|---:|---:|
 | REF2K | 0 B | 0 B | 0 B |
-| ABY3（3 方） | 4 200 B | 4 112 B | 0.52 MB（0.505–0.531） |
+| ABY3（3 方） | 4 200 B | 4 112 B | 0.51 MB（0.500–0.515） |
 | SEMI2K（2 方） | 8 336 B | 8 192 B | 0.70 MB |
 | SECURENN（3 方） | 12 032 B | 8 192 B | **25.84 MB** |
-| CHEETAH（2 方） | **2.41 MB**（2.414–2.415） | **1.47 MB**（1.474–1.475） | 1.76 MB |
+| CHEETAH（2 方） | **2.42 MB**（2.414–2.415） | **1.47 MB**（1.473–1.475） | 1.76 MB |
 
 同一次运行里的墙钟（ms），用来对照"墙钟看不出差别、通信量差 3 个数量级"：
 
 | 协议 | DistanceLE K=256 | WeightedSum K=256 | TemporalOverlap K=32 |
 |---|---:|---:|---:|
-| REF2K | 44.6 | 34.7 | 66.7 |
-| ABY3 | 44.2 | 35.2 | 84.1 |
-| SEMI2K | 46.2 | 38.8 | 94.5 |
-| SECURENN | 47.9 | 35.4 | 608.3 |
-| CHEETAH | 169.2 | 85.3 | 1220.8 |
+| REF2K | 45.0 | 35.6 | 65.9 |
+| ABY3 | 46.0 | 36.8 | 121.3 |
+| SEMI2K | 46.2 | 37.0 | 95.5 |
+| SECURENN | 48.7 | 38.7 | 632.9 |
+| CHEETAH | 176.1 | 85.2 | 1242.0 |
 
 三条站得住的结论
 ----------------
 
 1. **`DistanceLE` / `WeightedSum` 上墙钟完全排不出协议**：除 CHEETAH 外
-   四个协议墙钟都在 44–48 ms / 35–39 ms，而通信量从 **0 B 到 2.41 MB**
+   四个协议墙钟都在 45–49 ms / 36–39 ms，而通信量从 **0 B 到 2.42 MB**
    跨 3 个数量级。REF2K 的 0 B 直接说明它不做密码学保护（"最快"没有意义），
    SECURENN 的 12 032 B 说明它并不是"和 ABY3 差不多"；
 2. **`TemporalOverlap` 上墙钟与通信量给出相反的排序**：墙钟 SECURENN
-   608 ms < CHEETAH 1221 ms（差 2.0×），通信量却是 SECURENN **25.84 MB**
+   633 ms < CHEETAH 1242 ms（差 2.0×），通信量却是 SECURENN **25.84 MB**
    ≫ CHEETAH 1.76 MB（差 **14.7×**）。这是本轮**唯一**一处墙钟排序被
    通信量彻底反转的地方，也正是 §7 里"电路形态比协议选择更能决定代价"的
    量化证据：二次电路（N×M 两两比较）把 SECURENN 的通信量推爆；
@@ -477,7 +531,8 @@ SEMI2K 同一组合 2 方 8 192 B、3 方 16 384 B（同样 `WeightedSum` K=256 
 | ABY3 / SEMI2K / SECURENN × `DistanceLE`、`WeightedSum` | 0.000% | 五次逐字节一致 |
 | SEMI2K / SECURENN / CHEETAH × `TemporalOverlap` | 0.000% | 五次逐字节一致 |
 | CHEETAH × `DistanceLE` / `WeightedSum` | 0.03%–0.12% | 批间抖动 |
-| ABY3 × `TemporalOverlap` | 3.6%–10.8% | 两次重跑实测区间；FM32 3.9–4.9%、FM64 5.0–6.2%、FM128 7.1–10.1% |
+| ABY3 × `TemporalOverlap`（pairwise） | 3.0%–6.1% | FM32 3.0%、FM64 6.1%、FM128 6.0%；两次重跑之间也有同量级漂移 |
+| ABY3 × `TemporalOverlap`（`sweep`） | 9.5%–12.2% | 排序电路抖得更大：K=32 12.2%、K=256 9.5%、K=1024 9.9%——故 sweep 的比价一律报区间 |
 
 ⇒ 报数**一律用中位 + 区间**，不拿单次值下结论；ABY3 × `TemporalOverlap`
 这种抖动超过 4% 的组合，两个协议之间的差别要大于抖动才能算数。

@@ -132,6 +132,10 @@ SPU_ADAPTED_HLO_PRIMITIVES: tuple[str, ...] = (
     "broadcast_in_dim", "reshape", "transpose", "slice", "dynamic_slice",
     "concatenate", "reduce", "dot", "convert", "clamp", "iota",
     "gather", "scatter", "sort", "while", "exp", "log", "sqrt", "rsqrt",
+    # TemporalOverlap 的 sweep 电路实测用到（P3，真机跑通 ABY3/FM64 K=8…1024）：
+    # `cumsum` 降级成 reduce_window；`return` 出现在 sort 比较器 region 内部，
+    # 是 region 结构而不是独立 lowering 规则。两条都不是推断，是实测产物。
+    "reduce_window", "return",
 )
 
 #: StableHLO 层的高代价原语
@@ -560,6 +564,18 @@ OP_HLO_PRIMITIVES: Mapping[str, tuple[str, ...]] = {
     "Contains": ("compare", "convert"),
 }
 
+#: 同一算子**换电路**后的原语清单（默认电路仍登记在 OP_HLO_PRIMITIVES）。
+#: 键是 (算子, 电路名)，与 `backends.jax_backend.codegen` 的策略名一致。
+#: 用途：验证器/文档要核对"这套电路有没有用未适配的原语"时不必再猜一份。
+OP_HLO_PRIMITIVES_BY_STRATEGY: Mapping[tuple[str, str], tuple[str, ...]] = {
+    # 实测产物（`jax.jit(...).trace(...).lower().as_text()`）：
+    # sort + cumsum(reduce_window) + select + bit 提取，见 docs/MPC_BENCHMARK_PROTOCOL.md §4.1
+    ("TemporalOverlap", "sweep"): (
+        "shift_left", "shift_right_arithmetic", "add", "negate",
+        "broadcast_in_dim", "compare", "and", "or", "select",
+        "concatenate", "sort", "reduce", "reduce_window", "return", "constant",
+    ),
+}
 #: 算子推荐的协议与环宽
 OP_PROTOCOL_HINT: Mapping[str, tuple[str, int]] = {
     "DistanceLE": ("ABY3", 64),

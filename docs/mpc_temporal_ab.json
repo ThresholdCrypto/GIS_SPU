@@ -1,0 +1,1422 @@
+[
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=8 [pairwise]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 8,
+    "expect_status": "",
+    "strategy": "pairwise",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 82.77951900004155,
+      "max": 105.47045399994204,
+      "median": 85.2627310000571,
+      "p25": 83.68412799995895,
+      "p75": 85.55492699997558
+    },
+    "wall_ms_samples": [
+      105.47045399994204,
+      83.68412799995895,
+      82.77951900004155,
+      85.55492699997558,
+      85.2627310000571
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=8）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 95872 B（min 93952 / max 104064；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.18321299990020634,
+    "wall_ms": 85.2627310000571,
+    "memory_mb": 40.32421875,
+    "peak_rss_mb": 278.28125,
+    "pphlo_bytes": 2593,
+    "profiled": true,
+    "comm_send_bytes": 47872.0,
+    "comm_recv_bytes": 47744.0,
+    "comm_total_bytes": 95872.0,
+    "comm_send_actions": 578.0,
+    "comm_recv_actions": 580.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 46464,
+        "recv_bytes": 39936,
+        "executions": 2,
+        "duration_s": 0.018650637
+      },
+      "less": {
+        "send_bytes": 4608,
+        "recv_bytes": 4608,
+        "executions": 2,
+        "duration_s": 0.001003011
+      },
+      "reduce": {
+        "send_bytes": 64,
+        "recv_bytes": 64,
+        "executions": 1,
+        "duration_s": 0.000478031
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 3.4139e-05
+      },
+      "and": {
+        "send_bytes": 64,
+        "recv_bytes": 64,
+        "executions": 1,
+        "duration_s": 3.3113e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.0592e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.8119e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.6083e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 7.896e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 93952.0,
+      "max": 104064.0,
+      "median": 95872.0,
+      "p25": 95744.0,
+      "p75": 101312.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=8 [sweep]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 8,
+    "expect_status": "",
+    "strategy": "sweep",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 209.3554299999596,
+      "max": 224.3023500000163,
+      "median": 219.32773300000008,
+      "p25": 218.714140999964,
+      "p75": 222.41609299999254
+    },
+    "wall_ms_samples": [
+      222.41609299999254,
+      224.3023500000163,
+      209.3554299999596,
+      218.714140999964,
+      219.32773300000008
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=8）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 317968 B（min 316176 / max 349584；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.26529599995228637,
+    "wall_ms": 219.32773300000008,
+    "memory_mb": 2.25,
+    "peak_rss_mb": 283.296875,
+    "pphlo_bytes": 7102,
+    "profiled": true,
+    "comm_send_bytes": 178760.0,
+    "comm_recv_bytes": 142984.0,
+    "comm_total_bytes": 317968.0,
+    "comm_send_actions": 1322.0,
+    "comm_recv_actions": 1256.0,
+    "comm_by_primitive": {
+      "simple_sort": {
+        "send_bytes": 106496,
+        "recv_bytes": 89600,
+        "executions": 1,
+        "duration_s": 0.050736713
+      },
+      "shift_left": {
+        "send_bytes": 44096,
+        "recv_bytes": 44224,
+        "executions": 6,
+        "duration_s": 0.02143579
+      },
+      "equal": {
+        "send_bytes": 6208,
+        "recv_bytes": 6208,
+        "executions": 2,
+        "duration_s": 0.002345619
+      },
+      "less": {
+        "send_bytes": 2304,
+        "recv_bytes": 2304,
+        "executions": 2,
+        "duration_s": 0.001073553
+      },
+      "reduce_window": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 0.00070009
+      },
+      "shift_right_arithmetic": {
+        "send_bytes": 3584,
+        "recv_bytes": 3584,
+        "executions": 1,
+        "duration_s": 0.000495321
+      },
+      "reduce": {
+        "send_bytes": 32,
+        "recv_bytes": 32,
+        "executions": 1,
+        "duration_s": 0.000388951
+      },
+      "and": {
+        "send_bytes": 3616,
+        "recv_bytes": 3616,
+        "executions": 3,
+        "duration_s": 0.000386813
+      },
+      "select": {
+        "send_bytes": 512,
+        "recv_bytes": 512,
+        "executions": 2,
+        "duration_s": 0.000111292
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 2,
+        "duration_s": 7.7767e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 5.2905e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 5,
+        "duration_s": 5.0804e-05
+      },
+      "multiply": {
+        "send_bytes": 256,
+        "recv_bytes": 256,
+        "executions": 1,
+        "duration_s": 3.3391e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 39,
+        "duration_s": 2.3501e-05
+      },
+      "concatenate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.6397e-05
+      },
+      "pad": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.526e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 316176.0,
+      "max": 349584.0,
+      "median": 317968.0,
+      "p25": 317520.0,
+      "p75": 321744.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=32 [pairwise]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 32,
+    "expect_status": "",
+    "strategy": "pairwise",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 85.16557699999794,
+      "max": 95.19205299989153,
+      "median": 92.33620700001666,
+      "p25": 90.80503699988185,
+      "p75": 94.75032099999225
+    },
+    "wall_ms_samples": [
+      94.75032099999225,
+      90.80503699988185,
+      92.33620700001666,
+      95.19205299989153,
+      85.16557699999794
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 496896 B（min 480000 / max 540416；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.19148299998050788,
+    "wall_ms": 92.33620700001666,
+    "memory_mb": 1.265625,
+    "peak_rss_mb": 288.5,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 264192.0,
+    "comm_recv_bytes": 232704.0,
+    "comm_total_bytes": 496896.0,
+    "comm_send_actions": 579.0,
+    "comm_recv_actions": 579.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 188416,
+        "recv_bytes": 156928,
+        "executions": 2,
+        "duration_s": 0.019360036
+      },
+      "less": {
+        "send_bytes": 73728,
+        "recv_bytes": 73728,
+        "executions": 2,
+        "duration_s": 0.002977261
+      },
+      "reduce": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 0.000878439
+      },
+      "and": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 5.2193e-05
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 4.1262e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.1464e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.9092e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.8358e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 1.044e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 480000.0,
+      "max": 540416.0,
+      "median": 496896.0,
+      "p25": 480000.0,
+      "p75": 512256.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=32 [sweep]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 32,
+    "expect_status": "",
+    "strategy": "sweep",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 229.78065600000264,
+      "max": 351.85176499999216,
+      "median": 233.6701889998949,
+      "p25": 231.77933600004508,
+      "p75": 242.42247600000155
+    },
+    "wall_ms_samples": [
+      231.77933600004508,
+      229.78065600000264,
+      233.6701889998949,
+      242.42247600000155,
+      351.85176499999216
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 1265424 B（min 1249296 / max 1381392；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.2521189999242779,
+    "wall_ms": 233.6701889998949,
+    "memory_mb": 1.6875,
+    "peak_rss_mb": 293.0,
+    "pphlo_bytes": 7231,
+    "profiled": true,
+    "comm_send_bytes": 661768.0,
+    "comm_recv_bytes": 594440.0,
+    "comm_total_bytes": 1265424.0,
+    "comm_send_actions": 1450.0,
+    "comm_recv_actions": 1387.0,
+    "comm_by_primitive": {
+      "simple_sort": {
+        "send_bytes": 481792,
+        "recv_bytes": 283136,
+        "executions": 1,
+        "duration_s": 0.071454046
+      },
+      "shift_left": {
+        "send_bytes": 186368,
+        "recv_bytes": 175872,
+        "executions": 6,
+        "duration_s": 0.022352817
+      },
+      "reduce_window": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 0.003548081
+      },
+      "less": {
+        "send_bytes": 9216,
+        "recv_bytes": 9216,
+        "executions": 2,
+        "duration_s": 0.002857523
+      },
+      "equal": {
+        "send_bytes": 23808,
+        "recv_bytes": 27904,
+        "executions": 2,
+        "duration_s": 0.002754416
+      },
+      "reduce": {
+        "send_bytes": 128,
+        "recv_bytes": 128,
+        "executions": 1,
+        "duration_s": 0.000455752
+      },
+      "and": {
+        "send_bytes": 14464,
+        "recv_bytes": 14464,
+        "executions": 3,
+        "duration_s": 0.00045247
+      },
+      "shift_right_arithmetic": {
+        "send_bytes": 14336,
+        "recv_bytes": 14336,
+        "executions": 1,
+        "duration_s": 0.000425601
+      },
+      "select": {
+        "send_bytes": 2048,
+        "recv_bytes": 2048,
+        "executions": 2,
+        "duration_s": 0.000154528
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 2,
+        "duration_s": 9.6993e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 5.4902e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 5,
+        "duration_s": 5.4488e-05
+      },
+      "multiply": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 3.7346e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 39,
+        "duration_s": 2.4531e-05
+      },
+      "concatenate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.0113e-05
+      },
+      "pad": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.8464e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 1249296.0,
+      "max": 1381392.0,
+      "median": 1265424.0,
+      "p25": 1252880.0,
+      "p75": 1279760.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=64 [pairwise]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 64,
+    "expect_status": "",
+    "strategy": "pairwise",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 126.31518699981825,
+      "max": 149.09442300017872,
+      "median": 132.44185799999286,
+      "p25": 126.99751300010576,
+      "p75": 143.53216199992858
+    },
+    "wall_ms_samples": [
+      149.09442300017872,
+      132.44185799999286,
+      126.31518699981825,
+      126.99751300010576,
+      143.53216199992858
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=64）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 1296896 B（min 1224704 / max 1320960；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.19843899985971802,
+    "wall_ms": 132.44185799999286,
+    "memory_mb": 0.140625,
+    "peak_rss_mb": 294.6875,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 678912.0,
+    "comm_recv_bytes": 611328.0,
+    "comm_total_bytes": 1296896.0,
+    "comm_send_actions": 586.0,
+    "comm_recv_actions": 571.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 375808,
+        "recv_bytes": 314880,
+        "executions": 2,
+        "duration_s": 0.041128742
+      },
+      "less": {
+        "send_bytes": 294912,
+        "recv_bytes": 294912,
+        "executions": 2,
+        "duration_s": 0.012199309
+      },
+      "reduce": {
+        "send_bytes": 4096,
+        "recv_bytes": 4096,
+        "executions": 1,
+        "duration_s": 0.001484241
+      },
+      "and": {
+        "send_bytes": 4096,
+        "recv_bytes": 4096,
+        "executions": 1,
+        "duration_s": 0.000165926
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 3.957e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 3.144e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.5973e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.0777e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 1.668e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 1224704.0,
+      "max": 1320960.0,
+      "median": 1296896.0,
+      "p25": 1276416.0,
+      "p75": 1308160.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=64 [sweep]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 64,
+    "expect_status": "",
+    "strategy": "sweep",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 235.68810500000836,
+      "max": 247.37403799986168,
+      "median": 239.46022800009814,
+      "p25": 238.26795100012532,
+      "p75": 244.3421010000293
+    },
+    "wall_ms_samples": [
+      247.37403799986168,
+      235.68810500000836,
+      239.46022800009814,
+      238.26795100012532,
+      244.3421010000293
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=64）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 2497552 B（min 2490896 / max 2514960；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.25744300000951625,
+    "wall_ms": 239.46022800009814,
+    "memory_mb": 4.8125,
+    "peak_rss_mb": 300.90625,
+    "pphlo_bytes": 7231,
+    "profiled": true,
+    "comm_send_bytes": 1429512.0,
+    "comm_recv_bytes": 1083400.0,
+    "comm_total_bytes": 2497552.0,
+    "comm_send_actions": 1516.0,
+    "comm_recv_actions": 1457.0,
+    "comm_by_primitive": {
+      "simple_sort": {
+        "send_bytes": 959488,
+        "recv_bytes": 562176,
+        "executions": 1,
+        "duration_s": 0.0683911
+      },
+      "shift_left": {
+        "send_bytes": 400384,
+        "recv_bytes": 307200,
+        "executions": 6,
+        "duration_s": 0.02060578
+      },
+      "reduce_window": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 0.013317687
+      },
+      "equal": {
+        "send_bytes": 47616,
+        "recv_bytes": 51712,
+        "executions": 2,
+        "duration_s": 0.002744623
+      },
+      "less": {
+        "send_bytes": 18432,
+        "recv_bytes": 18432,
+        "executions": 2,
+        "duration_s": 0.001522172
+      },
+      "shift_right_arithmetic": {
+        "send_bytes": 28672,
+        "recv_bytes": 28672,
+        "executions": 1,
+        "duration_s": 0.00048702
+      },
+      "reduce": {
+        "send_bytes": 256,
+        "recv_bytes": 256,
+        "executions": 1,
+        "duration_s": 0.000457412
+      },
+      "and": {
+        "send_bytes": 28928,
+        "recv_bytes": 28928,
+        "executions": 3,
+        "duration_s": 0.000441714
+      },
+      "select": {
+        "send_bytes": 4096,
+        "recv_bytes": 4096,
+        "executions": 2,
+        "duration_s": 0.000138395
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 2,
+        "duration_s": 0.00010748
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 6.1772e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 5,
+        "duration_s": 4.7416e-05
+      },
+      "multiply": {
+        "send_bytes": 2048,
+        "recv_bytes": 2048,
+        "executions": 1,
+        "duration_s": 3.7004e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 39,
+        "duration_s": 2.2368e-05
+      },
+      "pad": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.1648e-05
+      },
+      "concatenate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.1602e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 2490896.0,
+      "max": 2514960.0,
+      "median": 2497552.0,
+      "p25": 2493456.0,
+      "p75": 2512912.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=128 [pairwise]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 128,
+    "expect_status": "",
+    "strategy": "pairwise",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 113.78984499992839,
+      "max": 117.82432299992252,
+      "median": 115.67051799988803,
+      "p25": 115.22974099989369,
+      "p75": 115.76487699994686
+    },
+    "wall_ms_samples": [
+      115.22974099989369,
+      115.67051799988803,
+      115.76487699994686,
+      113.78984499992839,
+      117.82432299992252
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=128）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 3853312 B（min 3756032 / max 3883008；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.2116020000357821,
+    "wall_ms": 115.67051799988803,
+    "memory_mb": 1.31640625,
+    "peak_rss_mb": 308.09375,
+    "pphlo_bytes": 2713,
+    "profiled": true,
+    "comm_send_bytes": 1946624.0,
+    "comm_recv_bytes": 1926144.0,
+    "comm_total_bytes": 3853312.0,
+    "comm_send_actions": 586.0,
+    "comm_recv_actions": 581.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 1179648,
+        "recv_bytes": 1179648,
+        "executions": 2,
+        "duration_s": 0.023823931
+      },
+      "shift_left": {
+        "send_bytes": 714752,
+        "recv_bytes": 713728,
+        "executions": 2,
+        "duration_s": 0.021275499
+      },
+      "reduce": {
+        "send_bytes": 16384,
+        "recv_bytes": 16384,
+        "executions": 1,
+        "duration_s": 0.001232379
+      },
+      "and": {
+        "send_bytes": 16384,
+        "recv_bytes": 16384,
+        "executions": 1,
+        "duration_s": 0.000158023
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 3.4628e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.9582e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.8854e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.7637e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 1.2458e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 3756032.0,
+      "max": 3883008.0,
+      "median": 3853312.0,
+      "p25": 3844096.0,
+      "p75": 3870720.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=128 [sweep]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 128,
+    "expect_status": "",
+    "strategy": "sweep",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 275.14180899993335,
+      "max": 299.27005300010023,
+      "median": 278.8177509999059,
+      "p25": 275.997899999993,
+      "p75": 280.2391879999959
+    },
+    "wall_ms_samples": [
+      299.27005300010023,
+      278.8177509999059,
+      275.997899999993,
+      280.2391879999959,
+      275.14180899993335
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=128）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 5438480 B（min 4938768 / max 5561360；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.2993370001149742,
+    "wall_ms": 278.8177509999059,
+    "memory_mb": 12.68359375,
+    "peak_rss_mb": 321.25390625,
+    "pphlo_bytes": 7291,
+    "profiled": true,
+    "comm_send_bytes": 2633224.0,
+    "comm_recv_bytes": 2733576.0,
+    "comm_total_bytes": 5438480.0,
+    "comm_send_actions": 1584.0,
+    "comm_recv_actions": 1517.0,
+    "comm_by_primitive": {
+      "simple_sort": {
+        "send_bytes": 1652224,
+        "recv_bytes": 1906176,
+        "executions": 1,
+        "duration_s": 0.081420933
+      },
+      "reduce_window": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 0.035612207
+      },
+      "shift_left": {
+        "send_bytes": 788480,
+        "recv_bytes": 555008,
+        "executions": 6,
+        "duration_s": 0.025139426
+      },
+      "equal": {
+        "send_bytes": 95232,
+        "recv_bytes": 95232,
+        "executions": 2,
+        "duration_s": 0.003735896
+      },
+      "less": {
+        "send_bytes": 36864,
+        "recv_bytes": 36864,
+        "executions": 2,
+        "duration_s": 0.002870941
+      },
+      "and": {
+        "send_bytes": 57856,
+        "recv_bytes": 57856,
+        "executions": 3,
+        "duration_s": 0.000724507
+      },
+      "reduce": {
+        "send_bytes": 512,
+        "recv_bytes": 512,
+        "executions": 1,
+        "duration_s": 0.00059269
+      },
+      "shift_right_arithmetic": {
+        "send_bytes": 57344,
+        "recv_bytes": 57344,
+        "executions": 1,
+        "duration_s": 0.000533031
+      },
+      "select": {
+        "send_bytes": 8192,
+        "recv_bytes": 16384,
+        "executions": 2,
+        "duration_s": 0.000208199
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 2,
+        "duration_s": 0.000130034
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 6.5246e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 5,
+        "duration_s": 5.9518e-05
+      },
+      "multiply": {
+        "send_bytes": 4096,
+        "recv_bytes": 4096,
+        "executions": 1,
+        "duration_s": 2.8683e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 39,
+        "duration_s": 2.7079e-05
+      },
+      "pad": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.6652e-05
+      },
+      "concatenate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.7588e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 4938768.0,
+      "max": 5561360.0,
+      "median": 5438480.0,
+      "p25": 5012496.0,
+      "p75": 5485584.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=256 [pairwise]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "strategy": "pairwise",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 173.64637800005767,
+      "max": 181.8783969999913,
+      "median": 176.97772499991515,
+      "p25": 175.3550579999228,
+      "p75": 178.0341280000357
+    },
+    "wall_ms_samples": [
+      181.8783969999913,
+      175.3550579999228,
+      176.97772499991515,
+      178.0341280000357,
+      173.64637800005767
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=256）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 12546048 B（min 12503040 / max 12722176；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.2316400000381691,
+    "wall_ms": 176.97772499991515,
+    "memory_mb": 15.8203125,
+    "peak_rss_mb": 370.4765625,
+    "pphlo_bytes": 2713,
+    "profiled": true,
+    "comm_send_bytes": 6293504.0,
+    "comm_recv_bytes": 6273024.0,
+    "comm_total_bytes": 12546048.0,
+    "comm_send_actions": 589.0,
+    "comm_recv_actions": 592.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 4718592,
+        "recv_bytes": 4718592,
+        "executions": 2,
+        "duration_s": 0.08328586
+      },
+      "shift_left": {
+        "send_bytes": 1417216,
+        "recv_bytes": 1429504,
+        "executions": 2,
+        "duration_s": 0.025138524
+      },
+      "reduce": {
+        "send_bytes": 65536,
+        "recv_bytes": 65536,
+        "executions": 1,
+        "duration_s": 0.003040789
+      },
+      "and": {
+        "send_bytes": 65536,
+        "recv_bytes": 65536,
+        "executions": 1,
+        "duration_s": 0.000415739
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 6.4831e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.8652e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.5109e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.9247e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 1.3046e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 12503040.0,
+      "max": 12722176.0,
+      "median": 12546048.0,
+      "p25": 12539904.0,
+      "p75": 12566528.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=256 [sweep]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "strategy": "sweep",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 345.53874700009146,
+      "max": 368.540818999918,
+      "median": 353.73410299985153,
+      "p25": 346.9091039999057,
+      "p75": 359.35737999989215
+    },
+    "wall_ms_samples": [
+      368.540818999918,
+      345.53874700009146,
+      346.9091039999057,
+      359.35737999989215,
+      353.73410299985153
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=256）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 10889232 B（min 9627664 / max 11180048；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.3474220000043715,
+    "wall_ms": 353.73410299985153,
+    "memory_mb": 45.48828125,
+    "peak_rss_mb": 417.71484375,
+    "pphlo_bytes": 7360,
+    "profiled": true,
+    "comm_send_bytes": 5322760.0,
+    "comm_recv_bytes": 5650440.0,
+    "comm_total_bytes": 10889232.0,
+    "comm_send_actions": 1648.0,
+    "comm_recv_actions": 1582.0,
+    "comm_by_primitive": {
+      "simple_sort": {
+        "send_bytes": 3299328,
+        "recv_bytes": 3807232,
+        "executions": 1,
+        "duration_s": 0.104473077
+      },
+      "reduce_window": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 0.081530256
+      },
+      "shift_left": {
+        "send_bytes": 1394688,
+        "recv_bytes": 1331200,
+        "executions": 6,
+        "duration_s": 0.025311365
+      },
+      "less": {
+        "send_bytes": 73728,
+        "recv_bytes": 73728,
+        "executions": 2,
+        "duration_s": 0.011516269
+      },
+      "equal": {
+        "send_bytes": 206848,
+        "recv_bytes": 157696,
+        "executions": 2,
+        "duration_s": 0.004818298
+      },
+      "and": {
+        "send_bytes": 115712,
+        "recv_bytes": 115712,
+        "executions": 3,
+        "duration_s": 0.001037922
+      },
+      "shift_right_arithmetic": {
+        "send_bytes": 114688,
+        "recv_bytes": 114688,
+        "executions": 1,
+        "duration_s": 0.000829813
+      },
+      "reduce": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 0.000770207
+      },
+      "select": {
+        "send_bytes": 16384,
+        "recv_bytes": 16384,
+        "executions": 2,
+        "duration_s": 0.00022262
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 5,
+        "duration_s": 9.2392e-05
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 2,
+        "duration_s": 9.2068e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 5.3235e-05
+      },
+      "multiply": {
+        "send_bytes": 8192,
+        "recv_bytes": 8192,
+        "executions": 1,
+        "duration_s": 4.8747e-05
+      },
+      "pad": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 3.4097e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 39,
+        "duration_s": 3.2716e-05
+      },
+      "concatenate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.6633e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 9627664.0,
+      "max": 11180048.0,
+      "median": 10889232.0,
+      "p25": 9934864.0,
+      "p75": 11108368.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  }
+]

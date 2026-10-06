@@ -22,6 +22,8 @@
 | `Contains` 密态子集判定 | MPC 基数等值（SPU），退路披露为 `plaintext-fallback` |
 | MPC 协议矩阵 | REF2K / SEMI2K / ABY3 / CHEETAH / SECURENN × 3 个 MPC 算子，逐条真跑（`tests/test_spu_backend.py::TestProtocolFieldSweep`、`tests/test_protocol_coverage.py`） |
 | MPC 代价基线 | 见 `docs/mpc_benchmark_baseline.json`（本阶段新增，规程 `docs/MPC_BENCHMARK_PROTOCOL.md`） |
+| MPC 通信量基线 | 见 `docs/mpc_comm_baseline.json`（P2-2 新增，规程 §8.4） |
+| `TemporalOverlap` 电路 A/B | 见 `docs/mpc_temporal_ab.json`（P3 新增，规程 §4.1） |
 | 环境快照 | `docs/psi_capability_report_wsl.json` |
 
 ## 2. 已知的版本脆弱点（升级前先看）
@@ -87,6 +89,7 @@ cd GIS_SPU
 | 2026-10-05 | `423946d` + 工作区未提交改动（P0 MPC 协议入 planner / P1 MPC 代价基线 / P1.5 重复实验） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + MPC 协议矩阵（5 协议 × 3 算子 × 3 环宽）+ MPC 代价基线 + 重复实验（×5 / ×30） | **verified**（`748 passed`，0 failed，0 skipped） |
 | 2026-10-06 | `bd151ae` + 工作区未提交改动（P2-1：`WeightedSum` 定点 scale 改编译期常量、生成代码去除法） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + MPC 基线重跑（单次 / ×5 / ×30）+ 三环宽精确性 + 通信量探针 | **verified**（`753 passed`，0 failed，0 skipped） |
 | 2026-10-06 | `5a79c2c` + 工作区未提交改动（P2-2：通信量入基线，`capture_comm` / `--comm`） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + 通信量基线（全量 ×5，带 profiling）+ MPC 基线重跑（单次 / ×5 / ×30） | **verified**（`773 passed`，0 failed，0 skipped） |
+| 2026-10-06 | `4716f4b` + 工作区未提交改动（P3：`TemporalOverlap` 第二套电路 `sweep` + 两套电路的成对 A/B） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + MPC 基线重跑（单次 / ×5 / ×30）+ 通信量基线（×5）+ `sweep` A/B（×5，含 `sort` / `reduce_window` 真机实测） | **verified**（`793 passed`，0 failed，0 skipped） |
 
 > 2026-10-06 第二行（P2-2）的要点：通信量接进 `run_spu_simulation(capture_comm=True)`
 > 与每条基线记录，新增产物 `docs/mpc_comm_baseline.json` / `.csv`。

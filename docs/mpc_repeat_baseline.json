@@ -6,24 +6,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 43.165982999198604,
-      "max": 70.11730399972294,
-      "median": 43.572655002208194,
-      "p25": 43.46889800217468,
-      "p75": 43.68181700192508
+      "min": 42.28149599998687,
+      "max": 70.03226199992696,
+      "median": 43.45517400008703,
+      "p25": 42.97619799990571,
+      "p75": 47.14203300000008
     },
     "wall_ms_samples": [
-      70.11730399972294,
-      43.165982999198604,
-      43.68181700192508,
-      43.46889800217468,
-      43.572655002208194
+      70.03226199992696,
+      42.28149599998687,
+      43.45517400008703,
+      42.97619799990571,
+      47.14203300000008
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -39,10 +40,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(2, REF2K, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.1729440009512473,
-    "wall_ms": 43.572655002208194,
-    "memory_mb": 39.49609375,
-    "peak_rss_mb": 277.51171875,
+    "setup_ms": 0.24604899999758345,
+    "wall_ms": 43.45517400008703,
+    "memory_mb": 39.6328125,
+    "peak_rss_mb": 277.4375,
     "pphlo_bytes": 1526,
     "profiled": false,
     "comm_send_bytes": null,
@@ -65,24 +66,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 43.256828997982666,
-      "max": 47.33090700028697,
-      "median": 44.29980300119496,
-      "p25": 43.30417600067449,
-      "p75": 44.93503799676546
+      "min": 44.6799750000082,
+      "max": 49.962611000069046,
+      "median": 46.38818499995523,
+      "p25": 45.42380600003071,
+      "p75": 46.594437000067046
     },
     "wall_ms_samples": [
-      44.93503799676546,
-      44.29980300119496,
-      47.33090700028697,
-      43.30417600067449,
-      43.256828997982666
+      46.594437000067046,
+      46.38818499995523,
+      49.962611000069046,
+      45.42380600003071,
+      44.6799750000082
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -98,10 +100,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(2, SEMI2K, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.16845900245243683,
-    "wall_ms": 44.29980300119496,
-    "memory_mb": 0.703125,
-    "peak_rss_mb": 280.83984375,
+    "setup_ms": 0.20683299999291194,
+    "wall_ms": 46.38818499995523,
+    "memory_mb": 0.890625,
+    "peak_rss_mb": 280.953125,
     "pphlo_bytes": 1526,
     "profiled": false,
     "comm_send_bytes": null,
@@ -124,24 +126,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 42.2133930005657,
-      "max": 47.30834699876141,
-      "median": 43.67865699896356,
-      "p25": 42.65027599831228,
-      "p75": 44.13192500214791
+      "min": 44.432921999941755,
+      "max": 49.92692799999077,
+      "median": 46.320343000047615,
+      "p25": 45.8819709999716,
+      "p75": 46.93697499999416
     },
     "wall_ms_samples": [
-      44.13192500214791,
-      47.30834699876141,
-      43.67865699896356,
-      42.65027599831228,
-      42.2133930005657
+      46.320343000047615,
+      49.92692799999077,
+      45.8819709999716,
+      46.93697499999416,
+      44.432921999941755
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -157,10 +160,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.19041900304728188,
-    "wall_ms": 43.67865699896356,
-    "memory_mb": 1.68359375,
-    "peak_rss_mb": 283.3671875,
+    "setup_ms": 0.16513499997472536,
+    "wall_ms": 46.320343000047615,
+    "memory_mb": 1.875,
+    "peak_rss_mb": 283.671875,
     "pphlo_bytes": 1526,
     "profiled": false,
     "comm_send_bytes": null,
@@ -183,24 +186,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 162.89826299907872,
-      "max": 192.29393099885783,
-      "median": 167.86007300106576,
-      "p25": 165.76539300149307,
-      "p75": 167.9954329993052
+      "min": 164.858908000042,
+      "max": 182.83235100000184,
+      "median": 167.86787099999856,
+      "p25": 165.01385799995205,
+      "p75": 182.45222300004116
     },
     "wall_ms_samples": [
-      192.29393099885783,
-      167.86007300106576,
-      165.76539300149307,
-      162.89826299907872,
-      167.9954329993052
+      182.83235100000184,
+      167.86787099999856,
+      182.45222300004116,
+      164.858908000042,
+      165.01385799995205
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -216,10 +220,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(2, CHEETAH, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.1568040024721995,
-    "wall_ms": 167.86007300106576,
-    "memory_mb": 115.4140625,
-    "peak_rss_mb": 398.78125,
+    "setup_ms": 0.1866379999455603,
+    "wall_ms": 167.86787099999856,
+    "memory_mb": 116.22265625,
+    "peak_rss_mb": 399.89453125,
     "pphlo_bytes": 1526,
     "profiled": false,
     "comm_send_bytes": null,
@@ -242,24 +246,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 44.741011999576585,
-      "max": 46.4859810017515,
-      "median": 45.34328400040977,
-      "p25": 45.161056998040294,
-      "p75": 45.66289899958065
+      "min": 44.76615299995501,
+      "max": 46.45533999996587,
+      "median": 45.27378900002077,
+      "p25": 44.80289399998583,
+      "p75": 46.322438000061084
     },
     "wall_ms_samples": [
-      45.34328400040977,
-      45.161056998040294,
-      44.741011999576585,
-      46.4859810017515,
-      45.66289899958065
+      44.80289399998583,
+      45.27378900002077,
+      44.76615299995501,
+      46.45533999996587,
+      46.322438000061084
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -275,10 +280,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, SECURENN, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.1716090009722393,
-    "wall_ms": 45.34328400040977,
+    "setup_ms": 0.16661899996961438,
+    "wall_ms": 45.27378900002077,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.484375,
+    "peak_rss_mb": 415.9375,
     "pphlo_bytes": 1526,
     "profiled": false,
     "comm_send_bytes": null,
@@ -301,24 +306,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.049047997337766,
-      "max": 35.8422530007374,
-      "median": 33.38234400143847,
-      "p25": 33.32291699916823,
-      "p75": 35.44982899984461
+      "min": 34.031229999982315,
+      "max": 37.952393999944434,
+      "median": 34.843957000020964,
+      "p25": 34.081187000083446,
+      "p75": 35.073315999966326
     },
     "wall_ms_samples": [
-      33.049047997337766,
-      35.44982899984461,
-      35.8422530007374,
-      33.32291699916823,
-      33.38234400143847
+      34.031229999982315,
+      35.073315999966326,
+      37.952393999944434,
+      34.843957000020964,
+      34.081187000083446
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -336,10 +342,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(2, REF2K, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.16324399985023774,
-    "wall_ms": 33.38234400143847,
+    "setup_ms": 0.1581519999263037,
+    "wall_ms": 34.843957000020964,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.484375,
+    "peak_rss_mb": 415.9375,
     "pphlo_bytes": 903,
     "profiled": false,
     "comm_send_bytes": null,
@@ -362,24 +368,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.725985002092784,
-      "max": 35.89133599962224,
-      "median": 34.537433999503264,
-      "p25": 33.79481400043005,
-      "p75": 35.63710599701153
+      "min": 35.24469700005284,
+      "max": 38.24038200002633,
+      "median": 36.0039140000481,
+      "p25": 35.45842100004393,
+      "p75": 36.206309000021974
     },
     "wall_ms_samples": [
-      34.537433999503264,
-      35.63710599701153,
-      35.89133599962224,
-      33.725985002092784,
-      33.79481400043005
+      36.0039140000481,
+      35.45842100004393,
+      38.24038200002633,
+      36.206309000021974,
+      35.24469700005284
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -397,10 +404,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(2, SEMI2K, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.2132660010829568,
-    "wall_ms": 34.537433999503264,
+    "setup_ms": 0.1793520000319404,
+    "wall_ms": 36.0039140000481,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.484375,
+    "peak_rss_mb": 415.9375,
     "pphlo_bytes": 903,
     "profiled": false,
     "comm_send_bytes": null,
@@ -423,24 +430,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.348341999953846,
-      "max": 37.58286000083899,
-      "median": 34.61562799930107,
-      "p25": 34.16715600178577,
-      "p75": 35.307145000842866
+      "min": 33.966718999977275,
+      "max": 35.53254499990999,
+      "median": 34.85768999996708,
+      "p25": 34.75661500010574,
+      "p75": 34.9421150000353
     },
     "wall_ms_samples": [
-      33.348341999953846,
-      35.307145000842866,
-      37.58286000083899,
-      34.16715600178577,
-      34.61562799930107
+      34.75661500010574,
+      33.966718999977275,
+      34.9421150000353,
+      35.53254499990999,
+      34.85768999996708
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -458,10 +466,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.15423600052599795,
-    "wall_ms": 34.61562799930107,
+    "setup_ms": 0.15862399993693543,
+    "wall_ms": 34.85768999996708,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.484375,
+    "peak_rss_mb": 415.9375,
     "pphlo_bytes": 903,
     "profiled": false,
     "comm_send_bytes": null,
@@ -484,24 +492,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 80.08138799777953,
-      "max": 86.32444199974998,
-      "median": 81.4146199991228,
-      "p25": 80.64338300027885,
-      "p75": 84.46209000248928
+      "min": 80.26886300001479,
+      "max": 84.64407400003893,
+      "median": 82.79201999994257,
+      "p25": 81.97304800000893,
+      "p75": 84.4330440000931
     },
     "wall_ms_samples": [
-      80.64338300027885,
-      81.4146199991228,
-      84.46209000248928,
-      80.08138799777953,
-      86.32444199974998
+      84.64407400003893,
+      84.4330440000931,
+      81.97304800000893,
+      82.79201999994257,
+      80.26886300001479
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -519,10 +528,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(2, CHEETAH, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.15493700266233645,
-    "wall_ms": 81.4146199991228,
+    "setup_ms": 0.16277700001410267,
+    "wall_ms": 82.79201999994257,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.484375,
+    "peak_rss_mb": 415.9375,
     "pphlo_bytes": 903,
     "profiled": false,
     "comm_send_bytes": null,
@@ -545,24 +554,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.1869639994693,
-      "max": 35.997422000946244,
-      "median": 33.51993999967817,
-      "p25": 33.21323899945128,
-      "p75": 33.64691800015862
+      "min": 33.549000999983036,
+      "max": 36.50294299995949,
+      "median": 33.74232999999549,
+      "p25": 33.56406299997161,
+      "p75": 34.13395600000513
     },
     "wall_ms_samples": [
-      33.1869639994693,
-      33.64691800015862,
-      35.997422000946244,
-      33.51993999967817,
-      33.21323899945128
+      34.13395600000513,
+      33.56406299997161,
+      36.50294299995949,
+      33.74232999999549,
+      33.549000999983036
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -580,10 +590,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, SECURENN, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.16562499877181835,
-    "wall_ms": 33.51993999967817,
+    "setup_ms": 0.16037000000324042,
+    "wall_ms": 33.74232999999549,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.484375,
+    "peak_rss_mb": 415.9375,
     "pphlo_bytes": 903,
     "profiled": false,
     "comm_send_bytes": null,
@@ -606,24 +616,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 63.635900001827395,
-      "max": 73.69385900165071,
-      "median": 64.12495100084925,
-      "p25": 63.899328000843525,
-      "p75": 64.38583099952666
+      "min": 63.123234999920896,
+      "max": 73.8046830000485,
+      "median": 64.77456999994047,
+      "p25": 63.817145000029996,
+      "p75": 67.28430399994068
     },
     "wall_ms_samples": [
-      73.69385900165071,
-      63.899328000843525,
-      63.635900001827395,
-      64.38583099952666,
-      64.12495100084925
+      73.8046830000485,
+      63.123234999920896,
+      63.817145000029996,
+      64.77456999994047,
+      67.28430399994068
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -639,10 +650,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(2, REF2K, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.19104900275124237,
-    "wall_ms": 64.12495100084925,
+    "setup_ms": 0.20291000009819982,
+    "wall_ms": 64.77456999994047,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.484375,
+    "peak_rss_mb": 415.9375,
     "pphlo_bytes": 2653,
     "profiled": false,
     "comm_send_bytes": null,
@@ -665,24 +676,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 91.9422900005884,
-      "max": 99.77045100094983,
-      "median": 93.75680399898556,
-      "p25": 93.2671800001117,
-      "p75": 99.42765499727102
+      "min": 93.86750900000607,
+      "max": 100.86718799993832,
+      "median": 95.22075899997162,
+      "p25": 94.23989199990501,
+      "p75": 100.01373800002966
     },
     "wall_ms_samples": [
-      99.77045100094983,
-      93.2671800001117,
-      99.42765499727102,
-      93.75680399898556,
-      91.9422900005884
+      94.23989199990501,
+      95.22075899997162,
+      100.86718799993832,
+      93.86750900000607,
+      100.01373800002966
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -698,10 +710,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(2, SEMI2K, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.20498799858614802,
-    "wall_ms": 93.75680399898556,
+    "setup_ms": 0.1771729999973104,
+    "wall_ms": 95.22075899997162,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.484375,
+    "peak_rss_mb": 415.9375,
     "pphlo_bytes": 2653,
     "profiled": false,
     "comm_send_bytes": null,
@@ -724,24 +736,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 80.48890600184677,
-      "max": 89.7296750008536,
-      "median": 82.78712199899019,
-      "p25": 82.72787600071752,
-      "p75": 83.04880300056539
+      "min": 87.1035480000728,
+      "max": 98.71581099992,
+      "median": 92.33496100000593,
+      "p25": 91.68858200007435,
+      "p75": 93.68052699994678
     },
     "wall_ms_samples": [
-      82.78712199899019,
-      83.04880300056539,
-      82.72787600071752,
-      89.7296750008536,
-      80.48890600184677
+      98.71581099992,
+      91.68858200007435,
+      93.68052699994678,
+      92.33496100000593,
+      87.1035480000728
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -757,10 +770,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.19252999845775776,
-    "wall_ms": 82.78712199899019,
+    "setup_ms": 0.38109100000838225,
+    "wall_ms": 92.33496100000593,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.484375,
+    "peak_rss_mb": 415.9375,
     "pphlo_bytes": 2653,
     "profiled": false,
     "comm_send_bytes": null,
@@ -783,24 +796,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 1075.7932529995742,
-      "max": 1326.5704980003648,
-      "median": 1291.1599679973733,
-      "p25": 1165.745472000708,
-      "p75": 1296.3669569980993
+      "min": 1045.4624970000168,
+      "max": 1267.0123870000225,
+      "median": 1090.3266110000231,
+      "p25": 1068.6511840000321,
+      "p75": 1147.7489920000608
     },
     "wall_ms_samples": [
-      1326.5704980003648,
-      1291.1599679973733,
-      1296.3669569980993,
-      1165.745472000708,
-      1075.7932529995742
+      1267.0123870000225,
+      1147.7489920000608,
+      1090.3266110000231,
+      1045.4624970000168,
+      1068.6511840000321
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -816,10 +830,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(2, CHEETAH, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.19079699995927513,
-    "wall_ms": 1291.1599679973733,
-    "memory_mb": 650.12890625,
-    "peak_rss_mb": 1064.61328125,
+    "setup_ms": 0.298423999993247,
+    "wall_ms": 1090.3266110000231,
+    "memory_mb": 652.36328125,
+    "peak_rss_mb": 1068.30078125,
     "pphlo_bytes": 2653,
     "profiled": false,
     "comm_send_bytes": null,
@@ -842,24 +856,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 597.9023389991198,
-      "max": 631.0160950015415,
-      "median": 605.2338099980261,
-      "p25": 598.7976579999668,
-      "p75": 616.4423410009476
+      "min": 593.7799959999666,
+      "max": 648.2045409999273,
+      "median": 610.3105839999898,
+      "p25": 609.4977519999247,
+      "p75": 621.3500569999724
     },
     "wall_ms_samples": [
-      598.7976579999668,
-      605.2338099980261,
-      631.0160950015415,
-      616.4423410009476,
-      597.9023389991198
+      609.4977519999247,
+      593.7799959999666,
+      610.3105839999898,
+      648.2045409999273,
+      621.3500569999724
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -875,11 +890,191 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, SECURENN, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.20669700097641908,
-    "wall_ms": 605.2338099980261,
+    "setup_ms": 0.1902160000781805,
+    "wall_ms": 610.3105839999898,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1075.484375,
     "pphlo_bytes": 2653,
+    "profiled": false,
+    "comm_send_bytes": null,
+    "comm_recv_bytes": null,
+    "comm_total_bytes": null,
+    "comm_send_actions": null,
+    "comm_recv_actions": null,
+    "comm_by_primitive": {},
+    "comm_total_bytes_stats": {},
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=32 [sweep]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 32,
+    "expect_status": "",
+    "strategy": "sweep",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 225.92014299993934,
+      "max": 254.98769700004686,
+      "median": 233.4403449999627,
+      "p25": 229.51294999995753,
+      "p75": 238.88469900009568
+    },
+    "wall_ms_samples": [
+      233.4403449999627,
+      225.92014299993934,
+      229.51294999995753,
+      238.88469900009568,
+      254.98769700004686
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
+    "error": "",
+    "setup_ms": 0.2995329999748719,
+    "wall_ms": 233.4403449999627,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1075.484375,
+    "pphlo_bytes": 7231,
+    "profiled": false,
+    "comm_send_bytes": null,
+    "comm_recv_bytes": null,
+    "comm_total_bytes": null,
+    "comm_send_actions": null,
+    "comm_recv_actions": null,
+    "comm_by_primitive": {},
+    "comm_total_bytes_stats": {},
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=256 [sweep]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "strategy": "sweep",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 350.2697479999597,
+      "max": 377.5812549999955,
+      "median": 360.43357999994896,
+      "p25": 360.12207100009164,
+      "p75": 375.3080169999521
+    },
+    "wall_ms_samples": [
+      377.5812549999955,
+      350.2697479999597,
+      360.43357999994896,
+      375.3080169999521,
+      360.12207100009164
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=256）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
+    "error": "",
+    "setup_ms": 0.3538150000395035,
+    "wall_ms": 360.43357999994896,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1075.484375,
+    "pphlo_bytes": 7360,
+    "profiled": false,
+    "comm_send_bytes": null,
+    "comm_recv_bytes": null,
+    "comm_total_bytes": null,
+    "comm_send_actions": null,
+    "comm_recv_actions": null,
+    "comm_by_primitive": {},
+    "comm_total_bytes_stats": {},
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=1024 [sweep]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 1024,
+    "expect_status": "",
+    "strategy": "sweep",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 1630.081336000103,
+      "max": 2138.452199000085,
+      "median": 1926.184228000011,
+      "p25": 1651.847742999962,
+      "p75": 2020.3587920000246
+    },
+    "wall_ms_samples": [
+      1926.184228000011,
+      1651.847742999962,
+      2020.3587920000246,
+      2138.452199000085,
+      1630.081336000103
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=1024）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
+    "error": "",
+    "setup_ms": 0.5235540000967376,
+    "wall_ms": 1926.184228000011,
+    "memory_mb": 843.1328125,
+    "peak_rss_mb": 1918.6171875,
+    "pphlo_bytes": 7414,
     "profiled": false,
     "comm_send_bytes": null,
     "comm_recv_bytes": null,
@@ -901,24 +1096,25 @@
     "field": "FM32",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 42.70842199912295,
-      "max": 45.92248600238236,
-      "median": 44.0452879993245,
-      "p25": 42.936765999911586,
-      "p75": 45.53781600043294
+      "min": 44.29344300001503,
+      "max": 46.9338450000123,
+      "median": 44.47287800007871,
+      "p25": 44.398613000112164,
+      "p75": 45.11688600018715
     },
     "wall_ms_samples": [
-      45.53781600043294,
-      42.70842199912295,
-      42.936765999911586,
-      44.0452879993245,
-      45.92248600238236
+      44.47287800007871,
+      45.11688600018715,
+      44.29344300001503,
+      46.9338450000123,
+      44.398613000112164
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -934,10 +1130,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM32) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.23783399956300855,
-    "wall_ms": 44.0452879993245,
+    "setup_ms": 0.17864699998426659,
+    "wall_ms": 44.47287800007871,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 1526,
     "profiled": false,
     "comm_send_bytes": null,
@@ -960,24 +1156,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 42.501328000071226,
-      "max": 45.63281099763117,
-      "median": 44.677157999103656,
-      "p25": 44.644082998274826,
-      "p75": 45.44616699786275
+      "min": 44.12678200014852,
+      "max": 45.03455200006101,
+      "median": 44.60753900002601,
+      "p25": 44.26573199998529,
+      "p75": 44.83313499986252
     },
     "wall_ms_samples": [
-      44.644082998274826,
-      45.63281099763117,
-      45.44616699786275,
-      44.677157999103656,
-      42.501328000071226
+      44.12678200014852,
+      45.03455200006101,
+      44.83313499986252,
+      44.26573199998529,
+      44.60753900002601
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -993,10 +1190,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.1932560007844586,
-    "wall_ms": 44.677157999103656,
+    "setup_ms": 0.1597709999714425,
+    "wall_ms": 44.60753900002601,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 1526,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1019,24 +1216,25 @@
     "field": "FM128",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 42.76272500283085,
-      "max": 44.93058899970492,
-      "median": 43.138610999449156,
-      "p25": 42.86169199986034,
-      "p75": 44.03506699964055
+      "min": 43.006876999925225,
+      "max": 47.624625000025844,
+      "median": 46.0529269998915,
+      "p25": 43.77428099996905,
+      "p75": 46.72709500005112
     },
     "wall_ms_samples": [
-      43.138610999449156,
-      44.93058899970492,
-      44.03506699964055,
-      42.86169199986034,
-      42.76272500283085
+      43.77428099996905,
+      47.624625000025844,
+      46.72709500005112,
+      46.0529269998915,
+      43.006876999925225
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1052,10 +1250,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM128) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.16946899995673448,
-    "wall_ms": 43.138610999449156,
+    "setup_ms": 0.17485200010014523,
+    "wall_ms": 46.0529269998915,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 1526,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1078,24 +1276,25 @@
     "field": "FM32",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 32.97806699993089,
-      "max": 36.570846001268364,
-      "median": 34.682176999922376,
-      "p25": 33.35540100306389,
-      "p75": 36.04278899729252
+      "min": 33.49582300006659,
+      "max": 35.00102800012428,
+      "median": 34.49474400008512,
+      "p25": 34.04207099993073,
+      "p75": 34.52788699996745
     },
     "wall_ms_samples": [
-      36.570846001268364,
-      34.682176999922376,
-      36.04278899729252,
-      32.97806699993089,
-      33.35540100306389
+      35.00102800012428,
+      34.49474400008512,
+      34.52788699996745,
+      33.49582300006659,
+      34.04207099993073
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1113,10 +1312,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM32) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.20146700262557715,
-    "wall_ms": 34.682176999922376,
+    "setup_ms": 0.1620880000245961,
+    "wall_ms": 34.49474400008512,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 903,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1139,24 +1338,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.07459200004814,
-      "max": 35.59286299787345,
-      "median": 33.6076099993079,
-      "p25": 33.09913500197581,
-      "p75": 34.38790299696848
+      "min": 33.16147500004263,
+      "max": 35.77436499995201,
+      "median": 34.70661699998345,
+      "p25": 34.6477230000346,
+      "p75": 35.63536199999362
     },
     "wall_ms_samples": [
-      33.09913500197581,
-      34.38790299696848,
-      35.59286299787345,
-      33.07459200004814,
-      33.6076099993079
+      35.77436499995201,
+      33.16147500004263,
+      34.70661699998345,
+      34.6477230000346,
+      35.63536199999362
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1174,10 +1374,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.180432998604374,
-    "wall_ms": 33.6076099993079,
+    "setup_ms": 0.15785300001880387,
+    "wall_ms": 34.70661699998345,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 903,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1200,24 +1400,25 @@
     "field": "FM128",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 32.041845999629004,
-      "max": 41.373668002052,
-      "median": 33.65057600240107,
-      "p25": 33.05360800004564,
-      "p75": 33.95625900157029
+      "min": 34.2432079999071,
+      "max": 37.9113840001537,
+      "median": 35.082722999959515,
+      "p25": 34.891633999905025,
+      "p75": 35.322882999935246
     },
     "wall_ms_samples": [
-      33.65057600240107,
-      32.041845999629004,
-      41.373668002052,
-      33.95625900157029,
-      33.05360800004564
+      37.9113840001537,
+      34.2432079999071,
+      35.082722999959515,
+      34.891633999905025,
+      35.322882999935246
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1235,10 +1436,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM128) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.16268699982902035,
-    "wall_ms": 33.65057600240107,
+    "setup_ms": 0.16482599994560587,
+    "wall_ms": 35.082722999959515,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 903,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1261,24 +1462,25 @@
     "field": "FM32",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 80.68525799899362,
-      "max": 82.31316000092193,
-      "median": 81.2073369997961,
-      "p25": 80.95250199767179,
-      "p75": 81.69235199966352
+      "min": 84.87214899992068,
+      "max": 96.10039399990455,
+      "median": 90.97613999983878,
+      "p25": 87.16104099994482,
+      "p75": 92.2794860000522
     },
     "wall_ms_samples": [
-      80.95250199767179,
-      82.31316000092193,
-      80.68525799899362,
-      81.69235199966352,
-      81.2073369997961
+      90.97613999983878,
+      87.16104099994482,
+      84.87214899992068,
+      92.2794860000522,
+      96.10039399990455
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1294,10 +1496,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM32) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.2099960001942236,
-    "wall_ms": 81.2073369997961,
+    "setup_ms": 0.19057099984820525,
+    "wall_ms": 90.97613999983878,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 2653,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1320,24 +1522,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 81.57684199977666,
-      "max": 86.86582399968756,
-      "median": 83.79984099883586,
-      "p25": 82.99060500212363,
-      "p75": 86.33930699943448
+      "min": 85.60847100011415,
+      "max": 93.6918060001517,
+      "median": 88.00124200001846,
+      "p25": 87.02516200014543,
+      "p75": 90.17269599985411
     },
     "wall_ms_samples": [
-      82.99060500212363,
-      81.57684199977666,
-      86.33930699943448,
-      86.86582399968756,
-      83.79984099883586
+      88.00124200001846,
+      93.6918060001517,
+      87.02516200014543,
+      85.60847100011415,
+      90.17269599985411
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1353,10 +1556,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.21806700169690885,
-    "wall_ms": 83.79984099883586,
+    "setup_ms": 0.19085299982180004,
+    "wall_ms": 88.00124200001846,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 2653,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1379,24 +1582,25 @@
     "field": "FM128",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 84.046309999394,
-      "max": 88.024933997076,
-      "median": 84.51594500002102,
-      "p25": 84.27510600085952,
-      "p75": 84.72085599714774
+      "min": 88.6565690000225,
+      "max": 89.88998500012713,
+      "median": 88.79674299987528,
+      "p25": 88.77767500007394,
+      "p75": 88.90293000013116
     },
     "wall_ms_samples": [
-      88.024933997076,
-      84.046309999394,
-      84.27510600085952,
-      84.51594500002102,
-      84.72085599714774
+      88.6565690000225,
+      88.77767500007394,
+      89.88998500012713,
+      88.79674299987528,
+      88.90293000013116
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1412,10 +1616,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM128) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.20763100110343657,
-    "wall_ms": 84.51594500002102,
+    "setup_ms": 0.18058800014841836,
+    "wall_ms": 88.79674299987528,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 2653,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1438,24 +1642,25 @@
     "field": "FM64",
     "k": 64,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 42.22043900153949,
-      "max": 52.92551899765385,
-      "median": 43.74662999907741,
-      "p25": 43.414643998403335,
-      "p75": 44.4597599998815
+      "min": 49.21041400007198,
+      "max": 56.06074599995736,
+      "median": 51.82114099989121,
+      "p25": 51.30044099996667,
+      "p75": 52.88699299990185
     },
     "wall_ms_samples": [
-      52.92551899765385,
-      43.74662999907741,
-      42.22043900153949,
-      44.4597599998815,
-      43.414643998403335
+      56.06074599995736,
+      49.21041400007198,
+      52.88699299990185,
+      51.30044099996667,
+      51.82114099989121
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1471,10 +1676,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.23523499839939177,
-    "wall_ms": 43.74662999907741,
+    "setup_ms": 0.15349399996011925,
+    "wall_ms": 51.82114099989121,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 1517,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1497,24 +1702,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 42.59208399889758,
-      "max": 44.1176149979583,
-      "median": 43.794534998596646,
-      "p25": 42.84704699966824,
-      "p75": 43.9797759972862
+      "min": 44.67725399990741,
+      "max": 49.89120699997329,
+      "median": 47.22651900010533,
+      "p25": 46.7323979999037,
+      "p75": 47.423786000081236
     },
     "wall_ms_samples": [
-      43.794534998596646,
-      42.59208399889758,
-      43.9797759972862,
-      44.1176149979583,
-      42.84704699966824
+      49.89120699997329,
+      44.67725399990741,
+      47.423786000081236,
+      46.7323979999037,
+      47.22651900010533
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1530,10 +1736,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.16288900224026293,
-    "wall_ms": 43.794534998596646,
+    "setup_ms": 0.2231869998468028,
+    "wall_ms": 47.22651900010533,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 1526,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1556,24 +1762,25 @@
     "field": "FM64",
     "k": 1024,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 43.40392399899429,
-      "max": 53.02693299745442,
-      "median": 44.855064999865135,
-      "p25": 44.76567600067938,
-      "p75": 45.21995100003551
+      "min": 44.600578999961726,
+      "max": 47.690568999996685,
+      "median": 45.6445029999486,
+      "p25": 45.259065999971426,
+      "p75": 45.652861999997185
     },
     "wall_ms_samples": [
-      53.02693299745442,
-      44.855064999865135,
-      44.76567600067938,
-      45.21995100003551,
-      43.40392399899429
+      47.690568999996685,
+      45.259065999971426,
+      45.652861999997185,
+      44.600578999961726,
+      45.6445029999486
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1589,10 +1796,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.23943500127643347,
-    "wall_ms": 44.855064999865135,
+    "setup_ms": 0.24373599990212824,
+    "wall_ms": 45.6445029999486,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 1535,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1615,24 +1822,25 @@
     "field": "FM64",
     "k": 4096,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 44.63401199973305,
-      "max": 55.557772000611294,
-      "median": 45.376705998933176,
-      "p25": 45.37388300013845,
-      "p75": 51.637513999594375
+      "min": 44.424253999977736,
+      "max": 54.55253700006324,
+      "median": 45.27443300003142,
+      "p25": 45.01214000015352,
+      "p75": 45.92959800015706
     },
     "wall_ms_samples": [
-      55.557772000611294,
-      45.376705998933176,
-      45.37388300013845,
-      44.63401199973305,
-      51.637513999594375
+      54.55253700006324,
+      45.92959800015706,
+      45.01214000015352,
+      44.424253999977736,
+      45.27443300003142
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1648,10 +1856,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.5704440009139944,
-    "wall_ms": 45.376705998933176,
+    "setup_ms": 0.5218430001150409,
+    "wall_ms": 45.27443300003142,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 1535,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1674,24 +1882,25 @@
     "field": "FM64",
     "k": 64,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 32.059290999313816,
-      "max": 34.90206400238094,
-      "median": 32.99695399982738,
-      "p25": 32.80073200221523,
-      "p75": 34.14120600064052
+      "min": 35.18294400009836,
+      "max": 39.494380999940404,
+      "median": 37.007216999882075,
+      "p25": 35.60244400000556,
+      "p75": 37.16260499982127
     },
     "wall_ms_samples": [
-      34.14120600064052,
-      32.80073200221523,
-      32.059290999313816,
-      34.90206400238094,
-      32.99695399982738
+      39.494380999940404,
+      35.60244400000556,
+      35.18294400009836,
+      37.007216999882075,
+      37.16260499982127
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1709,10 +1918,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.14333400031318888,
-    "wall_ms": 32.99695399982738,
+    "setup_ms": 0.1438270001017372,
+    "wall_ms": 37.007216999882075,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 898,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1735,24 +1944,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 32.041726997704245,
-      "max": 35.24487300092005,
-      "median": 32.9573140006687,
-      "p25": 32.346707997930935,
-      "p75": 33.74985300251865
+      "min": 34.21363800021027,
+      "max": 43.96595299999717,
+      "median": 36.214173000189476,
+      "p25": 36.0059120000642,
+      "p75": 37.03030399992713
     },
     "wall_ms_samples": [
-      33.74985300251865,
-      32.346707997930935,
-      32.041726997704245,
-      35.24487300092005,
-      32.9573140006687
+      43.96595299999717,
+      34.21363800021027,
+      37.03030399992713,
+      36.214173000189476,
+      36.0059120000642
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1770,10 +1980,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.15561300097033381,
-    "wall_ms": 32.9573140006687,
+    "setup_ms": 0.17222500014213438,
+    "wall_ms": 36.214173000189476,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 903,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1796,24 +2006,25 @@
     "field": "FM64",
     "k": 1024,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.5094330002903,
-      "max": 35.93227400051546,
-      "median": 34.30641899831244,
-      "p25": 33.94200399998226,
-      "p75": 34.74662599910516
+      "min": 34.00422699996852,
+      "max": 38.34329900018929,
+      "median": 35.39607600009731,
+      "p25": 34.94227999999566,
+      "p75": 35.65301999992698
     },
     "wall_ms_samples": [
-      33.94200399998226,
-      34.74662599910516,
-      33.5094330002903,
-      35.93227400051546,
-      34.30641899831244
+      38.34329900018929,
+      34.00422699996852,
+      35.39607600009731,
+      35.65301999992698,
+      34.94227999999566
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1831,10 +2042,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.24481999935233034,
-    "wall_ms": 34.30641899831244,
+    "setup_ms": 0.2580850000413193,
+    "wall_ms": 35.39607600009731,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 908,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1857,24 +2068,25 @@
     "field": "FM64",
     "k": 4096,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.928130000276724,
-      "max": 36.02783200039994,
-      "median": 34.25515299750259,
-      "p25": 34.21331000208738,
-      "p75": 34.52707799806376
+      "min": 34.44080399981431,
+      "max": 38.848092999842265,
+      "median": 36.06168400006027,
+      "p25": 35.11889399987922,
+      "p75": 38.45658000000185
     },
     "wall_ms_samples": [
-      34.52707799806376,
-      34.25515299750259,
-      34.21331000208738,
-      36.02783200039994,
-      33.928130000276724
+      38.848092999842265,
+      35.11889399987922,
+      36.06168400006027,
+      38.45658000000185,
+      34.44080399981431
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1892,10 +2104,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.515286999871023,
-    "wall_ms": 34.25515299750259,
+    "setup_ms": 0.5589610000242828,
+    "wall_ms": 36.06168400006027,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 908,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1918,24 +2130,25 @@
     "field": "FM64",
     "k": 8,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 78.04200700047659,
-      "max": 89.54731100311619,
-      "median": 81.15632699991693,
-      "p25": 80.3543219990388,
-      "p75": 81.56889699966996
+      "min": 79.54377900000509,
+      "max": 90.46162099980393,
+      "median": 81.86316699993768,
+      "p25": 81.69963499994992,
+      "p75": 82.02858999993623
     },
     "wall_ms_samples": [
-      89.54731100311619,
-      78.04200700047659,
-      81.15632699991693,
-      81.56889699966996,
-      80.3543219990388
+      90.46162099980393,
+      81.69963499994992,
+      81.86316699993768,
+      82.02858999993623,
+      79.54377900000509
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1951,10 +2164,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.1813870003388729,
-    "wall_ms": 81.15632699991693,
+    "setup_ms": 0.18246100012220268,
+    "wall_ms": 81.86316699993768,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 2593,
     "profiled": false,
     "comm_send_bytes": null,
@@ -1977,24 +2190,25 @@
     "field": "FM64",
     "k": 16,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 80.00529000128154,
-      "max": 88.81413599738153,
-      "median": 81.14926099733566,
-      "p25": 80.39316299982602,
-      "p75": 81.88908500233083
+      "min": 83.0996069998946,
+      "max": 95.34139199990932,
+      "median": 85.5138800000077,
+      "p25": 85.36106200017457,
+      "p75": 86.84622600003422
     },
     "wall_ms_samples": [
-      88.81413599738153,
-      81.14926099733566,
-      80.00529000128154,
-      80.39316299982602,
-      81.88908500233083
+      95.34139199990932,
+      83.0996069998946,
+      85.5138800000077,
+      85.36106200017457,
+      86.84622600003422
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -2010,10 +2224,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.1850440021371469,
-    "wall_ms": 81.14926099733566,
+    "setup_ms": 0.19582499999160063,
+    "wall_ms": 85.5138800000077,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 2653,
     "profiled": false,
     "comm_send_bytes": null,
@@ -2036,24 +2250,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 82.14933799899882,
-      "max": 86.86102199862944,
-      "median": 83.54580200102646,
-      "p25": 82.2448520011676,
-      "p75": 85.78102700266754
+      "min": 85.21114800009855,
+      "max": 93.45987899996544,
+      "median": 89.73200000014003,
+      "p25": 86.35087299990118,
+      "p75": 92.59256199993615
     },
     "wall_ms_samples": [
-      86.86102199862944,
-      83.54580200102646,
-      82.14933799899882,
-      82.2448520011676,
-      85.78102700266754
+      93.45987899996544,
+      85.21114800009855,
+      92.59256199993615,
+      86.35087299990118,
+      89.73200000014003
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -2069,10 +2284,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator.simple(3, ABY3, FM64) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}",
     "error": "",
-    "setup_ms": 0.1869609986897558,
-    "wall_ms": 83.54580200102646,
+    "setup_ms": 0.33965299985538877,
+    "wall_ms": 89.73200000014003,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1071.73828125,
+    "peak_rss_mb": 1918.6171875,
     "pphlo_bytes": 2653,
     "profiled": false,
     "comm_send_bytes": null,
@@ -2095,6 +2310,7 @@
     "field": "FM32",
     "k": 1048576,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "unavailable": 5

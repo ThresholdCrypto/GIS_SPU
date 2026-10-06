@@ -15,6 +15,10 @@ stdout/stderr，不影响本脚本产出的 JSON/CSV。建议重定向日志：
 - `--ops` / `--protocols`：只测指定组合；
 - `--repeat N`：每条用例重复 N 次，输出统计记录（中位数 / p25 / p75 / 偏差率）。
   拿方差才谈协议排序，见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8。
+- `--temporal-ab`：只跑 `TemporalOverlap` 两套电路（pairwise / sweep）的
+  **同规模成对** A/B 对照，输出 `docs/mpc_temporal_ab.json`（见 §4.1）。
+  单独开一个模式是因为"谁更省、在哪交叉"只在成对比较下成立，混进主扫描
+  会被不同 K 的行稀释掉。
 - `--comm`：打开 SPU 的 pphlo profiling，采集**通信量**（send/recv bytes、
   逐原语明细）。两个必读注意（见 §8.4）：(a) profiling 有开销，
   **开了 profiling 的墙钟不能与没开的比**；(b) 通信量有 ~1–2% 批间抖动，
@@ -48,6 +52,7 @@ from backends.spu_backend.benchmark import (  # noqa: E402
     format_summary,
     run_benchmark_cases,
     standard_cases,
+    temporal_ab_cases,
     unexpected_records,
     write_benchmark_csv,
     write_benchmark_json,
@@ -73,19 +78,33 @@ def parse_args(argv=None):
     parser.add_argument("--ops", default="", help=f"只测算子（逗号分隔）：{MPC_BENCHMARK_OPS}")
     parser.add_argument("--protocols", default="", help=f"只测协议（逗号分隔）：{SPU_PROTOCOLS}")
     parser.add_argument(
+        "--temporal-ab",
+        action="store_true",
+        help=(
+            "只跑 TemporalOverlap 两套电路的同规模 A/B 对照"
+            "（pairwise vs sweep，ABY3/FM64）；默认写 docs/mpc_temporal_ab.json"
+        ),
+    )
+    parser.add_argument(
         "--comm",
         action="store_true",
         help="打开 SPU pphlo profiling 采集通信量（墙钟会含 profiling 开销，勿与未开时比）",
     )
     parser.add_argument(
         "--json",
-        default="docs/mpc_benchmark_baseline.json",
-        help="JSON 输出路径（相对项目根）",
+        default=None,
+        help=(
+            "JSON 输出路径（相对项目根）；默认 docs/mpc_benchmark_baseline.json，"
+            "`--temporal-ab` 时默认 docs/mpc_temporal_ab.json"
+        ),
     )
     parser.add_argument(
         "--csv",
-        default="docs/mpc_benchmark_baseline.csv",
-        help="CSV 输出路径（相对项目根）",
+        default=None,
+        help=(
+            "CSV 输出路径（相对项目根）；默认 docs/mpc_benchmark_baseline.csv，"
+            "`--temporal-ab` 时默认 docs/mpc_temporal_ab.csv"
+        ),
     )
     parser.add_argument("--no-json", action="store_true", help="不写 JSON")
     parser.add_argument("--no-csv", action="store_true", help="不写 CSV")
@@ -96,8 +115,26 @@ def _split(value: str) -> set[str]:
     return {part for part in value.replace(",", " ").split() if part}
 
 
+def resolve_output_paths(args) -> tuple[str | None, str | None]:
+    """把 `--json` / `--csv` 解析成绝对路径（未给则按模式取默认名）。"""
+
+    stem = "mpc_temporal_ab" if args.temporal_ab else "mpc_benchmark_baseline"
+    json_path = None if args.no_json else _resolve(args.json or f"docs/{stem}.json")
+    csv_path = None if args.no_csv else _resolve(args.csv or f"docs/{stem}.csv")
+    return json_path, csv_path
+
+
 def build_cases(args):
     repeats = max(1, int(args.repeat))
+    if args.temporal_ab:
+        # A/B 模式自带用例集：与 --ops / --protocols 组合会得到"半张对照表"
+        # （只有一侧电路），比报错更坏。这里直接拒绝组合。
+        clash = sorted(_split(args.ops) | _split(args.protocols))
+        if clash:
+            raise SystemExit(
+                f"--temporal-ab 自带用例集，不与 --ops/--protocols 组合（收到 {clash}）"
+            )
+        return temporal_ab_cases(repeats=repeats, capture_comm=bool(args.comm))
     cases = standard_cases(
         quick=args.quick, repeats=repeats, capture_comm=bool(args.comm)
     )
@@ -121,8 +158,7 @@ def main(argv=None) -> int:
     cases = build_cases(args)
     if not cases:
         raise SystemExit("筛选后没有用例（检查 --ops / --protocols）")
-    out_json = None if args.no_json else _resolve(args.json)
-    out_csv = None if args.no_csv else _resolve(args.csv)
+    out_json, out_csv = resolve_output_paths(args)
 
     report = check_capabilities()
     repeats = max(1, int(args.repeat))

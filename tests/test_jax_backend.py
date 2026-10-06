@@ -420,3 +420,140 @@ class TestModuleRendering:
         assert len(generation.skipped) == 1
         assert generation.skipped[0]["operation"] == "Intersects"
         assert "jax.numpy" in generation.skipped[0]["reason"]
+
+# --------------------------------------------------------------------------
+# TemporalOverlap 的第二套电路：sweep（P3：排序归并 + 前缀扫描）
+#
+# 背景：pairwise 电路要物化 [N, M]，K=4096 展开 1 670 万元素、实测把进程拖死，
+# 这就是"K 上限被锁死在 32 量级"的来源。sweep 把起止点打包成事件、排序归并后
+# 做前缀扫描，O((N+M)·log(N+M))，不物化矩阵。
+#
+# 但**排序在 MPC 里很贵**，所以它不是无条件的替换——实测交叉点在 K≈128–256
+# （见 docs/MPC_BENCHMARK_PROTOCOL.md §4.1），因此默认 `auto` 在拿不到规模时
+# 退回 pairwise，只在实测确认更省的一侧才切。这一节的测试守的正是这几点。
+# --------------------------------------------------------------------------
+
+
+def _overlap_args(left_nodes, right_nodes):
+    return (
+        np.array([n[0] for n in left_nodes], np.int32),
+        np.array([n[1] for n in left_nodes], np.int32),
+        np.array([n[0] for n in right_nodes], np.int32),
+        np.array([n[1] for n in right_nodes], np.int32),
+    )
+
+
+def _overlap_battery():
+    """边界 + 非对齐 dyadic + 随机（确定性种子）三类输入。"""
+
+    import random
+
+    cases = [
+        ([(0, 1)], [(1, 1)]),            # 半开相邻：[0,2) 与 [2,4) 不重叠
+        ([(0, 2)], [(0, 2)]),            # 完全相同
+        ([(0, 2)], [(2, 1)]),            # 嵌套
+        ([(0, 1), (4, 1)], [(2, 1)]),    # 两侧之间有空档
+        ([(0, 1), (2, 1)], [(0, 2)]),    # 子集正好铺满
+        ([(0, 1)], [(4, 1), (6, 1)]),    # 完全分离
+        ([(8, 4)], [(4, 3)]),            # **非对齐** dyadic：部分重叠
+        ([(8, 4)], [(0, 3)]),            # 非对齐且恰好不相交
+    ]
+    rng = random.Random(7)
+    for _ in range(200):
+        n, m = rng.randint(1, 4), rng.randint(1, 4)
+        cases.append(
+            (
+                [(rng.randint(0, 60), rng.randint(0, 5)) for _ in range(n)],
+                [(rng.randint(0, 60), rng.randint(0, 5)) for _ in range(m)],
+            )
+        )
+    for a in range(6):
+        for la in range(3):
+            for b in range(6):
+                for lb in range(3):
+                    cases.append(([(a, la)], [(b, lb)]))
+    return cases
+
+
+class TestTemporalOverlapSweepStrategy:
+    """两套电路必须**逐位等价**：逐对版是语义规范，扫描版要经得起交叉验证。"""
+
+    def test_sweep_and_pairwise_and_plain_all_agree(self):
+        sweep = load_generated_function(
+            generate_temporal_overlap("f_sweep", strategy="sweep").source, "f_sweep"
+        )
+        pairwise = load_generated_function(
+            generate_temporal_overlap("f_pair", strategy="pairwise").source, "f_pair"
+        )
+        cases = _overlap_battery()
+        for left, right in cases:
+            args = _overlap_args(left, right)
+            expected = run_plain("TemporalOverlap", left, right).value
+            assert bool(run_jax_jit(sweep, args)) == expected, (left, right)
+            assert bool(run_jax_jit(pairwise, args)) == expected, (left, right)
+        assert len(cases) > 500, "对照组不能太少"
+
+    def test_auto_picks_by_size_and_defaults_to_pairwise(self):
+        """拿不到规模时不许擅自换电路——那会把既有成本口径偷偷改掉。"""
+
+        from backends.jax_backend.codegen import TEMPORAL_OVERLAP_SWEEP_MIN_SIZE
+
+        def uses_sweep(function):
+            return "jnp.sort" in function.source
+
+        assert not uses_sweep(generate_temporal_overlap("f"))       # 默认 auto，无规模
+        assert not uses_sweep(generate_temporal_overlap("f", size_hint=None))
+        assert not uses_sweep(
+            generate_temporal_overlap(
+                "f", size_hint=TEMPORAL_OVERLAP_SWEEP_MIN_SIZE - 1
+            )
+        )
+        assert uses_sweep(
+            generate_temporal_overlap("f", size_hint=TEMPORAL_OVERLAP_SWEEP_MIN_SIZE)
+        )
+        assert uses_sweep(
+            generate_temporal_overlap("f", strategy="sweep", size_hint=None)
+        )
+
+    def test_unknown_strategy_is_rejected_loudly(self):
+        with pytest.raises(ValueError, match="未知 TemporalOverlap 电路形态"):
+            generate_temporal_overlap("f", strategy="magic")
+
+    def test_sweep_source_stays_traceable_and_pure(self):
+        """仍然不许出现 Python 级控制流、不许用 jnp 以外的东西。"""
+
+        function = generate_temporal_overlap("f", strategy="sweep")
+        problems = static_check_source(function.source)
+        assert not problems, problems
+        check = check_traceable(
+            load_generated_function(function.source, function.name),
+            _overlap_args([(0, 4)], [(2, 2)]),
+        )
+        assert check.traceable, check.error
+
+    def test_sweep_hlo_primitives_are_registered_and_supported(self):
+        from backends.spu_backend import (
+            OP_HLO_PRIMITIVES_BY_STRATEGY,
+            SPU_ADAPTED_HLO_PRIMITIVES,
+        )
+
+        function = generate_temporal_overlap("f", strategy="sweep")
+        fn = load_generated_function(function.source, function.name)
+        text, error = lower_to_hlo_text(fn, _overlap_args([(0, 4)], [(2, 2)]))
+        assert error is None, error
+        measured = set(extract_hlo_ops(text))
+        registered = set(OP_HLO_PRIMITIVES_BY_STRATEGY[("TemporalOverlap", "sweep")])
+        assert not (measured - registered), sorted(measured - registered)
+        assert not (registered - set(SPU_ADAPTED_HLO_PRIMITIVES))
+
+    def test_sweep_notes_state_the_measured_crossover(self):
+        """备注必须带上"K<256 时更贵"这条实测结论，别让人以为换电路白赚。"""
+
+        notes = " ".join(generate_temporal_overlap("f", strategy="sweep").notes)
+        assert "K<256" in notes
+
+    def test_default_notes_no_longer_claim_the_old_limit(self):
+        """默认（pairwise）备注应指向新的选择规则，而不是原来的"无需排序"。"""
+
+        notes = " ".join(generate_temporal_overlap("f").notes)
+        assert "sweep" in notes

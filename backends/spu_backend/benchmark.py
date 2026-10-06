@@ -67,19 +67,27 @@ from .runtime import run_spu_simulation
 MPC_BENCHMARK_OPS: tuple[str, ...] = ("DistanceLE", "WeightedSum", "TemporalOverlap")
 
 #: 主扫描规模：**按算子给**，不强行统一量纲。
-#: `TemporalOverlap` 是 N×M 两两比较电路（见 generate_temporal_overlap 的
-#: `[:, None] < [None, :]`），代价对节点数**二次**：K=256 在 CHEETAH 上单条
-#: 超过 90 s 不返回，K=4096 会展开 1670 万元素直接拖死进程。
+#: `TemporalOverlap` 走的是 **pairwise 电路**（默认策略：拿不到规模就保守选它），
+#: 代价对节点数**二次**：K=256 在 CHEETAH 上单条超过 90 s 不返回，
+#: K=4096 会展开 1670 万元素直接拖死进程。
+#: sweep 电路（排序归并）的规模在该值上另行扫描，见 _TEMPORAL_SWEEP_SIZES。
 _MAIN_SCAN_K: Mapping[str, int] = {
     "DistanceLE": 256,
     "WeightedSum": 256,
     "TemporalOverlap": 32,
 }
 
+#: TemporalOverlap 的 sweep 电路扫描规模（ABY3 / FM64）。
+#: 含 K=32 是为了与 pairwise 在同一规模上**直接比价**（这就是 A/B 基线），
+#: 更大的 256 / 1024 是"逐对版跑不动、扫描版跑得动"的证据点。
+#: 上限止步于 1024：K=1024 单条实测约 1.8 s / 43.7 MB 通信量，再往上
+#: 排序电路的通信量增长很快，属于按需再测的范围。
+_TEMPORAL_SWEEP_SIZES: tuple[int, ...] = (32, 256, 1024)
+
 #: 规模扫描：**按算子各取各的量纲**，不强行统一。
-#: `TemporalOverlap` 的电路是 N×M 两两比较（见 generate_temporal_overlap 的
-#: `[:, None] < [None, :]`），对节点数是**二次**的——K=4096 会展开 1670 万元素，
-#: 实测直接把进程拖死。故它的规模上限单独压低。
+#: `TemporalOverlap` 的 pairwise 电路对节点数是**二次**的——K=4096 会展开
+#: 1670 万元素，实测直接把进程拖死。故它的规模上限单独压低
+#: （想跑更大规模请用 sweep 电路，见 _TEMPORAL_SWEEP_SIZES）。
 _SIZE_SWEEP: Mapping[str, tuple[int, ...]] = {
     "DistanceLE": (64, 256, 1024, 4096),
     "WeightedSum": (64, 256, 1024, 4096),
@@ -123,9 +131,12 @@ class MpcBenchmarkCase:
     repeats: int = 1
     #: 是否打开 SPU 的 pphlo profiling 采集通信量（开了的墙钟不可与没开的比）
     capture_comm: bool = False
+    #: 电路形态（仅 TemporalOverlap 有意义）："" = 生成器默认（pairwise）
+    strategy: str = ""
 
     def label(self) -> str:
-        return f"{self.op} {self.protocol} {self.field} K={self.k}"
+        suffix = f" [{self.strategy}]" if self.strategy else ""
+        return f"{self.op} {self.protocol} {self.field} K={self.k}{suffix}"
 
 
 def standard_cases(
@@ -154,10 +165,31 @@ def standard_cases(
             )
         )
 
+    def add_sweep(k: int) -> None:
+        """TemporalOverlap 的 sweep 电路（ABY3 / FM64），与 pairwise 同表比价。"""
+
+        cases.append(
+            MpcBenchmarkCase(
+                op="TemporalOverlap",
+                protocol="ABY3",
+                field="FM64",
+                k=k,
+                expect_status="",
+                repeats=max(1, int(repeats)),
+                capture_comm=capture_comm,
+                strategy="sweep",
+            )
+        )
+
     # 1) 协议 × 算子：主扫描（这本就是"接协议要跑哪些组合"的落地口径）
     for op in MPC_BENCHMARK_OPS:
         for protocol in SPU_PROTOCOLS:
             add(op, protocol, "FM64", _MAIN_SCAN_K[op])
+
+    # 1b) TemporalOverlap：sweep 电路（P3）。K=32 与上面的 pairwise 行同规模，
+    #     256 / 1024 是"逐对版跑不动"的对照点。
+    for k in _TEMPORAL_SWEEP_SIZES:
+        add_sweep(k)
 
     # 2) 环宽矩阵：协议 × 算子固定 ABY3，走三个字段
     if not quick:
@@ -190,6 +222,43 @@ def standard_cases(
                 ),
             )
         )
+    return cases
+
+
+#: TemporalOverlap 两套电路的 A/B 对照规模（ABY3 / FM64，见
+#: `docs/MPC_BENCHMARK_PROTOCOL.md` §4.1）。**同一个 K 上同时跑 pairwise 与 sweep**
+#: 才谈得上"交叉点"；单次运行不足以支撑排序结论（§6），所以 A/B 也走重复实验，
+#: 报中位数 + 四分位区间。上限止于 256：pairwise 在 K=256 已是"勉强跑得动"的
+#: 边缘（再往上就是"逐对版跑不动"本身），sweep 的更大规模另见 _TEMPORAL_SWEEP_SIZES。
+_TEMPORAL_AB_SIZES: tuple[int, ...] = (8, 32, 64, 128, 256)
+
+
+def temporal_ab_cases(
+    *, repeats: int = 1, capture_comm: bool = False
+) -> list[MpcBenchmarkCase]:
+    """TemporalOverlap 两套电路的 A/B 对照用例（成对出现，见 §4.1）。
+
+    与 `standard_cases` 分开的理由：A/B 的结论（谁更省、在哪交叉）**只在同规模
+    成对比较下成立**，混进主扫描里会被不同 K 的行稀释掉。两套电路的用例
+    `strategy` 都显式写死（`"pairwise"` / `"sweep"`），不依赖生成器的默认值——
+    默认值将来会变，A/B 的对照物不该跟着变。
+    """
+
+    cases: list[MpcBenchmarkCase] = []
+    for k in _TEMPORAL_AB_SIZES:
+        for strategy in ("pairwise", "sweep"):
+            cases.append(
+                MpcBenchmarkCase(
+                    op="TemporalOverlap",
+                    protocol="ABY3",
+                    field="FM64",
+                    k=k,
+                    expect_status="",
+                    repeats=max(1, int(repeats)),
+                    capture_comm=capture_comm,
+                    strategy=strategy,
+                )
+            )
     return cases
 
 
@@ -331,6 +400,10 @@ def _blank_record(case: MpcBenchmarkCase) -> dict[str, Any]:
         "field": case.field,
         "k": case.k,
         "expect_status": case.expect_status,
+        # 电路形态（仅 TemporalOverlap 有两套）。**必须落进记录**：
+        # 否则同一算子的两套电路在 JSON/CSV 里长得一模一样，
+        # 汇总时会把它们当成同一条用例互相覆盖。
+        "strategy": case.strategy,
         "repeat": 1,
         "status_counts": {},
         "deviation_rate": None,
@@ -536,6 +609,16 @@ def _run_once(case: MpcBenchmarkCase, *, report: Any = None) -> dict[str, Any]:
         record["error"] = f"未登记的 MPC 基准算子 {case.op!r}；已知：{sorted(_GENERATORS)}"
         return record
 
+    if case.strategy and case.op != "TemporalOverlap":
+        # 配置错误，与环境无关：要在能力核查之前报出来，否则在没装 SPU 的机器上
+        # 会被降级成 unavailable，看起来像"环境不具备"。
+        record["status"] = "error"
+        record["error"] = (
+            f"电路形态只对 TemporalOverlap 有意义，{case.op} 不接受 strategy="
+            f"{case.strategy!r}"
+        )
+        return record
+
     report = report or check_capabilities()
     if not report.runnable:
         record["note"] = (
@@ -546,7 +629,9 @@ def _run_once(case: MpcBenchmarkCase, *, report: Any = None) -> dict[str, Any]:
 
     setup_start = time.perf_counter()
     args, reference = builder(case.k)
-    generated = generator("f")
+    generated = generator("f") if not case.strategy else generator(
+        "f", strategy=case.strategy
+    )
     fn = load_generated_function(generated.source, generated.name)
     record["setup_ms"] = (time.perf_counter() - setup_start) * 1000.0
 
@@ -656,6 +741,7 @@ _CSV_COLUMNS: tuple[str, ...] = (
     "predicted_bits",
     "field_bits",
     "bit_width_covered",
+    "strategy",
     "status",
     "wall_ms",
     "memory_mb",

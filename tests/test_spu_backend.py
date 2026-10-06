@@ -449,3 +449,65 @@ class TestProtocolFieldSweep:
         )
         assert run.ok, f"{field}: {run.describe()}"
         assert run.within_tolerance is True, field
+
+
+@requires_spu
+class TestTemporalOverlapSweepOnSpu:
+    """TemporalOverlap 的 sweep 电路（排序归并 + 前缀扫描）真机对拍。
+
+    这一节守的是 P3 的核心主张：**K 上限不再被 [N, M] 矩阵锁死**。
+    逐对版在 K=256 会物化 65 536 个比较、K=4096 是 1 670 万元素（实测拖死进程），
+    扫描版把代价降到 O((N+M)·log(N+M)) 并在真机上跑通。
+
+    规模取 256 而不是更大，是为了让测试跑得起：排序在 MPC 里代价高，
+    K=1024 单条实测约 1.8 s / 43.7 MB 通信量，不适合放进常规测试套件
+    （完整规模曲线见 docs/mpc_comm_baseline.json）。
+    """
+
+    @staticmethod
+    def _case(k):
+        from backends.plain import run_plain
+
+        function = generate_temporal_overlap("f", strategy="sweep")
+        fn = load_generated_function(function.source, function.name)
+        left_toff = np.array([(i * 8) % 16000 for i in range(k)], np.int32)
+        left_lt = np.array([2 + (i % 3) for i in range(k)], np.int32)
+        right_toff = np.array([(i * 8 + 4) % 16000 for i in range(k)], np.int32)
+        right_lt = np.array([2 + (i % 3) for i in range(k)], np.int32)
+        args = [left_toff, left_lt, right_toff, right_lt]
+        reference = lambda lt, llt, rt, rlt: run_plain(  # noqa: E731
+            "TemporalOverlap",
+            [(int(a), int(b)) for a, b in zip(lt, llt)],
+            [(int(a), int(b)) for a, b in zip(rt, rlt)],
+        ).value
+        return fn, args, reference
+
+    def test_sweep_runs_at_k_256_and_matches_plain(self):
+        """K=256：逐对版在这一规模上已经开始吃力，扫描版必须能跑且逐位一致。"""
+
+        fn, args, reference = self._case(256)
+        run = run_spu_simulation(
+            fn, args, protocol="ABY3", field="FM64",
+            reference_fn=reference, tolerance=0.0,
+        )
+        assert run.ok, run.describe()
+        assert run.within_tolerance is True, run.describe()
+        assert run.max_abs_error == 0.0
+
+    def test_sweep_agrees_with_pairwise_on_the_same_inputs(self):
+        """同一批输入上两套电路必须给出同一个布尔——这是等价性的真机证据。"""
+
+        fn, args, reference = self._case(64)
+        pairwise_fn = load_generated_function(
+            generate_temporal_overlap("g", strategy="pairwise").source, "g"
+        )
+        sweep = run_spu_simulation(
+            fn, args, protocol="ABY3", field="FM64",
+            reference_fn=reference, tolerance=0.0,
+        )
+        pairwise = run_spu_simulation(
+            pairwise_fn, args, protocol="ABY3", field="FM64",
+            reference_fn=reference, tolerance=0.0,
+        )
+        assert sweep.ok and pairwise.ok, (sweep.describe(), pairwise.describe())
+        assert bool(np.asarray(sweep.outputs)) == bool(np.asarray(pairwise.outputs))

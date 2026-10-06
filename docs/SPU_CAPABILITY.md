@@ -163,7 +163,8 @@ result = spu_fn(*inputs)
 |---|---|
 | DistanceLE | `subtract, multiply, reduce, add, convert, compare, constant` |
 | WeightedSum | `multiply, reduce, add, constant`（P2-1 后；修前为 `multiply, reduce, add, divide, remainder, compare, select, sign, and, convert, subtract, constant`） |
-| TemporalOverlap | `shift_left, add, broadcast_in_dim, compare, and, or, reduce, constant` |
+| TemporalOverlap（默认 / pairwise） | `shift_left, add, broadcast_in_dim, compare, and, or, reduce, constant` |
+| TemporalOverlap（`sweep` 电路，P3） | `shift_left, shift_right_arithmetic, add, negate, broadcast_in_dim, compare, and, or, select, concatenate, sort, reduce, reduce_window, return, constant` |
 
 **重要发现（正是"不要假设 SPU API"的实例）**：
 
@@ -181,6 +182,18 @@ result = spu_fn(*inputs)
 该表由 `tests/test_jax_backend.py::TestHloAndPrimitives::test_measured_primitives_match_registry`
 锁定：若生成代码变动导致原语集合超出登记清单，测试会失败。
 
+> **P3 新增（2026-10-06）**：`TemporalOverlap` 增加第二套电路 `sweep`（排序归并 +
+> 前缀扫描），它的原语清单登记在 `OP_HLO_PRIMITIVES_BY_STRATEGY[("TemporalOverlap","sweep")]`，
+> 由 `tests/test_jax_backend.py::TestTemporalOverlapSweepStrategy` 实测核对。两点值得记下：
+>
+> 1. **`sort` 第一次真被用上**：在此之前生成代码都刻意绕开它（§2.6 的补丁点、
+>    `SPU_EXPENSIVE_HLO_PRIMITIVES` 里写着"跨 jax 版本易碎"）。真机实测
+>    （ABY3/FM64，K=8…1024）能跑通且与明文逐位一致，但**通信量代价高**：
+>    K=32 时 1.38 MB，是同规模逐对电路（0.53 MB）的 2.6 倍；
+>    实测交叉点在 K≈128–256（`docs/MPC_BENCHMARK_PROTOCOL.md` §4.1）；
+> 2. **白名单补了两项**：`reduce_window`（`jnp.cumsum` 降级产物）与 `return`
+>    （`sort` 比较器 region 内部的结构，不是独立 lowering 规则）。
+>    两者都是**实测产物**才登记的，不是按文档推断的。
 ## 四、环宽与整数溢出
 
 本项目 `grid_code` 为 **64 位定长键**。在 `FM64` 环上把它当无符号整数参与运算，

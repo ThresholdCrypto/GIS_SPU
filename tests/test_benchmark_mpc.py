@@ -13,6 +13,11 @@ import json
 import numpy as np
 import pytest
 
+from tests.benchmarks.benchmark_mpc import (  # noqa: E402
+    build_cases,
+    parse_args,
+    resolve_output_paths,
+)
 from backends.spu_backend import (
     EXPECT_DEVIATION,
     FIELD_BITS,
@@ -28,6 +33,7 @@ from backends.spu_backend import (
     run_benchmark_case,
     summarize_repeats,
     standard_cases,
+    temporal_ab_cases,
     unexpected_records,
     write_benchmark_csv,
     write_benchmark_json,
@@ -135,10 +141,54 @@ class TestCaseSet:
             assert case.field in SPU_FIELDS, case
 
     def test_temporal_overlap_scale_is_capped_for_its_quadratic_circuit(self):
-        """TemporalOverlap 是 N×M 两两比较；节点数上界必须显著低于其他算子。"""
+        """**两两比较电路**的节点数上界必须显著低于其他算子（O(N·M) 会拖死进程）。
 
-        largest = max(c.k for c in standard_cases() if c.op == "TemporalOverlap")
-        assert largest <= 32, f"TemporalOverlap 节点数上限过大：{largest}"
+        口径（P3 之后）：`TemporalOverlap` 有两套电路，这里的"上限 32"只约束
+        **逐对版**；sweep 版可以跑到 1024，见下一条用例。
+        """
+
+        largest = max(
+            c.k
+            for c in standard_cases()
+            if c.op == "TemporalOverlap" and not c.strategy
+        )
+        assert largest <= 32, f"TemporalOverlap 逐对电路节点数上限过大：{largest}"
+
+    def test_temporal_overlap_sweep_rows_prove_the_ceiling_moved(self):
+        """sweep 电路必须真的在基线里跑到远超 32 的规模——否则"上限提高"只是口号。"""
+
+        sweep = [c for c in standard_cases() if c.strategy]
+        assert sweep, "基线里应有 sweep 电路的用例"
+        assert all(c.op == "TemporalOverlap" for c in sweep)
+        assert all(c.strategy == "sweep" for c in sweep)
+        assert max(c.k for c in sweep) >= 1024
+        pairwise_k = {
+            c.k for c in standard_cases() if c.op == "TemporalOverlap" and not c.strategy
+        }
+        assert pairwise_k & {c.k for c in sweep}, "缺少同规模的 A/B 对照点"
+
+    def test_strategy_rows_are_labelled_so_they_cannot_be_confused(self):
+        """换电路的行必须在标签上看得出来，否则汇总表会把两套电路混成一条。"""
+
+        cases = standard_cases()
+        labels = [c.label() for c in cases]
+        assert "TemporalOverlap ABY3 FM64 K=256 [sweep]" in labels
+        assert "TemporalOverlap ABY3 FM64 K=32 [sweep]" in labels
+        assert "TemporalOverlap ABY3 FM64 K=32" in labels
+        # 同规模（K=32）上两套电路是两个不同的标签，汇总表不会把它们混成一条
+        assert "TemporalOverlap ABY3 FM64 K=32 [sweep]" != "TemporalOverlap ABY3 FM64 K=32"
+        # 只有 sweep 行带方括号标记，逐对行不带
+        assert all("[sweep]" in c.label() for c in cases if c.strategy)
+        assert all("[sweep]" not in c.label() for c in cases if not c.strategy)
+
+    def test_strategy_is_rejected_for_ops_without_a_second_circuit(self):
+        """给没有第二套电路的算子塞 strategy 必须报错，而不是被静默忽略。"""
+
+        record = run_benchmark_case(
+            MpcBenchmarkCase(op="DistanceLE", protocol="ABY3", k=16, strategy="sweep")
+        )
+        assert record["status"] == "error"
+        assert "TemporalOverlap" in record["error"]
 
     def test_bit_width_probe_row_is_not_executed_and_says_why(self):
         probes = [c for c in standard_cases() if not c.execute]
@@ -181,6 +231,64 @@ class TestCaseSet:
         """
 
         assert EXPECT_DEVIATION not in ("ok", "error", "")
+
+
+class TestTemporalAbMode:
+    """两套电路的 A/B 对照模式（§4.1 的交叉点表要能由入库产物复现）。"""
+
+    def test_ab_pairs_both_circuits_at_every_size(self):
+        by_k: dict[int, set[str]] = {}
+        for case in temporal_ab_cases():
+            by_k.setdefault(case.k, set()).add(case.strategy)
+        assert by_k, "A/B 用例集不能是空集"
+        for k, strategies in by_k.items():
+            assert strategies == {"pairwise", "sweep"}, (k, strategies)
+
+    def test_ab_pins_both_strategies_explicitly(self):
+        """两侧的 strategy 都要写死：靠生成器默认值等于把对照物交给别人改。"""
+
+        cases = temporal_ab_cases()
+        assert all(case.strategy in ("pairwise", "sweep") for case in cases)
+        assert all(case.op == "TemporalOverlap" for case in cases)
+
+    def test_ab_carries_repeats_and_capture_comm(self):
+        cases = temporal_ab_cases(repeats=5, capture_comm=True)
+        assert all(case.repeats == 5 and case.capture_comm for case in cases)
+        assert all(case.repeats == 1 for case in temporal_ab_cases(repeats=0))
+
+    def test_ab_pairwise_arm_is_the_same_circuit_as_the_default(self):
+        """A/B 的 pairwise 侧必须就是主扫描里的那套电路，否则对照不成立。"""
+
+        from backends.jax_backend.codegen import generate_temporal_overlap
+
+        default = generate_temporal_overlap("f")
+        labelled = generate_temporal_overlap("f", strategy="pairwise")
+        assert labelled.source == default.source
+
+    def test_ab_mode_cli_selects_the_cases_and_the_default_paths(self):
+        args = parse_args(["--temporal-ab"])
+        cases = build_cases(args)
+        assert {c.strategy for c in cases} == {"pairwise", "sweep"}
+        assert all("[pairwise]" in c.label() or "[sweep]" in c.label() for c in cases)
+        json_path, csv_path = resolve_output_paths(args)
+        assert json_path.endswith("docs/mpc_temporal_ab.json"), json_path
+        assert csv_path.endswith("docs/mpc_temporal_ab.csv"), csv_path
+
+    def test_standard_mode_keeps_the_baseline_default_paths(self):
+        json_path, csv_path = resolve_output_paths(parse_args([]))
+        assert json_path.endswith("docs/mpc_benchmark_baseline.json"), json_path
+        assert csv_path.endswith("docs/mpc_benchmark_baseline.csv"), csv_path
+
+    def test_ab_mode_refuses_to_be_combined_with_filters(self):
+        """与 --ops 组合会得到"只有一侧电路"的半张对照表，必须报错而不是照跑。"""
+
+        for argv in (
+            ["--temporal-ab", "--ops", "WeightedSum"],
+            ["--temporal-ab", "--protocols", "CHEETAH"],
+        ):
+            with pytest.raises(SystemExit) as excinfo:
+                build_cases(parse_args(argv))
+            assert "temporal-ab" in str(excinfo.value)
 
 
 # --------------------------------------------------------------------------
@@ -235,6 +343,25 @@ class TestRecordHonesty:
         # 预测侧仍然有值——对账本来就是"预测 vs 实测"，实测空缺要显眼
         assert record["predicted_bits"] == 36
         assert record["bit_width_covered"] is False
+
+    def test_strategy_is_recorded_not_only_in_the_label(self):
+        """电路形态必须落进记录字段：只有标签不同的话，汇总/比价会把两套电路混掉。"""
+
+        record = run_benchmark_case(
+            MpcBenchmarkCase(
+                op="TemporalOverlap", protocol="ABY3", field="FM64", k=32,
+                strategy="sweep",
+            )
+        )
+        assert record["strategy"] == "sweep"
+        plain = run_benchmark_case(
+            MpcBenchmarkCase(op="TemporalOverlap", protocol="ABY3", field="FM64", k=32)
+        )
+        assert plain["strategy"] == ""
+        # 字段进了 CSV 列，否则导出后这份信息就丢了
+        from backends.spu_backend.benchmark import _CSV_COLUMNS
+
+        assert "strategy" in _CSV_COLUMNS
 
     def test_unregistered_op_is_an_error_not_a_crash(self):
         record = run_benchmark_case(MpcBenchmarkCase(op="Nope", protocol="ABY3"))

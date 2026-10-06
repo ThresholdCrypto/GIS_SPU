@@ -6,24 +6,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 43.405645999882836,
-      "max": 72.00121699861484,
-      "median": 44.607945001189364,
-      "p25": 44.216800000867806,
-      "p75": 45.680451999942306
+      "min": 44.69343599998865,
+      "max": 69.68505000008918,
+      "median": 45.02264699999614,
+      "p25": 44.81818299996121,
+      "p75": 45.208946999991895
     },
     "wall_ms_samples": [
-      72.00121699861484,
-      44.607945001189364,
-      45.680451999942306,
-      44.216800000867806,
-      43.405645999882836
+      69.68505000008918,
+      45.208946999991895,
+      44.81818299996121,
+      45.02264699999614,
+      44.69343599998865
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -39,10 +40,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(REF2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 0 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.17660599769442342,
-    "wall_ms": 44.607945001189364,
-    "memory_mb": 39.6796875,
-    "peak_rss_mb": 277.65234375,
+    "setup_ms": 0.19417299995438952,
+    "wall_ms": 45.02264699999614,
+    "memory_mb": 39.49609375,
+    "peak_rss_mb": 277.5390625,
     "pphlo_bytes": 1526,
     "profiled": true,
     "comm_send_bytes": 0.0,
@@ -55,55 +56,55 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000182587
-      },
-      "negate": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 2.4431e-05
-      },
-      "multiply": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 2,
-        "duration_s": 1.9892e-05
-      },
-      "add": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.7651e-05
-      },
-      "constant": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.6557e-05
+        "duration_s": 0.000158689
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.6206e-05
+        "duration_s": 1.7582e-05
       },
-      "less": {
+      "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.1136e-05
+        "duration_s": 1.6891e-05
+      },
+      "multiply": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.6088e-05
       },
       "not": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 9.419e-06
+        "duration_s": 1.5636e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.5268e-05
+      },
+      "less": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.253e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.2239e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 2.682e-06
+        "duration_s": 2.348e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -126,24 +127,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 45.01598800197826,
-      "max": 47.35653900206671,
-      "median": 46.221207001508446,
-      "p25": 46.09585699654417,
-      "p75": 47.187211999698775
+      "min": 45.27914799996324,
+      "max": 47.01185799990526,
+      "median": 46.23184999991281,
+      "p25": 45.541334000063216,
+      "p75": 46.87062100015282
     },
     "wall_ms_samples": [
-      46.09585699654417,
-      46.221207001508446,
-      47.187211999698775,
-      45.01598800197826,
-      47.35653900206671
+      47.01185799990526,
+      45.541334000063216,
+      46.87062100015282,
+      46.23184999991281,
+      45.27914799996324
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -159,10 +161,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(SEMI2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 8336 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.15911900118226185,
-    "wall_ms": 46.221207001508446,
-    "memory_mb": 1.171875,
-    "peak_rss_mb": 281.16796875,
+    "setup_ms": 0.17325299995718524,
+    "wall_ms": 46.23184999991281,
+    "memory_mb": 0.84375,
+    "peak_rss_mb": 280.8671875,
     "pphlo_bytes": 1526,
     "profiled": true,
     "comm_send_bytes": 4168.0,
@@ -175,55 +177,55 @@
         "send_bytes": 56,
         "recv_bytes": 56,
         "executions": 1,
-        "duration_s": 0.000525666
+        "duration_s": 0.00057029
       },
       "multiply": {
         "send_bytes": 4112,
         "recv_bytes": 4112,
         "executions": 2,
-        "duration_s": 0.000184646
+        "duration_s": 0.000234361
       },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000159058
+        "duration_s": 0.000156404
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 3.5203e-05
+        "duration_s": 4.0065e-05
       },
       "negate": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 2.5792e-05
-      },
-      "add": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.3576e-05
-      },
-      "not": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.139e-05
+        "duration_s": 2.697e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.1098e-05
+        "duration_s": 1.6212e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.3984e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.3002e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 4.032e-06
+        "duration_s": 3.638e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -246,24 +248,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 44.820663999416865,
-      "max": 55.540418998134555,
-      "median": 46.521678999852156,
-      "p25": 45.97003399976529,
-      "p75": 46.8407570006093
+      "min": 44.61602300011691,
+      "max": 47.728375999895434,
+      "median": 45.9512969998741,
+      "p25": 45.37203200015938,
+      "p75": 46.195726999940234
     },
     "wall_ms_samples": [
-      45.97003399976529,
-      55.540418998134555,
-      46.521678999852156,
-      46.8407570006093,
-      44.820663999416865
+      46.195726999940234,
+      47.728375999895434,
+      45.37203200015938,
+      44.61602300011691,
+      45.9512969998741
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -279,10 +282,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4200 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.16718899860279635,
-    "wall_ms": 46.521678999852156,
-    "memory_mb": 1.6875,
-    "peak_rss_mb": 283.69921875,
+    "setup_ms": 0.1737749998937943,
+    "wall_ms": 45.9512969998741,
+    "memory_mb": 1.859375,
+    "peak_rss_mb": 283.7109375,
     "pphlo_bytes": 1526,
     "profiled": true,
     "comm_send_bytes": 2100.0,
@@ -295,55 +298,55 @@
         "send_bytes": 36,
         "recv_bytes": 36,
         "executions": 1,
-        "duration_s": 0.000396589
-      },
-      "reduce": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 0.000202323
+        "duration_s": 0.000578839
       },
       "convert": {
         "send_bytes": 8,
         "recv_bytes": 8,
         "executions": 1,
-        "duration_s": 0.000197564
+        "duration_s": 0.000193932
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000169848
       },
       "multiply": {
         "send_bytes": 2056,
         "recv_bytes": 2056,
         "executions": 2,
-        "duration_s": 7.2952e-05
-      },
-      "constant": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 2.7502e-05
+        "duration_s": 7.054e-05
       },
       "negate": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 2.6349e-05
+        "duration_s": 1.466e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.2976e-05
+        "duration_s": 1.4356e-05
       },
       "not": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 8.267e-06
+        "duration_s": 1.1253e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 9.339e-06
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 4.139e-06
+        "duration_s": 4.797e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -366,24 +369,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 166.83121700043557,
-      "max": 185.19555199964088,
-      "median": 169.21774000002188,
-      "p25": 167.41084399836836,
-      "p75": 169.9183290002111
+      "min": 168.84487400011494,
+      "max": 198.88108200007082,
+      "median": 176.11805900014588,
+      "p25": 173.31674999991264,
+      "p75": 182.13059300001078
     },
     "wall_ms_samples": [
-      185.19555199964088,
-      167.41084399836836,
-      169.9183290002111,
-      166.83121700043557,
-      169.21774000002188
+      198.88108200007082,
+      176.11805900014588,
+      173.31674999991264,
+      182.13059300001078,
+      168.84487400011494
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -397,17 +401,17 @@
     "field_bits": 64,
     "bit_width_covered": true,
     "status": "ok",
-    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(CHEETAH, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 2414954 B（min 2413534 / max 2415046；抖动是实测现象，非解析确定量）",
+    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(CHEETAH, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 2415124 B（min 2414449 / max 2415416；抖动是实测现象，非解析确定量）",
     "error": "",
-    "setup_ms": 0.21153299894649535,
-    "wall_ms": 169.21774000002188,
-    "memory_mb": 114.8359375,
-    "peak_rss_mb": 398.53515625,
+    "setup_ms": 0.1815739999528887,
+    "wall_ms": 176.11805900014588,
+    "memory_mb": 113.81640625,
+    "peak_rss_mb": 397.52734375,
     "pphlo_bytes": 1526,
     "profiled": true,
-    "comm_send_bytes": 1135682.0,
-    "comm_recv_bytes": 1279195.0,
-    "comm_total_bytes": 2414954.0,
+    "comm_send_bytes": 1135670.0,
+    "comm_recv_bytes": 1279262.0,
+    "comm_total_bytes": 2415124.0,
     "comm_send_actions": 954.0,
     "comm_recv_actions": 954.0,
     "comm_by_primitive": {
@@ -415,63 +419,63 @@
         "send_bytes": 470363,
         "recv_bytes": 470315,
         "executions": 1,
-        "duration_s": 0.074125898
+        "duration_s": 0.079878247
       },
       "multiply": {
-        "send_bytes": 665319,
-        "recv_bytes": 808957,
+        "send_bytes": 665475,
+        "recv_bytes": 808971,
         "executions": 2,
-        "duration_s": 0.063433898
+        "duration_s": 0.045287907
       },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000209844
+        "duration_s": 0.000264578
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 8.5565e-05
+        "duration_s": 9.5692e-05
       },
       "not": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 2.2711e-05
+        "duration_s": 3.9371e-05
       },
       "negate": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.8907e-05
+        "duration_s": 1.3124e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.3078e-05
-      },
-      "constant": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.2686e-05
+        "duration_s": 1.1519e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 9.458e-06
+        "duration_s": 1.0008e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.926e-06
       }
     },
     "comm_total_bytes_stats": {
-      "min": 2413534.0,
-      "max": 2415046.0,
-      "median": 2414954.0,
-      "p25": 2414824.0,
-      "p75": 2415009.0
+      "min": 2414449.0,
+      "max": 2415416.0,
+      "median": 2415124.0,
+      "p25": 2414916.0,
+      "p75": 2415198.0
     },
     "agreement": true,
     "output_bits": 0,
@@ -486,24 +490,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 46.85699299807311,
-      "max": 48.60821599868359,
-      "median": 47.94017300082487,
-      "p25": 47.12667999774567,
-      "p75": 47.95682999974815
+      "min": 47.22802500009493,
+      "max": 51.10723100005998,
+      "median": 48.666596999964895,
+      "p25": 48.28123400011464,
+      "p75": 49.736634000055346
     },
     "wall_ms_samples": [
-      47.95682999974815,
-      48.60821599868359,
-      46.85699299807311,
-      47.94017300082487,
-      47.12667999774567
+      51.10723100005998,
+      49.736634000055346,
+      48.28123400011464,
+      48.666596999964895,
+      47.22802500009493
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -519,10 +524,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(SECURENN, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 12032 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.16513100126758218,
-    "wall_ms": 47.94017300082487,
+    "setup_ms": 0.2562550000675401,
+    "wall_ms": 48.666596999964895,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.203125,
+    "peak_rss_mb": 415.30859375,
     "pphlo_bytes": 1526,
     "profiled": true,
     "comm_send_bytes": 6000.0,
@@ -535,55 +540,55 @@
         "send_bytes": 1888,
         "recv_bytes": 1920,
         "executions": 1,
-        "duration_s": 0.001776123
+        "duration_s": 0.002020768
       },
       "multiply": {
         "send_bytes": 4112,
         "recv_bytes": 4112,
         "executions": 2,
-        "duration_s": 0.000314999
+        "duration_s": 0.000466605
       },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.00015571
+        "duration_s": 0.000226247
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 2.6904e-05
-      },
-      "add": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.4309e-05
+        "duration_s": 4.452e-05
       },
       "negate": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.405e-05
-      },
-      "not": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.1636e-05
+        "duration_s": 2.2035e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 8.812e-06
+        "duration_s": 2.0087e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.8592e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.2707e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 4.8e-06
+        "duration_s": 5.78e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -606,24 +611,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.783431001211284,
-      "max": 36.82566000134102,
-      "median": 34.72887899988564,
-      "p25": 34.01752300123917,
-      "p75": 36.637576999055455
+      "min": 34.22599199984688,
+      "max": 36.58827999993264,
+      "median": 35.64345999984653,
+      "p25": 35.4130329999407,
+      "p75": 35.658348999959344
     },
     "wall_ms_samples": [
-      36.637576999055455,
-      33.783431001211284,
-      36.82566000134102,
-      34.01752300123917,
-      34.72887899988564
+      35.4130329999407,
+      35.64345999984653,
+      35.658348999959344,
+      36.58827999993264,
+      34.22599199984688
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -641,10 +647,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(REF2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 0 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.21706799816456623,
-    "wall_ms": 34.72887899988564,
+    "setup_ms": 0.41351200002281985,
+    "wall_ms": 35.64345999984653,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.203125,
+    "peak_rss_mb": 415.30859375,
     "pphlo_bytes": 903,
     "profiled": true,
     "comm_send_bytes": 0.0,
@@ -657,31 +663,31 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000160719
+        "duration_s": 0.000150832
       },
       "multiply": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 2.3384e-05
+        "duration_s": 1.7108e-05
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.7047e-05
+        "duration_s": 1.5803e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.2361e-05
+        "duration_s": 9.176e-06
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.028e-06
+        "duration_s": 1.02e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -704,24 +710,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 37.38719299872173,
-      "max": 39.05635099727078,
-      "median": 38.751002997742034,
-      "p25": 37.70823900049436,
-      "p75": 39.05048100205022
+      "min": 36.22891400004846,
+      "max": 38.16756799983523,
+      "median": 36.96083800014094,
+      "p25": 36.72291099996983,
+      "p75": 37.32777100003659
     },
     "wall_ms_samples": [
-      38.751002997742034,
-      37.38719299872173,
-      39.05048100205022,
-      39.05635099727078,
-      37.70823900049436
+      36.22891400004846,
+      37.32777100003659,
+      38.16756799983523,
+      36.72291099996983,
+      36.96083800014094
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -739,10 +746,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(SEMI2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 8192 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.22282700228970498,
-    "wall_ms": 38.751002997742034,
+    "setup_ms": 0.20339100001365296,
+    "wall_ms": 36.96083800014094,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.203125,
+    "peak_rss_mb": 415.30859375,
     "pphlo_bytes": 903,
     "profiled": true,
     "comm_send_bytes": 4096.0,
@@ -755,31 +762,31 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000170928
+        "duration_s": 0.000166009
       },
       "multiply": {
         "send_bytes": 4096,
         "recv_bytes": 4096,
         "executions": 1,
-        "duration_s": 0.000123004
+        "duration_s": 0.000125769
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 3.1921e-05
+        "duration_s": 3.1445e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 9.067e-06
+        "duration_s": 9.038e-06
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.2e-06
+        "duration_s": 1.175e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -802,24 +809,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.6525429993344,
-      "max": 39.23845500321477,
-      "median": 36.342834999231854,
-      "p25": 34.44409300209372,
-      "p75": 37.75311000208603
+      "min": 35.981842999945,
+      "max": 37.287504000005356,
+      "median": 36.82099200000266,
+      "p25": 36.58259200005887,
+      "p75": 36.90585800018198
     },
     "wall_ms_samples": [
-      33.6525429993344,
-      36.342834999231854,
-      39.23845500321477,
-      37.75311000208603,
-      34.44409300209372
+      36.58259200005887,
+      36.90585800018198,
+      37.287504000005356,
+      36.82099200000266,
+      35.981842999945
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -837,10 +845,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4112 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.1646430027903989,
-    "wall_ms": 36.342834999231854,
+    "setup_ms": 0.20882600006189023,
+    "wall_ms": 36.82099200000266,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.203125,
+    "peak_rss_mb": 415.30859375,
     "pphlo_bytes": 903,
     "profiled": true,
     "comm_send_bytes": 2056.0,
@@ -853,31 +861,31 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000149064
-      },
-      "convert": {
-        "send_bytes": 8,
-        "recv_bytes": 8,
-        "executions": 1,
-        "duration_s": 6.6233e-05
+        "duration_s": 0.000174606
       },
       "multiply": {
         "send_bytes": 2048,
         "recv_bytes": 2048,
         "executions": 1,
-        "duration_s": 4.0247e-05
+        "duration_s": 9.6935e-05
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 5.061e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.0331e-05
+        "duration_s": 1.3583e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.336e-06
+        "duration_s": 1.558e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -900,24 +908,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 82.00329199826228,
-      "max": 86.5433530016162,
-      "median": 85.30375400005141,
-      "p25": 83.44666500124731,
-      "p75": 86.24597800007905
+      "min": 81.17431599998781,
+      "max": 88.12270399994304,
+      "median": 85.19289500009108,
+      "p25": 83.71280799997294,
+      "p75": 85.84083799996733
     },
     "wall_ms_samples": [
-      86.5433530016162,
-      83.44666500124731,
-      86.24597800007905,
-      85.30375400005141,
-      82.00329199826228
+      81.17431599998781,
+      83.71280799997294,
+      88.12270399994304,
+      85.84083799996733,
+      85.19289500009108
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -933,57 +942,57 @@
     "field_bits": 64,
     "bit_width_covered": true,
     "status": "ok",
-    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(CHEETAH, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 1474167 B（min 1473656 / max 1474642；抖动是实测现象，非解析确定量）",
+    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(CHEETAH, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 1473970 B（min 1472736 / max 1475147；抖动是实测现象，非解析确定量）",
     "error": "",
-    "setup_ms": 0.14933200145605952,
-    "wall_ms": 85.30375400005141,
+    "setup_ms": 0.15738299998702132,
+    "wall_ms": 85.19289500009108,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.203125,
+    "peak_rss_mb": 415.30859375,
     "pphlo_bytes": 903,
     "profiled": true,
-    "comm_send_bytes": 665190.0,
-    "comm_recv_bytes": 808903.0,
-    "comm_total_bytes": 1474167.0,
+    "comm_send_bytes": 665086.0,
+    "comm_recv_bytes": 808800.0,
+    "comm_total_bytes": 1473970.0,
     "comm_send_actions": 6.0,
     "comm_recv_actions": 6.0,
     "comm_by_primitive": {
       "multiply": {
-        "send_bytes": 665305,
-        "recv_bytes": 808862,
+        "send_bytes": 665170,
+        "recv_bytes": 808800,
         "executions": 1,
-        "duration_s": 0.05000445
+        "duration_s": 0.048826876
       },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000182693
+        "duration_s": 0.000187395
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 8.9274e-05
+        "duration_s": 8.8628e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.1611e-05
+        "duration_s": 1.1118e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.217e-06
+        "duration_s": 1.274e-06
       }
     },
     "comm_total_bytes_stats": {
-      "min": 1473656.0,
-      "max": 1474642.0,
-      "median": 1474167.0,
-      "p25": 1473932.0,
-      "p75": 1474313.0
+      "min": 1472736.0,
+      "max": 1475147.0,
+      "median": 1473970.0,
+      "p25": 1473830.0,
+      "p75": 1474783.0
     },
     "agreement": true,
     "output_bits": 16,
@@ -998,24 +1007,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 34.287323000171455,
-      "max": 37.36824699808494,
-      "median": 35.4394889982359,
-      "p25": 35.0025560001086,
-      "p75": 36.88071999931708
+      "min": 34.05712900007529,
+      "max": 39.89072900003521,
+      "median": 38.65689300005215,
+      "p25": 37.29758999998012,
+      "p75": 39.68466900005296
     },
     "wall_ms_samples": [
-      35.4394889982359,
-      35.0025560001086,
-      36.88071999931708,
-      37.36824699808494,
-      34.287323000171455
+      37.29758999998012,
+      39.89072900003521,
+      38.65689300005215,
+      39.68466900005296,
+      34.05712900007529
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1033,10 +1043,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(SECURENN, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 8192 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.15902800078038126,
-    "wall_ms": 35.4394889982359,
+    "setup_ms": 0.16860300002008444,
+    "wall_ms": 38.65689300005215,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.203125,
+    "peak_rss_mb": 415.30859375,
     "pphlo_bytes": 903,
     "profiled": true,
     "comm_send_bytes": 4096.0,
@@ -1045,35 +1055,35 @@
     "comm_send_actions": 2.0,
     "comm_recv_actions": 2.0,
     "comm_by_primitive": {
-      "multiply": {
-        "send_bytes": 4096,
-        "recv_bytes": 4096,
-        "executions": 1,
-        "duration_s": 0.000163308
-      },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000154034
+        "duration_s": 0.00019064
+      },
+      "multiply": {
+        "send_bytes": 4096,
+        "recv_bytes": 4096,
+        "executions": 1,
+        "duration_s": 0.000164601
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 2.6639e-05
+        "duration_s": 3.6212e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.2002e-05
+        "duration_s": 1.0195e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.27e-06
+        "duration_s": 1.115e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -1096,24 +1106,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 66.1285720016167,
-      "max": 74.53539900234318,
-      "median": 66.72832000185736,
-      "p25": 66.19781100016553,
-      "p75": 67.47211000038078
+      "min": 64.61565400013569,
+      "max": 76.39130200004729,
+      "median": 65.85249400018256,
+      "p25": 64.89143399994646,
+      "p75": 66.85303300014311
     },
     "wall_ms_samples": [
-      74.53539900234318,
-      66.72832000185736,
-      66.19781100016553,
-      66.1285720016167,
-      67.47211000038078
+      76.39130200004729,
+      65.85249400018256,
+      64.89143399994646,
+      64.61565400013569,
+      66.85303300014311
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1129,10 +1140,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(REF2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 0 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.2228049997938797,
-    "wall_ms": 66.72832000185736,
+    "setup_ms": 0.18858599992199743,
+    "wall_ms": 65.85249400018256,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.203125,
+    "peak_rss_mb": 415.30859375,
     "pphlo_bytes": 2653,
     "profiled": true,
     "comm_send_bytes": 0.0,
@@ -1145,55 +1156,55 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 0.003162523
+        "duration_s": 0.003167996
       },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000233792
+        "duration_s": 0.000262654
       },
       "less": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 9.5853e-05
-      },
-      "constant": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 2,
-        "duration_s": 2.6959e-05
-      },
-      "and": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 2.0911e-05
+        "duration_s": 8.9403e-05
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.8871e-05
+        "duration_s": 3.6617e-05
       },
-      "broadcast": {
+      "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
-        "executions": 4,
-        "duration_s": 1.7078e-05
+        "executions": 2,
+        "duration_s": 3.4372e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 1.3317e-05
+        "duration_s": 1.5291e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 1.4949e-05
+      },
+      "and": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 9.782e-06
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 14,
-        "duration_s": 3.907e-06
+        "duration_s": 3.916e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -1216,24 +1227,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 94.17788499922608,
-      "max": 100.90250999928685,
-      "median": 94.49210000093444,
-      "p25": 94.19940500083612,
-      "p75": 94.84868499930599
+      "min": 93.57261600007405,
+      "max": 103.39696599999115,
+      "median": 95.50248600021405,
+      "p25": 95.26121399994736,
+      "p75": 99.43095499988885
     },
     "wall_ms_samples": [
-      94.84868499930599,
-      94.17788499922608,
-      100.90250999928685,
-      94.19940500083612,
-      94.49210000093444
+      103.39696599999115,
+      95.50248600021405,
+      99.43095499988885,
+      95.26121399994736,
+      93.57261600007405
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1249,10 +1261,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(SEMI2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 696320 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.2016950020333752,
-    "wall_ms": 94.49210000093444,
+    "setup_ms": 0.19719299984899408,
+    "wall_ms": 95.50248600021405,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.203125,
+    "peak_rss_mb": 415.30859375,
     "pphlo_bytes": 2653,
     "profiled": true,
     "comm_send_bytes": 348160.0,
@@ -1265,55 +1277,55 @@
         "send_bytes": 229376,
         "recv_bytes": 229376,
         "executions": 2,
-        "duration_s": 0.028792005
+        "duration_s": 0.030179889
       },
       "less": {
         "send_bytes": 114688,
         "recv_bytes": 114688,
         "executions": 2,
-        "duration_s": 0.002565781
+        "duration_s": 0.00264301
       },
       "reduce": {
         "send_bytes": 2048,
         "recv_bytes": 2048,
         "executions": 1,
-        "duration_s": 0.000828756
-      },
-      "and": {
-        "send_bytes": 2048,
-        "recv_bytes": 2048,
-        "executions": 1,
-        "duration_s": 6.9195e-05
+        "duration_s": 0.001281973
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 6.6826e-05
+        "duration_s": 7.9898e-05
+      },
+      "and": {
+        "send_bytes": 2048,
+        "recv_bytes": 2048,
+        "executions": 1,
+        "duration_s": 6.9985e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 4.5497e-05
+        "duration_s": 3.8427e-05
       },
       "broadcast": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 4,
-        "duration_s": 2.5836e-05
+        "duration_s": 3.027e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 1.8933e-05
+        "duration_s": 2.1301e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 14,
-        "duration_s": 8.775e-06
+        "duration_s": 9.982e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -1336,24 +1348,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 85.82718099933118,
-      "max": 88.18108099876554,
-      "median": 87.32641599999624,
-      "p25": 86.3991949991032,
-      "p75": 87.34946600088733
+      "min": 92.33088499991027,
+      "max": 147.09521800000402,
+      "median": 121.28869599996506,
+      "p25": 98.04392999990341,
+      "p75": 138.713578000079
     },
     "wall_ms_samples": [
-      87.32641599999624,
-      88.18108099876554,
-      85.82718099933118,
-      86.3991949991032,
-      87.34946600088733
+      92.33088499991027,
+      98.04392999990341,
+      147.09521800000402,
+      138.713578000079,
+      121.28869599996506
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1367,81 +1380,81 @@
     "field_bits": 64,
     "bit_width_covered": true,
     "status": "ok",
-    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 508160 B（min 486400 / max 541440；抖动是实测现象，非解析确定量）",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 508672 B（min 499712 / max 514816；抖动是实测现象，非解析确定量）",
     "error": "",
-    "setup_ms": 0.1938739987963345,
-    "wall_ms": 87.32641599999624,
+    "setup_ms": 0.19669599987537367,
+    "wall_ms": 121.28869599996506,
     "memory_mb": 0.0,
-    "peak_rss_mb": 414.203125,
+    "peak_rss_mb": 415.30859375,
     "pphlo_bytes": 2653,
     "profiled": true,
-    "comm_send_bytes": 255744.0,
-    "comm_recv_bytes": 248320.0,
-    "comm_total_bytes": 508160.0,
-    "comm_send_actions": 579.0,
-    "comm_recv_actions": 583.0,
+    "comm_send_bytes": 262144.0,
+    "comm_recv_bytes": 239616.0,
+    "comm_total_bytes": 508672.0,
+    "comm_send_actions": 584.0,
+    "comm_recv_actions": 578.0,
     "comm_by_primitive": {
       "shift_left": {
-        "send_bytes": 184064,
-        "recv_bytes": 172544,
+        "send_bytes": 199424,
+        "recv_bytes": 157696,
         "executions": 2,
-        "duration_s": 0.019433257
+        "duration_s": 0.026543747
       },
       "less": {
         "send_bytes": 73728,
         "recv_bytes": 73728,
         "executions": 2,
-        "duration_s": 0.002410501
+        "duration_s": 0.003229978
       },
       "reduce": {
         "send_bytes": 1024,
         "recv_bytes": 1024,
         "executions": 1,
-        "duration_s": 0.000731252
-      },
-      "convert": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 6.365e-05
-      },
-      "broadcast": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 4,
-        "duration_s": 5.1817e-05
-      },
-      "constant": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 2,
-        "duration_s": 2.6121e-05
+        "duration_s": 0.000898461
       },
       "and": {
         "send_bytes": 1024,
         "recv_bytes": 1024,
         "executions": 1,
-        "duration_s": 2.5063e-05
+        "duration_s": 4.3744e-05
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 4.2814e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.6879e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.1704e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 1.7011e-05
+        "duration_s": 1.986e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 14,
-        "duration_s": 8.079e-06
+        "duration_s": 8.837e-06
       }
     },
     "comm_total_bytes_stats": {
-      "min": 486400.0,
-      "max": 541440.0,
-      "median": 508160.0,
-      "p25": 495872.0,
-      "p75": 512000.0
+      "min": 499712.0,
+      "max": 514816.0,
+      "median": 508672.0,
+      "p25": 505088.0,
+      "p75": 510208.0
     },
     "agreement": true,
     "output_bits": 1,
@@ -1456,24 +1469,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 1078.75826199961,
-      "max": 1259.4913880020613,
-      "median": 1220.7855749984446,
-      "p25": 1205.7381849990634,
-      "p75": 1221.7625080011203
+      "min": 1097.4756069999785,
+      "max": 1425.9114440001213,
+      "median": 1241.9666890000371,
+      "p25": 1128.7862480000967,
+      "p75": 1319.004079000024
     },
     "wall_ms_samples": [
-      1205.7381849990634,
-      1259.4913880020613,
-      1221.7625080011203,
-      1220.7855749984446,
-      1078.75826199961
+      1425.9114440001213,
+      1319.004079000024,
+      1241.9666890000371,
+      1128.7862480000967,
+      1097.4756069999785
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1489,10 +1503,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(CHEETAH, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 1758220 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.18756599820335396,
-    "wall_ms": 1220.7855749984446,
-    "memory_mb": 652.6484375,
-    "peak_rss_mb": 1066.8515625,
+    "setup_ms": 0.2578010000888753,
+    "wall_ms": 1241.9666890000371,
+    "memory_mb": 650.171875,
+    "peak_rss_mb": 1065.48046875,
     "pphlo_bytes": 2653,
     "profiled": true,
     "comm_send_bytes": 968710.0,
@@ -1505,55 +1519,55 @@
         "send_bytes": 826534,
         "recv_bytes": 762022,
         "executions": 2,
-        "duration_s": 1.104766343
+        "duration_s": 1.305368063
       },
       "less": {
         "send_bytes": 141568,
         "recv_bytes": 26880,
         "executions": 2,
-        "duration_s": 0.02201341
+        "duration_s": 0.021533777
       },
       "reduce": {
         "send_bytes": 352,
         "recv_bytes": 352,
         "executions": 1,
-        "duration_s": 0.001328494
+        "duration_s": 0.001406343
       },
       "and": {
         "send_bytes": 256,
         "recv_bytes": 256,
         "executions": 1,
-        "duration_s": 0.000180034
+        "duration_s": 0.000115654
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000130323
+        "duration_s": 6.3887e-05
       },
       "broadcast": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 4,
-        "duration_s": 2.8556e-05
-      },
-      "add": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 2,
-        "duration_s": 2.3042e-05
+        "duration_s": 3.4396e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 2.0923e-05
+        "duration_s": 2.2559e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.1424e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 14,
-        "duration_s": 1.3935e-05
+        "duration_s": 1.2492e-05
       }
     },
     "comm_total_bytes_stats": {
@@ -1576,24 +1590,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 601.3038849996519,
-      "max": 632.0730369989178,
-      "median": 608.2810730003985,
-      "p25": 605.5789029996959,
-      "p75": 628.3641869995336
+      "min": 628.5024740000154,
+      "max": 640.156240000124,
+      "median": 632.9416639998726,
+      "p25": 630.0837299997966,
+      "p75": 639.7753239998565
     },
     "wall_ms_samples": [
-      605.5789029996959,
-      608.2810730003985,
-      632.0730369989178,
-      628.3641869995336,
-      601.3038849996519
+      640.156240000124,
+      639.7753239998565,
+      628.5024740000154,
+      632.9416639998726,
+      630.0837299997966
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1609,10 +1624,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(SECURENN, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 25837512 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.20761400082847103,
-    "wall_ms": 608.2810730003985,
+    "setup_ms": 0.20787100015695614,
+    "wall_ms": 632.9416639998726,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1072.23828125,
     "pphlo_bytes": 2653,
     "profiled": true,
     "comm_send_bytes": 12812260.0,
@@ -1625,55 +1640,55 @@
         "send_bytes": 8880128,
         "recv_bytes": 9027584,
         "executions": 2,
-        "duration_s": 0.448962796
+        "duration_s": 0.47532163
       },
       "less": {
         "send_bytes": 3866624,
         "recv_bytes": 3932160,
         "executions": 2,
-        "duration_s": 0.095613902
+        "duration_s": 0.098912599
       },
       "reduce": {
         "send_bytes": 32740,
         "recv_bytes": 32740,
         "executions": 1,
-        "duration_s": 0.001282964
+        "duration_s": 0.001562675
       },
       "and": {
         "send_bytes": 32768,
         "recv_bytes": 32768,
         "executions": 1,
-        "duration_s": 0.000134339
+        "duration_s": 0.000145498
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 7.366e-05
-      },
-      "broadcast": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 4,
-        "duration_s": 2.9489e-05
+        "duration_s": 7.3286e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 2.6731e-05
+        "duration_s": 3.3284e-05
       },
-      "free": {
+      "broadcast": {
         "send_bytes": 0,
         "recv_bytes": 0,
-        "executions": 14,
-        "duration_s": 1.8534e-05
+        "executions": 4,
+        "duration_s": 2.9604e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 1.8411e-05
+        "duration_s": 1.8987e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 1.5766e-05
       }
     },
     "comm_total_bytes_stats": {
@@ -1690,30 +1705,520 @@
     "value_runs": 5
   },
   {
-    "case": "DistanceLE ABY3 FM32 K=256",
-    "op": "DistanceLE",
+    "case": "TemporalOverlap ABY3 FM64 K=32 [sweep]",
+    "op": "TemporalOverlap",
     "protocol": "ABY3",
-    "field": "FM32",
-    "k": 256,
+    "field": "FM64",
+    "k": 32,
     "expect_status": "",
+    "strategy": "sweep",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 43.711567002901575,
-      "max": 45.435942000040086,
-      "median": 43.891354001971195,
-      "p25": 43.86219600201002,
-      "p75": 44.71608099993318
+      "min": 222.87830899995242,
+      "max": 229.36229200013258,
+      "median": 227.4889450000046,
+      "p25": 223.46831799995925,
+      "p75": 229.03744499990353
     },
     "wall_ms_samples": [
-      44.71608099993318,
-      43.86219600201002,
-      43.711567002901575,
-      43.891354001971195,
-      45.435942000040086
+      229.03744499990353,
+      222.87830899995242,
+      223.46831799995925,
+      229.36229200013258,
+      227.4889450000046
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 1252880 B（min 1234704 / max 1388048；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.39066299996193266,
+    "wall_ms": 227.4889450000046,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1072.23828125,
+    "pphlo_bytes": 7231,
+    "profiled": true,
+    "comm_send_bytes": 676872.0,
+    "comm_recv_bytes": 576008.0,
+    "comm_total_bytes": 1252880.0,
+    "comm_send_actions": 1451.0,
+    "comm_recv_actions": 1393.0,
+    "comm_by_primitive": {
+      "simple_sort": {
+        "send_bytes": 416256,
+        "recv_bytes": 348672,
+        "executions": 1,
+        "duration_s": 0.061609748
+      },
+      "shift_left": {
+        "send_bytes": 192512,
+        "recv_bytes": 161280,
+        "executions": 6,
+        "duration_s": 0.019489916
+      },
+      "reduce_window": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 0.003467397
+      },
+      "equal": {
+        "send_bytes": 24832,
+        "recv_bytes": 22784,
+        "executions": 2,
+        "duration_s": 0.002347332
+      },
+      "less": {
+        "send_bytes": 9216,
+        "recv_bytes": 9216,
+        "executions": 2,
+        "duration_s": 0.001098603
+      },
+      "reduce": {
+        "send_bytes": 128,
+        "recv_bytes": 128,
+        "executions": 1,
+        "duration_s": 0.000429144
+      },
+      "and": {
+        "send_bytes": 14464,
+        "recv_bytes": 14464,
+        "executions": 3,
+        "duration_s": 0.000406177
+      },
+      "shift_right_arithmetic": {
+        "send_bytes": 14336,
+        "recv_bytes": 14336,
+        "executions": 1,
+        "duration_s": 0.000396278
+      },
+      "select": {
+        "send_bytes": 3072,
+        "recv_bytes": 1024,
+        "executions": 2,
+        "duration_s": 0.000148709
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 5,
+        "duration_s": 9.3792e-05
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 2,
+        "duration_s": 8.961e-05
+      },
+      "multiply": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 7.051e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 5.2936e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 39,
+        "duration_s": 1.9865e-05
+      },
+      "pad": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.7378e-05
+      },
+      "concatenate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.5338e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 1234704.0,
+      "max": 1388048.0,
+      "median": 1252880.0,
+      "p25": 1245200.0,
+      "p75": 1273872.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=256 [sweep]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "strategy": "sweep",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 343.3621270000913,
+      "max": 375.1568640000187,
+      "median": 353.9783759999864,
+      "p25": 351.16611600005854,
+      "p75": 368.29568799998924
+    },
+    "wall_ms_samples": [
+      375.1568640000187,
+      351.16611600005854,
+      353.9783759999864,
+      368.29568799998924,
+      343.3621270000913
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=256）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 10065936 B（min 9994256 / max 10952720；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.4030070001590502,
+    "wall_ms": 353.9783759999864,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1072.23828125,
+    "pphlo_bytes": 7360,
+    "profiled": true,
+    "comm_send_bytes": 5302280.0,
+    "comm_recv_bytes": 4802568.0,
+    "comm_total_bytes": 10065936.0,
+    "comm_send_actions": 1647.0,
+    "comm_recv_actions": 1584.0,
+    "comm_by_primitive": {
+      "simple_sort": {
+        "send_bytes": 3299328,
+        "recv_bytes": 2758656,
+        "executions": 1,
+        "duration_s": 0.102050556
+      },
+      "reduce_window": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 0.078640173
+      },
+      "shift_left": {
+        "send_bytes": 1427456,
+        "recv_bytes": 1523712,
+        "executions": 6,
+        "duration_s": 0.024617687
+      },
+      "less": {
+        "send_bytes": 73728,
+        "recv_bytes": 73728,
+        "executions": 2,
+        "duration_s": 0.006875541
+      },
+      "equal": {
+        "send_bytes": 198656,
+        "recv_bytes": 182272,
+        "executions": 2,
+        "duration_s": 0.005894547
+      },
+      "and": {
+        "send_bytes": 115712,
+        "recv_bytes": 115712,
+        "executions": 3,
+        "duration_s": 0.000879657
+      },
+      "reduce": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 0.00084231
+      },
+      "shift_right_arithmetic": {
+        "send_bytes": 114688,
+        "recv_bytes": 114688,
+        "executions": 1,
+        "duration_s": 0.000710462
+      },
+      "select": {
+        "send_bytes": 16384,
+        "recv_bytes": 16384,
+        "executions": 2,
+        "duration_s": 0.00023423
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 2,
+        "duration_s": 8.9466e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 5.9697e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 5,
+        "duration_s": 5.5681e-05
+      },
+      "multiply": {
+        "send_bytes": 8192,
+        "recv_bytes": 8192,
+        "executions": 1,
+        "duration_s": 4.9202e-05
+      },
+      "concatenate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 4.1555e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 39,
+        "duration_s": 3.1755e-05
+      },
+      "pad": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 3.0369e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 9994256.0,
+      "max": 10952720.0,
+      "median": 10065936.0,
+      "p25": 10057744.0,
+      "p75": 10078224.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=1024 [sweep]",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 1024,
+    "expect_status": "",
+    "strategy": "sweep",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 1518.229449999808,
+      "max": 1670.3686450000532,
+      "median": 1583.5681099999874,
+      "p25": 1555.6189509998148,
+      "p75": 1631.1584029999722
+    },
+    "wall_ms_samples": [
+      1670.3686450000532,
+      1583.5681099999874,
+      1518.229449999808,
+      1631.1584029999722,
+      1555.6189509998148
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=1024）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 43644944 B（min 40187920 / max 44529680；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.48272899994117324,
+    "wall_ms": 1583.5681099999874,
+    "memory_mb": 785.37890625,
+    "peak_rss_mb": 1857.6171875,
+    "pphlo_bytes": 7414,
+    "profiled": true,
+    "comm_send_bytes": 21527560.0,
+    "comm_recv_bytes": 23002120.0,
+    "comm_total_bytes": 43644944.0,
+    "comm_send_actions": 1782.0,
+    "comm_recv_actions": 1718.0,
+    "comm_by_primitive": {
+      "reduce_window": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.167194764
+      },
+      "simple_sort": {
+        "send_bytes": 13179904,
+        "recv_bytes": 15211520,
+        "executions": 1,
+        "duration_s": 0.183847294
+      },
+      "shift_left": {
+        "send_bytes": 4898816,
+        "recv_bytes": 6062080,
+        "executions": 6,
+        "duration_s": 0.044455272
+      },
+      "equal": {
+        "send_bytes": 729088,
+        "recv_bytes": 860160,
+        "executions": 2,
+        "duration_s": 0.013434433
+      },
+      "less": {
+        "send_bytes": 294912,
+        "recv_bytes": 294912,
+        "executions": 2,
+        "duration_s": 0.006133043
+      },
+      "and": {
+        "send_bytes": 462848,
+        "recv_bytes": 462848,
+        "executions": 3,
+        "duration_s": 0.002424615
+      },
+      "shift_right_arithmetic": {
+        "send_bytes": 458752,
+        "recv_bytes": 458752,
+        "executions": 1,
+        "duration_s": 0.001969522
+      },
+      "reduce": {
+        "send_bytes": 4096,
+        "recv_bytes": 4096,
+        "executions": 1,
+        "duration_s": 0.000800969
+      },
+      "select": {
+        "send_bytes": 98304,
+        "recv_bytes": 32768,
+        "executions": 2,
+        "duration_s": 0.000418162
+      },
+      "multiply": {
+        "send_bytes": 32768,
+        "recv_bytes": 32768,
+        "executions": 1,
+        "duration_s": 0.000196189
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 0.000147111
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 2,
+        "duration_s": 9.7927e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 5,
+        "duration_s": 9.3804e-05
+      },
+      "pad": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 7.3841e-05
+      },
+      "concatenate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 5.2928e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 39,
+        "duration_s": 4.0188e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 40187920.0,
+      "max": 44529680.0,
+      "median": 43644944.0,
+      "p25": 40671248.0,
+      "p75": 44103696.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE ABY3 FM32 K=256",
+    "op": "DistanceLE",
+    "protocol": "ABY3",
+    "field": "FM32",
+    "k": 256,
+    "expect_status": "",
+    "strategy": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 44.021105000183525,
+      "max": 46.64007899987155,
+      "median": 45.01135599980444,
+      "p25": 44.26832299986927,
+      "p75": 45.497535999857064
+    },
+    "wall_ms_samples": [
+      45.01135599980444,
+      44.26832299986927,
+      44.021105000183525,
+      46.64007899987155,
+      45.497535999857064
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1729,10 +2234,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM32, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 2104 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.20527999731712043,
-    "wall_ms": 43.891354001971195,
+    "setup_ms": 0.2064749999135529,
+    "wall_ms": 45.01135599980444,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 1526,
     "profiled": true,
     "comm_send_bytes": 1052.0,
@@ -1745,55 +2250,55 @@
         "send_bytes": 20,
         "recv_bytes": 20,
         "executions": 1,
-        "duration_s": 0.00042379
+        "duration_s": 0.000347604
       },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000172396
+        "duration_s": 0.000161429
       },
       "multiply": {
         "send_bytes": 1028,
         "recv_bytes": 1028,
         "executions": 2,
-        "duration_s": 9.5508e-05
+        "duration_s": 0.000123017
       },
       "convert": {
         "send_bytes": 4,
         "recv_bytes": 4,
         "executions": 1,
-        "duration_s": 2.7719e-05
+        "duration_s": 2.6593e-05
       },
       "negate": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.8472e-05
-      },
-      "add": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.4015e-05
+        "duration_s": 1.9761e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.2e-05
+        "duration_s": 1.3507e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.3407e-05
       },
       "not": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 8.359e-06
+        "duration_s": 9.625e-06
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 3.38e-06
+        "duration_s": 3.899e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -1816,24 +2321,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 43.244413998763775,
-      "max": 45.67582600066089,
-      "median": 44.24193099839613,
-      "p25": 43.757065999670886,
-      "p75": 44.25635399820749
+      "min": 43.104726000137816,
+      "max": 46.28633299989815,
+      "median": 44.072356000015134,
+      "p25": 43.5450929999206,
+      "p75": 44.91133099986655
     },
     "wall_ms_samples": [
-      44.25635399820749,
-      43.244413998763775,
-      44.24193099839613,
-      45.67582600066089,
-      43.757065999670886
+      43.5450929999206,
+      44.91133099986655,
+      46.28633299989815,
+      43.104726000137816,
+      44.072356000015134
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1849,10 +2355,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4200 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.17893200129037723,
-    "wall_ms": 44.24193099839613,
+    "setup_ms": 0.17052699990927067,
+    "wall_ms": 44.072356000015134,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 1526,
     "profiled": true,
     "comm_send_bytes": 2100.0,
@@ -1865,55 +2371,55 @@
         "send_bytes": 36,
         "recv_bytes": 36,
         "executions": 1,
-        "duration_s": 0.000487174
-      },
-      "reduce": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 0.000209141
+        "duration_s": 0.000391077
       },
       "multiply": {
         "send_bytes": 2056,
         "recv_bytes": 2056,
         "executions": 2,
-        "duration_s": 5.8028e-05
+        "duration_s": 0.000172687
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000165454
       },
       "convert": {
         "send_bytes": 8,
         "recv_bytes": 8,
         "executions": 1,
-        "duration_s": 2.8168e-05
+        "duration_s": 2.8648e-05
       },
       "negate": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.8935e-05
+        "duration_s": 1.49e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.338e-05
-      },
-      "constant": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.1644e-05
+        "duration_s": 1.4468e-05
       },
       "not": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 9.13e-06
+        "duration_s": 1.0072e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 7.485e-06
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 4.167e-06
+        "duration_s": 3.176e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -1936,24 +2442,25 @@
     "field": "FM128",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 43.09710900270147,
-      "max": 46.197698000469245,
-      "median": 44.0045880022808,
-      "p25": 43.95075799766346,
-      "p75": 44.44446400157176
+      "min": 42.89492499992775,
+      "max": 45.45859300014854,
+      "median": 45.15792600000168,
+      "p25": 44.22490599995399,
+      "p75": 45.180307000009634
     },
     "wall_ms_samples": [
-      43.95075799766346,
-      44.44446400157176,
-      46.197698000469245,
-      44.0045880022808,
-      43.09710900270147
+      42.89492499992775,
+      45.15792600000168,
+      45.180307000009634,
+      44.22490599995399,
+      45.45859300014854
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -1969,10 +2476,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM128, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 8392 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.18598200040287338,
-    "wall_ms": 44.0045880022808,
+    "setup_ms": 0.16505600001437415,
+    "wall_ms": 45.15792600000168,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 1526,
     "profiled": true,
     "comm_send_bytes": 4196.0,
@@ -1985,55 +2492,55 @@
         "send_bytes": 68,
         "recv_bytes": 68,
         "executions": 1,
-        "duration_s": 0.000497236
+        "duration_s": 0.000581762
       },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000167748
+        "duration_s": 0.000154031
       },
       "multiply": {
         "send_bytes": 4112,
         "recv_bytes": 4112,
         "executions": 2,
-        "duration_s": 0.000154735
+        "duration_s": 0.000117658
       },
       "convert": {
         "send_bytes": 16,
         "recv_bytes": 16,
         "executions": 1,
-        "duration_s": 2.6185e-05
-      },
-      "add": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.4248e-05
+        "duration_s": 4.4667e-05
       },
       "negate": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.179e-05
+        "duration_s": 1.931e-05
       },
-      "not": {
+      "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 8.636e-06
+        "duration_s": 1.5248e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 7.528e-06
+        "duration_s": 1.1119e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 9.756e-06
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 3.569e-06
+        "duration_s": 4.081e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -2056,24 +2563,25 @@
     "field": "FM32",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.468202000221936,
-      "max": 36.621158997149905,
-      "median": 34.24077199815656,
-      "p25": 34.13243999966653,
-      "p75": 35.15465099917492
+      "min": 33.52569699995911,
+      "max": 35.57366900008674,
+      "median": 35.17913999985467,
+      "p25": 34.50941000005514,
+      "p75": 35.533897000050274
     },
     "wall_ms_samples": [
-      34.13243999966653,
-      34.24077199815656,
-      36.621158997149905,
-      35.15465099917492,
-      33.468202000221936
+      35.533897000050274,
+      33.52569699995911,
+      35.57366900008674,
+      34.50941000005514,
+      35.17913999985467
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -2091,10 +2599,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM32, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 2056 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.15856199752306566,
-    "wall_ms": 34.24077199815656,
+    "setup_ms": 0.19206699994356313,
+    "wall_ms": 35.17913999985467,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 903,
     "profiled": true,
     "comm_send_bytes": 1028.0,
@@ -2107,31 +2615,31 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000183807
-      },
-      "convert": {
-        "send_bytes": 4,
-        "recv_bytes": 4,
-        "executions": 1,
-        "duration_s": 0.000115094
+        "duration_s": 0.00015568
       },
       "multiply": {
         "send_bytes": 1024,
         "recv_bytes": 1024,
         "executions": 1,
-        "duration_s": 6.2865e-05
+        "duration_s": 0.000111224
+      },
+      "convert": {
+        "send_bytes": 4,
+        "recv_bytes": 4,
+        "executions": 1,
+        "duration_s": 7.4258e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.1829e-05
+        "duration_s": 1.2541e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.595e-06
+        "duration_s": 1.556e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -2154,24 +2662,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.33426499739289,
-      "max": 37.42696499830345,
-      "median": 35.11518400046043,
-      "p25": 33.79746499922476,
-      "p75": 35.754425000050105
+      "min": 37.82565699998486,
+      "max": 42.18722800010255,
+      "median": 41.18546600011541,
+      "p25": 40.96244199990906,
+      "p75": 41.317933000073026
     },
     "wall_ms_samples": [
-      33.33426499739289,
-      35.754425000050105,
-      37.42696499830345,
-      35.11518400046043,
-      33.79746499922476
+      37.82565699998486,
+      40.96244199990906,
+      42.18722800010255,
+      41.18546600011541,
+      41.317933000073026
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -2189,10 +2698,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4112 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.1457840007788036,
-    "wall_ms": 35.11518400046043,
+    "setup_ms": 0.15454999993380625,
+    "wall_ms": 41.18546600011541,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 903,
     "profiled": true,
     "comm_send_bytes": 2056.0,
@@ -2205,31 +2714,31 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000187022
-      },
-      "multiply": {
-        "send_bytes": 2048,
-        "recv_bytes": 2048,
-        "executions": 1,
-        "duration_s": 5.7315e-05
+        "duration_s": 0.000204093
       },
       "convert": {
         "send_bytes": 8,
         "recv_bytes": 8,
         "executions": 1,
-        "duration_s": 2.8333e-05
+        "duration_s": 0.000140449
+      },
+      "multiply": {
+        "send_bytes": 2048,
+        "recv_bytes": 2048,
+        "executions": 1,
+        "duration_s": 0.000125545
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.3192e-05
+        "duration_s": 1.3842e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.205e-06
+        "duration_s": 1.989e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -2252,24 +2761,25 @@
     "field": "FM128",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.240294997085584,
-      "max": 43.45940100029111,
-      "median": 36.10666799795581,
-      "p25": 34.48315800051205,
-      "p75": 36.48370600058115
+      "min": 36.04785399988941,
+      "max": 44.621659000085856,
+      "median": 42.100039999922956,
+      "p25": 39.893906999850515,
+      "p75": 42.93422599994301
     },
     "wall_ms_samples": [
-      33.240294997085584,
-      34.48315800051205,
-      43.45940100029111,
-      36.48370600058115,
-      36.10666799795581
+      44.621659000085856,
+      42.93422599994301,
+      42.100039999922956,
+      39.893906999850515,
+      36.04785399988941
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -2287,10 +2797,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM128, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 8224 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.14684900088468567,
-    "wall_ms": 36.10666799795581,
+    "setup_ms": 0.2749380000750534,
+    "wall_ms": 42.100039999922956,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 903,
     "profiled": true,
     "comm_send_bytes": 4112.0,
@@ -2303,31 +2813,31 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000210572
+        "duration_s": 0.000206521
       },
       "multiply": {
         "send_bytes": 4096,
         "recv_bytes": 4096,
         "executions": 1,
-        "duration_s": 5.1505e-05
+        "duration_s": 7.3e-05
       },
       "convert": {
         "send_bytes": 16,
         "recv_bytes": 16,
         "executions": 1,
-        "duration_s": 2.6756e-05
+        "duration_s": 3.5468e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 7.829e-06
+        "duration_s": 1.642e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.714e-06
+        "duration_s": 2.078e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -2350,24 +2860,25 @@
     "field": "FM32",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 84.77992700136383,
-      "max": 87.37817100336542,
-      "median": 85.29814400026225,
-      "p25": 84.93178400021861,
-      "p75": 86.80749699851731
+      "min": 82.5079819999246,
+      "max": 93.91262799999822,
+      "median": 89.6789579999222,
+      "p25": 87.90530400005991,
+      "p75": 90.92555799998081
     },
     "wall_ms_samples": [
-      84.93178400021861,
-      86.80749699851731,
-      85.29814400026225,
-      84.77992700136383,
-      87.37817100336542
+      90.92555799998081,
+      82.5079819999246,
+      87.90530400005991,
+      93.91262799999822,
+      89.6789579999222
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -2381,81 +2892,81 @@
     "field_bits": 32,
     "bit_width_covered": true,
     "status": "ok",
-    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM32, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 269568 B（min 259840 / max 273024；抖动是实测现象，非解析确定量）",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM32, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 271360 B（min 265600 / max 273664；抖动是实测现象，非解析确定量）",
     "error": "",
-    "setup_ms": 0.20670300000347197,
-    "wall_ms": 85.29814400026225,
+    "setup_ms": 0.21608999986710842,
+    "wall_ms": 89.6789579999222,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 2653,
     "profiled": true,
-    "comm_send_bytes": 132608.0,
-    "comm_recv_bytes": 133888.0,
-    "comm_total_bytes": 269568.0,
-    "comm_send_actions": 514.0,
-    "comm_recv_actions": 520.0,
+    "comm_send_bytes": 131072.0,
+    "comm_recv_bytes": 134656.0,
+    "comm_total_bytes": 271360.0,
+    "comm_send_actions": 511.0,
+    "comm_recv_actions": 525.0,
     "comm_by_primitive": {
       "shift_left": {
-        "send_bytes": 89600,
-        "recv_bytes": 93952,
+        "send_bytes": 97152,
+        "recv_bytes": 88192,
         "executions": 2,
-        "duration_s": 0.020761533
+        "duration_s": 0.01710856
       },
       "less": {
         "send_bytes": 40960,
         "recv_bytes": 40960,
         "executions": 2,
-        "duration_s": 0.001980979
+        "duration_s": 0.001953908
       },
       "reduce": {
         "send_bytes": 1024,
         "recv_bytes": 1024,
         "executions": 1,
-        "duration_s": 0.000936306
+        "duration_s": 0.000681363
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 5.6156e-05
-      },
-      "constant": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 2,
-        "duration_s": 2.805e-05
+        "duration_s": 7.757e-05
       },
       "and": {
         "send_bytes": 1024,
         "recv_bytes": 1024,
         "executions": 1,
-        "duration_s": 2.245e-05
+        "duration_s": 4.0484e-05
       },
       "broadcast": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 4,
-        "duration_s": 2.2106e-05
+        "duration_s": 1.9338e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.7991e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 2.1813e-05
+        "duration_s": 1.4995e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 14,
-        "duration_s": 7.542e-06
+        "duration_s": 8.77e-06
       }
     },
     "comm_total_bytes_stats": {
-      "min": 259840.0,
-      "max": 273024.0,
-      "median": 269568.0,
-      "p25": 264960.0,
-      "p75": 269696.0
+      "min": 265600.0,
+      "max": 273664.0,
+      "median": 271360.0,
+      "p25": 265728.0,
+      "p75": 273152.0
     },
     "agreement": true,
     "output_bits": 1,
@@ -2470,24 +2981,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 85.19445999991149,
-      "max": 89.77405599944177,
-      "median": 88.21267700113822,
-      "p25": 86.83078799731447,
-      "p75": 89.09034400130622
+      "min": 85.0762030001988,
+      "max": 96.51248700015458,
+      "median": 85.69922099991345,
+      "p25": 85.21797799994602,
+      "p75": 95.7267009998759
     },
     "wall_ms_samples": [
-      86.83078799731447,
-      89.77405599944177,
-      89.09034400130622,
-      88.21267700113822,
-      85.19445999991149
+      95.7267009998759,
+      85.69922099991345,
+      85.21797799994602,
+      85.0762030001988,
+      96.51248700015458
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -2501,81 +3013,81 @@
     "field_bits": 64,
     "bit_width_covered": true,
     "status": "ok",
-    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 507904 B（min 485120 / max 516608；抖动是实测现象，非解析确定量）",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 507904 B（min 498688 / max 529920；抖动是实测现象，非解析确定量）",
     "error": "",
-    "setup_ms": 0.19739400158869103,
-    "wall_ms": 88.21267700113822,
+    "setup_ms": 0.3476149997823086,
+    "wall_ms": 85.69922099991345,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 2653,
     "profiled": true,
-    "comm_send_bytes": 263936.0,
-    "comm_recv_bytes": 247040.0,
+    "comm_send_bytes": 248576.0,
+    "comm_recv_bytes": 250880.0,
     "comm_total_bytes": 507904.0,
-    "comm_send_actions": 584.0,
-    "comm_recv_actions": 581.0,
+    "comm_send_actions": 583.0,
+    "comm_recv_actions": 584.0,
     "comm_by_primitive": {
       "shift_left": {
-        "send_bytes": 180480,
-        "recv_bytes": 175872,
+        "send_bytes": 181248,
+        "recv_bytes": 175104,
         "executions": 2,
-        "duration_s": 0.022033462
+        "duration_s": 0.020299913
       },
       "less": {
         "send_bytes": 73728,
         "recv_bytes": 73728,
         "executions": 2,
-        "duration_s": 0.002481549
+        "duration_s": 0.002548472
       },
       "reduce": {
         "send_bytes": 1024,
         "recv_bytes": 1024,
         "executions": 1,
-        "duration_s": 0.000709844
-      },
-      "convert": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 5.9963e-05
-      },
-      "broadcast": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 4,
-        "duration_s": 3.936e-05
+        "duration_s": 0.000859245
       },
       "and": {
         "send_bytes": 1024,
         "recv_bytes": 1024,
         "executions": 1,
-        "duration_s": 2.8946e-05
+        "duration_s": 7.1072e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 2.2399e-05
+        "duration_s": 3.4504e-05
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 3.2553e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.1595e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 1.7596e-05
+        "duration_s": 1.8179e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 14,
-        "duration_s": 8.17e-06
+        "duration_s": 8.561e-06
       }
     },
     "comm_total_bytes_stats": {
-      "min": 485120.0,
-      "max": 516608.0,
+      "min": 498688.0,
+      "max": 529920.0,
       "median": 507904.0,
-      "p25": 505856.0,
-      "p75": 514816.0
+      "p25": 502528.0,
+      "p75": 523776.0
     },
     "agreement": true,
     "output_bits": 1,
@@ -2590,24 +3102,25 @@
     "field": "FM128",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 85.6932249989768,
-      "max": 90.32128100079717,
-      "median": 87.82957000221359,
-      "p25": 85.8796930006065,
-      "p75": 89.47331400122494
+      "min": 87.88988999981484,
+      "max": 98.72520099997928,
+      "median": 89.97428899988336,
+      "p25": 88.87296000011702,
+      "p75": 90.27056900004027
     },
     "wall_ms_samples": [
-      90.32128100079717,
-      89.47331400122494,
-      85.6932249989768,
-      87.82957000221359,
-      85.8796930006065
+      88.87296000011702,
+      87.88988999981484,
+      98.72520099997928,
+      90.27056900004027,
+      89.97428899988336
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -2621,80 +3134,80 @@
     "field_bits": 128,
     "bit_width_covered": true,
     "status": "ok",
-    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM128, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 962048 B（min 955904 / max 1024512；抖动是实测现象，非解析确定量）",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM128, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 984064 B（min 952832 / max 1012224；抖动是实测现象，非解析确定量）",
     "error": "",
-    "setup_ms": 0.19496100139804184,
-    "wall_ms": 87.82957000221359,
+    "setup_ms": 0.1948530000390747,
+    "wall_ms": 89.97428899988336,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 2653,
     "profiled": true,
-    "comm_send_bytes": 506368.0,
-    "comm_recv_bytes": 475136.0,
-    "comm_total_bytes": 962048.0,
-    "comm_send_actions": 650.0,
-    "comm_recv_actions": 638.0,
+    "comm_send_bytes": 494080.0,
+    "comm_recv_bytes": 479232.0,
+    "comm_total_bytes": 984064.0,
+    "comm_send_actions": 647.0,
+    "comm_recv_actions": 651.0,
     "comm_by_primitive": {
       "shift_left": {
-        "send_bytes": 365056,
-        "recv_bytes": 314368,
+        "send_bytes": 371712,
+        "recv_bytes": 329728,
         "executions": 2,
-        "duration_s": 0.02251599
+        "duration_s": 0.020703241
       },
       "less": {
         "send_bytes": 139264,
         "recv_bytes": 139264,
         "executions": 2,
-        "duration_s": 0.002813214
+        "duration_s": 0.003017951
       },
       "reduce": {
         "send_bytes": 1024,
         "recv_bytes": 1024,
         "executions": 1,
-        "duration_s": 0.000606718
-      },
-      "and": {
-        "send_bytes": 1024,
-        "recv_bytes": 1024,
-        "executions": 1,
-        "duration_s": 3.6968e-05
+        "duration_s": 0.000745604
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 3.4179e-05
+        "duration_s": 8.6607e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 2.6605e-05
+        "duration_s": 2.6842e-05
+      },
+      "and": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 2.3646e-05
       },
       "broadcast": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 4,
-        "duration_s": 2.6187e-05
+        "duration_s": 2.2079e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 1.8105e-05
+        "duration_s": 1.6004e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 14,
-        "duration_s": 8.593e-06
+        "duration_s": 7.891e-06
       }
     },
     "comm_total_bytes_stats": {
-      "min": 955904.0,
-      "max": 1024512.0,
-      "median": 962048.0,
-      "p25": 957952.0,
+      "min": 952832.0,
+      "max": 1012224.0,
+      "median": 984064.0,
+      "p25": 961024.0,
       "p75": 990720.0
     },
     "agreement": true,
@@ -2710,24 +3223,25 @@
     "field": "FM64",
     "k": 64,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 41.93884600317688,
-      "max": 53.78924600154278,
-      "median": 43.74429599920404,
-      "p25": 43.23318599927006,
-      "p75": 44.92377300266526
+      "min": 44.2006590001256,
+      "max": 54.11187099980452,
+      "median": 46.02871099996264,
+      "p25": 44.74004999997305,
+      "p75": 46.10333799996624
     },
     "wall_ms_samples": [
-      53.78924600154278,
-      43.23318599927006,
-      41.93884600317688,
-      44.92377300266526,
-      43.74429599920404
+      54.11187099980452,
+      44.2006590001256,
+      46.02871099996264,
+      44.74004999997305,
+      46.10333799996624
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -2743,10 +3257,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 1128 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.15122599870665,
-    "wall_ms": 43.74429599920404,
+    "setup_ms": 0.1583830000981834,
+    "wall_ms": 46.02871099996264,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 1517,
     "profiled": true,
     "comm_send_bytes": 564.0,
@@ -2759,55 +3273,55 @@
         "send_bytes": 36,
         "recv_bytes": 36,
         "executions": 1,
-        "duration_s": 0.000478828
+        "duration_s": 0.000575295
       },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000122714
+        "duration_s": 0.000190351
       },
       "multiply": {
         "send_bytes": 520,
         "recv_bytes": 520,
         "executions": 2,
-        "duration_s": 7.7414e-05
+        "duration_s": 6.7232e-05
       },
       "convert": {
         "send_bytes": 8,
         "recv_bytes": 8,
         "executions": 1,
-        "duration_s": 6.9833e-05
+        "duration_s": 3.7313e-05
       },
       "negate": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.8614e-05
-      },
-      "constant": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.2338e-05
+        "duration_s": 1.9676e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.2189e-05
+        "duration_s": 1.7699e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.038e-05
       },
       "not": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 8.557e-06
+        "duration_s": 9.268e-06
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 3.55e-06
+        "duration_s": 4.273e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -2830,24 +3344,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 42.45149000053061,
-      "max": 45.85235800186638,
-      "median": 44.151275000331225,
-      "p25": 43.76200300248456,
-      "p75": 44.26359799981583
+      "min": 45.57066699999268,
+      "max": 48.87546800000564,
+      "median": 47.19654600012291,
+      "p25": 45.69336499980636,
+      "p75": 47.680345000117086
     },
     "wall_ms_samples": [
-      44.26359799981583,
-      44.151275000331225,
-      45.85235800186638,
-      42.45149000053061,
-      43.76200300248456
+      45.57066699999268,
+      47.19654600012291,
+      45.69336499980636,
+      47.680345000117086,
+      48.87546800000564
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -2863,10 +3378,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4200 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.1640150003368035,
-    "wall_ms": 44.151275000331225,
+    "setup_ms": 0.16129899995576125,
+    "wall_ms": 47.19654600012291,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 1526,
     "profiled": true,
     "comm_send_bytes": 2100.0,
@@ -2879,55 +3394,55 @@
         "send_bytes": 36,
         "recv_bytes": 36,
         "executions": 1,
-        "duration_s": 0.000433257
-      },
-      "multiply": {
-        "send_bytes": 2056,
-        "recv_bytes": 2056,
-        "executions": 2,
-        "duration_s": 0.000173163
+        "duration_s": 0.000453739
       },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.00016199
+        "duration_s": 0.00017274
+      },
+      "multiply": {
+        "send_bytes": 2056,
+        "recv_bytes": 2056,
+        "executions": 2,
+        "duration_s": 9.7897e-05
       },
       "convert": {
         "send_bytes": 8,
         "recv_bytes": 8,
         "executions": 1,
-        "duration_s": 2.9153e-05
+        "duration_s": 2.8191e-05
       },
       "negate": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 2.0941e-05
-      },
-      "constant": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 1.5177e-05
+        "duration_s": 1.9785e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.3893e-05
+        "duration_s": 1.4524e-05
       },
       "not": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 9.94e-06
+        "duration_s": 1.059e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.026e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 3.562e-06
+        "duration_s": 3.414e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -2950,24 +3465,25 @@
     "field": "FM64",
     "k": 1024,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 44.15821899965522,
-      "max": 53.26127399894176,
-      "median": 44.62627999964752,
-      "p25": 44.354337002005195,
-      "p75": 45.30335500021465
+      "min": 46.2295479999284,
+      "max": 51.3035060000675,
+      "median": 47.62369700006275,
+      "p25": 47.38435500007654,
+      "p75": 51.19971599992823
     },
     "wall_ms_samples": [
-      53.26127399894176,
-      44.354337002005195,
-      44.62627999964752,
-      45.30335500021465,
-      44.15821899965522
+      51.19971599992823,
+      51.3035060000675,
+      47.62369700006275,
+      47.38435500007654,
+      46.2295479999284
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -2983,10 +3499,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 16488 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.23335599689744413,
-    "wall_ms": 44.62627999964752,
+    "setup_ms": 0.24173599990717776,
+    "wall_ms": 47.62369700006275,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 1535,
     "profiled": true,
     "comm_send_bytes": 8244.0,
@@ -2999,55 +3515,55 @@
         "send_bytes": 36,
         "recv_bytes": 36,
         "executions": 1,
-        "duration_s": 0.000408198
+        "duration_s": 0.000664525
       },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000195624
+        "duration_s": 0.000208417
       },
       "multiply": {
         "send_bytes": 8200,
         "recv_bytes": 8200,
         "executions": 2,
-        "duration_s": 0.00015282
+        "duration_s": 0.000141288
       },
       "convert": {
         "send_bytes": 8,
         "recv_bytes": 8,
         "executions": 1,
-        "duration_s": 4.5842e-05
+        "duration_s": 4.7502e-05
       },
       "negate": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 2.6639e-05
+        "duration_s": 2.2805e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.7518e-05
-      },
-      "not": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 8.599e-06
+        "duration_s": 1.9715e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 8.545e-06
+        "duration_s": 1.142e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.611e-06
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 4.088e-06
+        "duration_s": 3.629e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -3070,24 +3586,25 @@
     "field": "FM64",
     "k": 4096,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 45.21888900126214,
-      "max": 55.62213400116889,
-      "median": 46.0253230012313,
-      "p25": 45.420425001793774,
-      "p75": 52.22128899913514
+      "min": 47.17688100004125,
+      "max": 56.50950599988391,
+      "median": 49.19137399997453,
+      "p25": 48.66230200013888,
+      "p75": 50.97906699984378
     },
     "wall_ms_samples": [
-      55.62213400116889,
-      45.420425001793774,
-      46.0253230012313,
-      45.21888900126214,
-      52.22128899913514
+      56.50950599988391,
+      47.17688100004125,
+      49.19137399997453,
+      48.66230200013888,
+      50.97906699984378
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -3103,10 +3620,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 65640 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.5580500001087785,
-    "wall_ms": 46.0253230012313,
+    "setup_ms": 0.49544300009074504,
+    "wall_ms": 49.19137399997453,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 1535,
     "profiled": true,
     "comm_send_bytes": 32820.0,
@@ -3115,59 +3632,59 @@
     "comm_send_actions": 11.0,
     "comm_recv_actions": 11.0,
     "comm_by_primitive": {
+      "multiply": {
+        "send_bytes": 32776,
+        "recv_bytes": 32776,
+        "executions": 2,
+        "duration_s": 0.000720854
+      },
       "less": {
         "send_bytes": 36,
         "recv_bytes": 36,
         "executions": 1,
-        "duration_s": 0.000558952
+        "duration_s": 0.000407748
       },
       "reduce": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000292986
-      },
-      "multiply": {
-        "send_bytes": 32776,
-        "recv_bytes": 32776,
-        "executions": 2,
-        "duration_s": 0.000206659
-      },
-      "add": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 1,
-        "duration_s": 6.1037e-05
+        "duration_s": 0.00030649
       },
       "convert": {
         "send_bytes": 8,
         "recv_bytes": 8,
         "executions": 1,
-        "duration_s": 5.5486e-05
+        "duration_s": 9.072e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.4738e-05
       },
       "negate": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 4.7258e-05
+        "duration_s": 5.7763e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.4265e-05
+        "duration_s": 1.2855e-05
       },
       "not": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 8.856e-06
+        "duration_s": 1.0813e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 8,
-        "duration_s": 4.224e-06
+        "duration_s": 5.984e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -3190,24 +3707,25 @@
     "field": "FM64",
     "k": 64,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 33.01392499997746,
-      "max": 38.40322999894852,
-      "median": 34.35140399960801,
-      "p25": 33.508751999761444,
-      "p75": 36.87580999758211
+      "min": 35.62135499987562,
+      "max": 46.15774299986697,
+      "median": 38.85232600009658,
+      "p25": 35.80877799981863,
+      "p75": 40.89233700005934
     },
     "wall_ms_samples": [
-      33.508751999761444,
-      34.35140399960801,
-      33.01392499997746,
-      38.40322999894852,
-      36.87580999758211
+      35.62135499987562,
+      38.85232600009658,
+      40.89233700005934,
+      46.15774299986697,
+      35.80877799981863
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -3225,10 +3743,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 1040 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.1458000006095972,
-    "wall_ms": 34.35140399960801,
+    "setup_ms": 0.15207799992822402,
+    "wall_ms": 38.85232600009658,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 898,
     "profiled": true,
     "comm_send_bytes": 520.0,
@@ -3241,31 +3759,31 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000133875
+        "duration_s": 0.000181542
       },
       "multiply": {
         "send_bytes": 512,
         "recv_bytes": 512,
         "executions": 1,
-        "duration_s": 0.000100591
+        "duration_s": 7.0841e-05
       },
       "convert": {
         "send_bytes": 8,
         "recv_bytes": 8,
         "executions": 1,
-        "duration_s": 4.4561e-05
+        "duration_s": 3.1849e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.1462e-05
+        "duration_s": 1.0743e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.335e-06
+        "duration_s": 2.22e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -3288,24 +3806,25 @@
     "field": "FM64",
     "k": 256,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 34.80119900268619,
-      "max": 36.4560359994357,
-      "median": 35.16652699909173,
-      "p25": 35.08558600151446,
-      "p75": 35.25055999853066
+      "min": 34.905037999806154,
+      "max": 39.105441999936374,
+      "median": 35.33263799999986,
+      "p25": 35.064960999989125,
+      "p75": 35.54127799998241
     },
     "wall_ms_samples": [
-      35.25055999853066,
-      35.16652699909173,
-      34.80119900268619,
-      36.4560359994357,
-      35.08558600151446
+      34.905037999806154,
+      35.064960999989125,
+      35.33263799999986,
+      39.105441999936374,
+      35.54127799998241
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -3323,10 +3842,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4112 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.15994799832697026,
-    "wall_ms": 35.16652699909173,
+    "setup_ms": 0.16478699990329915,
+    "wall_ms": 35.33263799999986,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 903,
     "profiled": true,
     "comm_send_bytes": 2056.0,
@@ -3339,31 +3858,31 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000154813
-      },
-      "multiply": {
-        "send_bytes": 2048,
-        "recv_bytes": 2048,
-        "executions": 1,
-        "duration_s": 0.000100088
+        "duration_s": 0.000155033
       },
       "convert": {
         "send_bytes": 8,
         "recv_bytes": 8,
         "executions": 1,
-        "duration_s": 4.8993e-05
+        "duration_s": 6.6029e-05
+      },
+      "multiply": {
+        "send_bytes": 2048,
+        "recv_bytes": 2048,
+        "executions": 1,
+        "duration_s": 5.1171e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.3614e-05
+        "duration_s": 1.1412e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.319e-06
+        "duration_s": 1.926e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -3386,24 +3905,25 @@
     "field": "FM64",
     "k": 1024,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 34.62276100253803,
-      "max": 36.70358499948634,
-      "median": 35.157205998984864,
-      "p25": 34.64995399917825,
-      "p75": 36.395702001755126
+      "min": 35.006458999987444,
+      "max": 38.615621999952054,
+      "median": 36.10547299990685,
+      "p25": 35.69513599995844,
+      "p75": 36.288058000081946
     },
     "wall_ms_samples": [
-      36.395702001755126,
-      34.62276100253803,
-      34.64995399917825,
-      36.70358499948634,
-      35.157205998984864
+      36.10547299990685,
+      35.69513599995844,
+      36.288058000081946,
+      38.615621999952054,
+      35.006458999987444
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -3421,10 +3941,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 16400 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.286358997982461,
-    "wall_ms": 35.157205998984864,
+    "setup_ms": 0.2631560000736499,
+    "wall_ms": 36.10547299990685,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 908,
     "profiled": true,
     "comm_send_bytes": 8200.0,
@@ -3437,31 +3957,31 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000227914
+        "duration_s": 0.000280522
       },
       "multiply": {
         "send_bytes": 8192,
         "recv_bytes": 8192,
         "executions": 1,
-        "duration_s": 7.0113e-05
+        "duration_s": 0.000130133
       },
       "convert": {
         "send_bytes": 8,
         "recv_bytes": 8,
         "executions": 1,
-        "duration_s": 4.3996e-05
+        "duration_s": 4.0827e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.4273e-05
+        "duration_s": 8.554e-06
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.793e-06
+        "duration_s": 2.454e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -3484,24 +4004,25 @@
     "field": "FM64",
     "k": 4096,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 35.70389599917689,
-      "max": 37.575131998892175,
-      "median": 36.295485002483474,
-      "p25": 35.81611399931717,
-      "p75": 36.5489189971413
+      "min": 35.937600999886854,
+      "max": 39.00384199982909,
+      "median": 37.288193000222236,
+      "p25": 36.656094999898414,
+      "p75": 38.34817199981444
     },
     "wall_ms_samples": [
-      36.295485002483474,
-      35.70389599917689,
-      36.5489189971413,
-      37.575131998892175,
-      35.81611399931717
+      36.656094999898414,
+      37.288193000222236,
+      35.937600999886854,
+      38.34817199981444,
+      39.00384199982909
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -3519,10 +4040,10 @@
     "status": "ok",
     "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 65552 B（5 次逐字节一致）",
     "error": "",
-    "setup_ms": 0.561273998755496,
-    "wall_ms": 36.295485002483474,
+    "setup_ms": 0.613244000078339,
+    "wall_ms": 37.288193000222236,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 908,
     "profiled": true,
     "comm_send_bytes": 32776.0,
@@ -3535,31 +4056,31 @@
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 0.000276458
+        "duration_s": 0.000293551
       },
       "multiply": {
         "send_bytes": 32768,
         "recv_bytes": 32768,
         "executions": 1,
-        "duration_s": 0.000140437
+        "duration_s": 0.000131346
       },
       "convert": {
         "send_bytes": 8,
         "recv_bytes": 8,
         "executions": 1,
-        "duration_s": 2.9456e-05
+        "duration_s": 2.9796e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 1.3394e-05
+        "duration_s": 8.001e-06
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 3,
-        "duration_s": 1.921e-06
+        "duration_s": 1.819e-06
       }
     },
     "comm_total_bytes_stats": {
@@ -3582,24 +4103,25 @@
     "field": "FM64",
     "k": 8,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 80.49733500229195,
-      "max": 94.00621500026318,
-      "median": 82.32592399872374,
-      "p25": 81.10174800094683,
-      "p75": 82.61556000070414
+      "min": 84.75191499996981,
+      "max": 102.46990499990716,
+      "median": 85.51205000003392,
+      "p25": 84.83415699993202,
+      "p75": 91.07232900009876
     },
     "wall_ms_samples": [
-      94.00621500026318,
-      80.49733500229195,
-      82.61556000070414,
-      81.10174800094683,
-      82.32592399872374
+      102.46990499990716,
+      91.07232900009876,
+      84.83415699993202,
+      85.51205000003392,
+      84.75191499996981
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -3613,81 +4135,81 @@
     "field_bits": 64,
     "bit_width_covered": true,
     "status": "ok",
-    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 97856 B（min 96000 / max 102208；抖动是实测现象，非解析确定量）",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 99328 B（min 98496 / max 100800；抖动是实测现象，非解析确定量）",
     "error": "",
-    "setup_ms": 0.22055099907447584,
-    "wall_ms": 82.32592399872374,
+    "setup_ms": 0.2511099999082944,
+    "wall_ms": 85.51205000003392,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 2593,
     "profiled": true,
-    "comm_send_bytes": 52928.0,
-    "comm_recv_bytes": 48320.0,
-    "comm_total_bytes": 97856.0,
-    "comm_send_actions": 582.0,
-    "comm_recv_actions": 569.0,
+    "comm_send_bytes": 48192.0,
+    "comm_recv_bytes": 51136.0,
+    "comm_total_bytes": 99328.0,
+    "comm_send_actions": 577.0,
+    "comm_recv_actions": 581.0,
     "comm_by_primitive": {
       "shift_left": {
-        "send_bytes": 42048,
-        "recv_bytes": 46336,
+        "send_bytes": 41408,
+        "recv_bytes": 48448,
         "executions": 2,
-        "duration_s": 0.018822316
+        "duration_s": 0.018746134
       },
       "less": {
         "send_bytes": 4608,
         "recv_bytes": 4608,
         "executions": 2,
-        "duration_s": 0.00091862
+        "duration_s": 0.001056286
       },
       "reduce": {
         "send_bytes": 64,
         "recv_bytes": 64,
         "executions": 1,
-        "duration_s": 0.000454617
-      },
-      "and": {
-        "send_bytes": 64,
-        "recv_bytes": 64,
-        "executions": 1,
-        "duration_s": 5.8996e-05
+        "duration_s": 0.000424111
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 3.8332e-05
+        "duration_s": 6.3961e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 2.2952e-05
+        "duration_s": 3.0775e-05
+      },
+      "and": {
+        "send_bytes": 64,
+        "recv_bytes": 64,
+        "executions": 1,
+        "duration_s": 3.0033e-05
       },
       "broadcast": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 4,
-        "duration_s": 1.9608e-05
+        "duration_s": 2.0923e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 1.5983e-05
+        "duration_s": 1.673e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 14,
-        "duration_s": 7.15e-06
+        "duration_s": 6.371e-06
       }
     },
     "comm_total_bytes_stats": {
-      "min": 96000.0,
-      "max": 102208.0,
-      "median": 97856.0,
-      "p25": 96384.0,
-      "p75": 100416.0
+      "min": 98496.0,
+      "max": 100800.0,
+      "median": 99328.0,
+      "p25": 99072.0,
+      "p75": 100736.0
     },
     "agreement": true,
     "output_bits": 1,
@@ -3702,24 +4224,25 @@
     "field": "FM64",
     "k": 16,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 81.34571699702065,
-      "max": 90.17653000046266,
-      "median": 84.30842600137112,
-      "p25": 82.36043099896051,
-      "p75": 84.76975599842262
+      "min": 84.62286000008135,
+      "max": 94.8154519999207,
+      "median": 89.15777600009278,
+      "p25": 85.97233299997242,
+      "p75": 90.7880469999327
     },
     "wall_ms_samples": [
-      90.17653000046266,
-      82.36043099896051,
-      81.34571699702065,
-      84.76975599842262,
-      84.30842600137112
+      94.8154519999207,
+      90.7880469999327,
+      84.62286000008135,
+      85.97233299997242,
+      89.15777600009278
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -3733,81 +4256,81 @@
     "field_bits": 64,
     "bit_width_covered": true,
     "status": "ok",
-    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 215936 B（min 211584 / max 219392；抖动是实测现象，非解析确定量）",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 215808 B（min 212352 / max 220288；抖动是实测现象，非解析确定量）",
     "error": "",
-    "setup_ms": 0.1826029983931221,
-    "wall_ms": 84.30842600137112,
+    "setup_ms": 0.17089300013140019,
+    "wall_ms": 89.15777600009278,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 2653,
     "profiled": true,
-    "comm_send_bytes": 108544.0,
-    "comm_recv_bytes": 107392.0,
-    "comm_total_bytes": 215936.0,
-    "comm_send_actions": 578.0,
-    "comm_recv_actions": 584.0,
+    "comm_send_bytes": 109952.0,
+    "comm_recv_bytes": 105856.0,
+    "comm_total_bytes": 215808.0,
+    "comm_send_actions": 581.0,
+    "comm_recv_actions": 585.0,
     "comm_by_primitive": {
       "shift_left": {
-        "send_bytes": 91776,
-        "recv_bytes": 86272,
+        "send_bytes": 91008,
+        "recv_bytes": 86912,
         "executions": 2,
-        "duration_s": 0.020447757
+        "duration_s": 0.019778692
       },
       "less": {
         "send_bytes": 18432,
         "recv_bytes": 18432,
         "executions": 2,
-        "duration_s": 0.001689768
+        "duration_s": 0.001394417
       },
       "reduce": {
         "send_bytes": 256,
         "recv_bytes": 256,
         "executions": 1,
-        "duration_s": 0.000518123
-      },
-      "and": {
-        "send_bytes": 256,
-        "recv_bytes": 256,
-        "executions": 1,
-        "duration_s": 6.5861e-05
+        "duration_s": 0.000495543
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 3.7383e-05
+        "duration_s": 3.9578e-05
+      },
+      "and": {
+        "send_bytes": 256,
+        "recv_bytes": 256,
+        "executions": 1,
+        "duration_s": 3.258e-05
       },
       "broadcast": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 4,
-        "duration_s": 2.7208e-05
+        "duration_s": 2.7596e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 2.5133e-05
+        "duration_s": 2.5649e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 2.1881e-05
+        "duration_s": 1.5993e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 14,
-        "duration_s": 1.4249e-05
+        "duration_s": 6.11e-06
       }
     },
     "comm_total_bytes_stats": {
-      "min": 211584.0,
-      "max": 219392.0,
-      "median": 215936.0,
-      "p25": 211968.0,
-      "p75": 219008.0
+      "min": 212352.0,
+      "max": 220288.0,
+      "median": 215808.0,
+      "p25": 213120.0,
+      "p75": 218880.0
     },
     "agreement": true,
     "output_bits": 1,
@@ -3822,24 +4345,25 @@
     "field": "FM64",
     "k": 32,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "ok": 5
     },
     "deviation_rate": 0.0,
     "wall_ms_stats": {
-      "min": 82.92910099771689,
-      "max": 85.8983719990647,
-      "median": 84.10535300208721,
-      "p25": 83.89849000013783,
-      "p75": 85.76192399777938
+      "min": 85.94976700010193,
+      "max": 99.42230100000415,
+      "median": 90.67528400009905,
+      "p25": 88.6136169999645,
+      "p75": 91.7654530001073
     },
     "wall_ms_samples": [
-      84.10535300208721,
-      85.8983719990647,
-      82.92910099771689,
-      83.89849000013783,
-      85.76192399777938
+      85.94976700010193,
+      88.6136169999645,
+      91.7654530001073,
+      90.67528400009905,
+      99.42230100000415
     ],
     "max_abs_error_max": 0.0,
     "predicted_cost": {
@@ -3853,81 +4377,81 @@
     "field_bits": 64,
     "bit_width_covered": true,
     "status": "ok",
-    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 516608 B（min 504576 / max 530944；抖动是实测现象，非解析确定量）",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 509440 B（min 494592 / max 513280；抖动是实测现象，非解析确定量）",
     "error": "",
-    "setup_ms": 0.189461003174074,
-    "wall_ms": 84.10535300208721,
+    "setup_ms": 0.20307399995544984,
+    "wall_ms": 90.67528400009905,
     "memory_mb": 0.0,
-    "peak_rss_mb": 1074.5625,
+    "peak_rss_mb": 1885.875,
     "pphlo_bytes": 2653,
     "profiled": true,
-    "comm_send_bytes": 255232.0,
-    "comm_recv_bytes": 252928.0,
-    "comm_total_bytes": 516608.0,
-    "comm_send_actions": 583.0,
-    "comm_recv_actions": 587.0,
+    "comm_send_bytes": 260864.0,
+    "comm_recv_bytes": 248576.0,
+    "comm_total_bytes": 509440.0,
+    "comm_send_actions": 587.0,
+    "comm_recv_actions": 577.0,
     "comm_by_primitive": {
       "shift_left": {
-        "send_bytes": 187904,
-        "recv_bytes": 177152,
+        "send_bytes": 185088,
+        "recv_bytes": 172800,
         "executions": 2,
-        "duration_s": 0.019488162
+        "duration_s": 0.019116811
       },
       "less": {
         "send_bytes": 73728,
         "recv_bytes": 73728,
         "executions": 2,
-        "duration_s": 0.00238246
+        "duration_s": 0.002657647
       },
       "reduce": {
         "send_bytes": 1024,
         "recv_bytes": 1024,
         "executions": 1,
-        "duration_s": 0.000699693
-      },
-      "and": {
-        "send_bytes": 1024,
-        "recv_bytes": 1024,
-        "executions": 1,
-        "duration_s": 0.000197313
-      },
-      "broadcast": {
-        "send_bytes": 0,
-        "recv_bytes": 0,
-        "executions": 4,
-        "duration_s": 9.9578e-05
+        "duration_s": 0.000716046
       },
       "convert": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 1,
-        "duration_s": 2.9025e-05
+        "duration_s": 5.9452e-05
       },
       "constant": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 1.9819e-05
+        "duration_s": 2.6306e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.6171e-05
+      },
+      "and": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 2.3313e-05
       },
       "add": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 2,
-        "duration_s": 1.8373e-05
+        "duration_s": 1.5487e-05
       },
       "free": {
         "send_bytes": 0,
         "recv_bytes": 0,
         "executions": 14,
-        "duration_s": 8.59e-06
+        "duration_s": 8.837e-06
       }
     },
     "comm_total_bytes_stats": {
-      "min": 504576.0,
-      "max": 530944.0,
-      "median": 516608.0,
-      "p25": 507392.0,
-      "p75": 521216.0
+      "min": 494592.0,
+      "max": 513280.0,
+      "median": 509440.0,
+      "p25": 505088.0,
+      "p75": 513024.0
     },
     "agreement": true,
     "output_bits": 1,
@@ -3942,6 +4466,7 @@
     "field": "FM32",
     "k": 1048576,
     "expect_status": "",
+    "strategy": "",
     "repeat": 5,
     "status_counts": {
       "unavailable": 5

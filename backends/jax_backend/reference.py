@@ -14,6 +14,8 @@ __all__ = [
     "jax_distance_le",
     "jax_intersects",
     "jax_temporal_overlap",
+    "jax_temporal_overlap_sweep",
+    "jax_temporal_overlap_pairwise",
     "jax_weighted_sum",
     "run_jax",
 ]
@@ -63,7 +65,12 @@ def jax_weighted_sum(values: Any, weights: Any, scale: int = 1) -> Any:
 def jax_temporal_overlap(
     left_toff: Any, left_lt: Any, right_toff: Any, right_lt: Any
 ) -> Any:
-    """段式区间重叠（广播比较，无 Python 分支）。"""
+    """段式区间重叠：广播成 [N, M] 逐对比较（O(N·M)）。
+
+    这是**语义规范**：逐对直接判定，显然正确，因此拿来当生成代码的期望值来源。
+    代价 O(N·M)——K=256 展开 65 536 个比较、K=4096 是 1 670 万元素。
+    大 K 请用 `jax_temporal_overlap_sweep`（等价，O((N+M)·log(N+M))）。
+    """
 
     jnp = _require_jax()
     one = jnp.asarray(1, jnp.int32)
@@ -73,6 +80,56 @@ def jax_temporal_overlap(
         right_toff[None, :] < left_end[:, None]
     )
     return jnp.any(overlapping)
+
+
+def jax_temporal_overlap_sweep(
+    left_toff: Any, left_lt: Any, right_toff: Any, right_lt: Any
+) -> Any:
+    """段式区间重叠：**事件排序归并 + 前缀扫描**（与 codegen 的 sweep 逐行对应）。
+
+    O((N+M)·log(N+M))，不物化 [N, M] 矩阵。与 `jax_temporal_overlap` 等价，
+    但成本常数更大（MPC 里排序本身很贵），故只在规模足够大时才划算：
+    实测（ABY3/FM64）K=128 时两两比较 3.81 MB < 扫描 5.01 MB，
+    K=256 时反过来 12.59 MB > 9.93 MB——交叉点在 128–256 之间，
+    见 docs/MPC_BENCHMARK_PROTOCOL.md §4.1。
+
+    步骤：
+        1. 每个段式节点 (Toff, Lt) 展开成半开区间 [Toff, Toff + 2^Lt)，
+           拆成"起点/终点"两个事件；
+        2. 事件打包成一个整数一起排序：`(pos << 2) | (is_start << 1) | side`，
+           起点/终点占**高位** ⇒ 同一位置上所有终点排在所有起点之前
+           （半开区间：`[0,2)` 与 `[2,4)` 不重叠）；
+        3. 按序做前缀和 ⇒ 两侧各自的"当前活跃区间数"；
+        4. **两侧活跃数同时 > 0** 即存在一对区间重叠。
+
+    等价性理由：两侧区间并集相交 ⟺ 存在一对区间相交；扫描在每个事件位置上
+    都给出两侧的活跃集合，故不漏判也不误判（632 组输入与逐对版/明文逐位一致）。
+    """
+
+    jnp = _require_jax()
+    one = jnp.asarray(1, jnp.int32)
+    zero = jnp.asarray(0, jnp.int32)
+    left_end = left_toff + jnp.left_shift(one, left_lt)
+    right_end = right_toff + jnp.left_shift(one, right_lt)
+    left_events = jnp.concatenate(
+        [
+            jnp.left_shift(left_toff, 2) + 3,
+            jnp.left_shift(left_end, 2) + 1,
+        ]
+    )
+    right_events = jnp.concatenate(
+        [
+            jnp.left_shift(right_toff, 2) + 2,
+            jnp.left_shift(right_end, 2),
+        ]
+    )
+    keys = jnp.sort(jnp.concatenate([left_events, right_events]))
+    is_start = jnp.bitwise_and(jnp.right_shift(keys, 1), one)
+    side = jnp.bitwise_and(keys, one)
+    delta = jnp.where(is_start == 1, one, -one)
+    active_left = jnp.cumsum(jnp.where(side == 1, delta, zero))
+    active_right = jnp.cumsum(jnp.where(side == 1, zero, delta))
+    return jnp.any((active_left > 0) & (active_right > 0))
 
 
 def jax_intersects(left_codes: Any, right_codes: Any) -> Any:

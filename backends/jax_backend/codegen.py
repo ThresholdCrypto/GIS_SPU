@@ -167,29 +167,142 @@ def generate_weighted_sum(
     )
 
 
-def generate_temporal_overlap(fn_name: str, *, dtype: str = "int32") -> GeneratedFunction:
+#: TemporalOverlap 的电路形态：
+#:   - `pairwise`：广播成 [N, M] 逐对比较，O(N·M)；
+#:   - `sweep`   ：事件排序归并 + 前缀扫描，O((N+M)·log(N+M))；
+#:   - `auto`    ：按规模在两者间选（见 TEMPORAL_OVERLAP_SWEEP_MIN_SIZE），
+#:                 拿不到规模时退回 `pairwise`（保守：不改动既有成本口径）。
+TEMPORAL_OVERLAP_STRATEGIES: tuple[str, ...] = ("auto", "pairwise", "sweep")
+
+#: `auto` 的切换阈值：节点数 ≥ 此值时用 `sweep`。
+#:
+#: 依据是**实测的成对 A/B**（ABY3/FM64，×5 中位 + 区间，
+#: `docs/mpc_temporal_ab.json`）：排序本身在 MPC 里很贵，所以扫描版只有在
+#: 规模足够大时才划算——
+#:
+#: | K | pairwise 通信量 | sweep 通信量 | 谁更省 |
+#: |---:|---:|---:|---|
+#: | 8 | 95 872 B | 317 968 B | pairwise |
+#: | 32 | 496 896 B | 1 265 424 B | pairwise |
+#: | 64 | 1 296 896 B | 2 497 552 B | pairwise |
+#: | 128 | 3 853 312 B | 5 438 480 B | pairwise |
+#: | 256 | 12 546 048 B | **10 889 232 B** | sweep |
+#:
+#: 交叉点落在 128–256 之间（K=256 上同一次运行内两侧区间不重叠），取 256 作为
+#: 阈值：只在实测确认更省的一侧切换。跨运行有 8% 量级漂移（sweep 抖动更大，
+#: 见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.1），故阈值是保守取整，不是精确门限。
+TEMPORAL_OVERLAP_SWEEP_MIN_SIZE = 256
+
+#: sweep 形态的函数体（未缩进；组装时整体缩进到函数体内）
+_TEMPORAL_OVERLAP_SWEEP_BODY = textwrap.dedent(
+    """
+    one = jnp.asarray(1, jnp.int32)
+    zero = jnp.asarray(0, jnp.int32)
+    left_end = left_toff + jnp.left_shift(one, left_lt)
+    right_end = right_toff + jnp.left_shift(one, right_lt)
+    # 事件打包成一个整数一起排序：(pos << 2) | (is_start << 1) | side
+    #   is_start=1 起点 / 0 终点；side=1 左侧 / 0 右侧。
+    # 起终点占**高位** ⇒ 同一位置上所有终点排在所有起点之前，
+    # 半开区间 [0,2) 与 [2,4) 因此不会被误判成重叠。
+    left_events = jnp.concatenate(
+        [
+            jnp.left_shift(left_toff, 2) + 3,
+            jnp.left_shift(left_end, 2) + 1,
+        ]
+    )
+    right_events = jnp.concatenate(
+        [
+            jnp.left_shift(right_toff, 2) + 2,
+            jnp.left_shift(right_end, 2),
+        ]
+    )
+    keys = jnp.sort(jnp.concatenate([left_events, right_events]))
+    is_start = jnp.bitwise_and(jnp.right_shift(keys, 1), one)
+    side = jnp.bitwise_and(keys, one)
+    delta = jnp.where(is_start == 1, one, -one)
+    active_left = jnp.cumsum(jnp.where(side == 1, delta, zero))
+    active_right = jnp.cumsum(jnp.where(side == 1, zero, delta))
+    return jnp.any((active_left > 0) & (active_right > 0))
+    """
+).strip()
+
+#: pairwise 形态的函数体（P3 之前的形态，保留作 A/B 基线与 oracle）
+_TEMPORAL_OVERLAP_PAIRWISE_BODY = textwrap.dedent(
+    """
+    one = jnp.asarray(1, jnp.int32)
+    left_end = left_toff + jnp.left_shift(one, left_lt)
+    right_end = right_toff + jnp.left_shift(one, right_lt)
+    # 广播为 [N, M] 逐对比较：重叠判据 l.start < r.end 且 r.start < l.end
+    overlapping = (left_toff[:, None] < right_end[None, :]) & (
+        right_toff[None, :] < left_end[:, None]
+    )
+    return jnp.any(overlapping)
+    """
+).strip()
+
+_TEMPORAL_OVERLAP_NOTES: Mapping[str, tuple[str, ...]] = {
+    "sweep": (
+        "排序归并 + 前缀扫描：代价 O((N+M)·log(N+M))，不物化 [N, M] 比较矩阵",
+        "事件打包进单个整数，归并由排序隐含完成（无 Python 级控制流）",
+        "排序在 MPC 里代价高：K<256 时比逐对比较更贵（实测交叉点，见 §4.1）",
+        "节点必须按 2^Lt 对齐（审计发现 F3）",
+    ),
+    "pairwise": (
+        "广播成 [N, M] 逐对比较：代价 O(N·M)；K≥256 起换 sweep 电路更省",
+        "节点必须按 2^Lt 对齐（审计发现 F3）",
+    ),
+}
+
+
+def generate_temporal_overlap(
+    fn_name: str,
+    *,
+    dtype: str = "int32",
+    strategy: str = "auto",
+    size_hint: int | None = None,
+) -> GeneratedFunction:
     """生成 TemporalOverlap 的 JAX 实现。
 
-    段式编码：节点展开为 [start, end) 后逐对比较，用向量化替代双重循环。
+    两种电路形态（都无 Python 级控制流、都只用 jnp）：
+
+    - `pairwise`：广播成 [N, M] 逐对比较，O(N·M)。**K=4096 会展开 1 670 万
+      元素、实测直接拖死进程**，这是"K 上限被锁死"的来源；
+    - `sweep`：把节点的起止点打包成事件、**排序归并**后做前缀扫描，
+      两侧活跃数同时 > 0 即存在重叠，O((N+M)·log(N+M))，不物化 [N, M] 矩阵。
+
+    `strategy="auto"`（默认）按 `size_hint` 在两者间选：≥
+    `TEMPORAL_OVERLAP_SWEEP_MIN_SIZE` 用 `sweep`，否则（拿不到规模时也）用
+    `pairwise`。切换阈值来自实测交叉点，不是拍的——见常量处的对照表。
+
+    Args:
+        size_hint: 调用方声明的节点数（N 与 M 取较大者即可）。仅
+            `strategy="auto"` 用；给不出就保持既有（pairwise）成本口径。
     """
 
-    source = textwrap.dedent(
-        f'''
-        import jax.numpy as jnp
+    if strategy not in TEMPORAL_OVERLAP_STRATEGIES:
+        raise ValueError(
+            f"未知 TemporalOverlap 电路形态 {strategy!r}；"
+            f"可用：{TEMPORAL_OVERLAP_STRATEGIES}"
+        )
 
+    if strategy == "auto":
+        strategy = (
+            "sweep"
+            if size_hint is not None and int(size_hint) >= TEMPORAL_OVERLAP_SWEEP_MIN_SIZE
+            else "pairwise"
+        )
 
-        def {fn_name}(left_toff, left_lt, right_toff, right_lt):
-            """是否存在重叠时段。段式节点按 [Toff, Toff + 2^Lt) 展开后两两比较。"""
-            one = jnp.asarray(1, jnp.int32)
-            left_end = left_toff + jnp.left_shift(one, left_lt)
-            right_end = right_toff + jnp.left_shift(one, right_lt)
-            # 广播为 [N, M] 逐对比较：重叠判据 l.start < r.end 且 r.start < l.end
-            overlapping = (left_toff[:, None] < right_end[None, :]) & (
-                right_toff[None, :] < left_end[:, None]
-            )
-            return jnp.any(overlapping)
-        '''
-    ).strip()
+    if strategy == "sweep":
+        body = _TEMPORAL_OVERLAP_SWEEP_BODY
+    else:
+        body = _TEMPORAL_OVERLAP_PAIRWISE_BODY
+    source = (
+        "import jax.numpy as jnp\n\n\n"
+        f"def {fn_name}(left_toff, left_lt, right_toff, right_lt):\n"
+        '    """是否存在重叠时段。节点按 [Toff, Toff + 2^Lt) 展开（半开区间）。"""\n'
+        + textwrap.indent(body, "    ")
+        + "\n"
+    )
     return GeneratedFunction(
         op="TemporalOverlap",
         name=fn_name,
@@ -198,11 +311,7 @@ def generate_temporal_overlap(fn_name: str, *, dtype: str = "int32") -> Generate
         signature=f"({fn_name}(left_toff: i32[N], left_lt: i32[N], right_toff: i32[M], right_lt: i32[M]) -> bool)",
         tolerance=TOLERANCES["TemporalOverlap"],
         dtype=dtype,
-        notes=(
-            "用位运算与向量比较替代双重循环，避免动态控制流",
-            "jnp.all 归约；无需排序，故不触碰 SPU 的 sort 补丁路径",
-            "节点必须按 2^Lt 对齐（审计发现 F3）",
-        ),
+        notes=_TEMPORAL_OVERLAP_NOTES[strategy],
     )
 
 

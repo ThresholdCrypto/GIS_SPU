@@ -701,7 +701,7 @@ export LD_LIBRARY_PATH="$HOME/.local/lib"                      # libgomp.so.1 �
 - `WeightedSum × FM32` **完全起不来**（除法路径内部需要 64 位环：
   `ring=FM32 could not represent PT_I64`），而 planner 的位宽预测
   b(K=256)=24 ≤ 32 会判"够用"——**预测 ≠ 实测**的实例。
-- （另有）`TemporalOverlap` 的电路是 N×M 两两比较（二次），规模上限只能是 K≈32。
+- （另有）`TemporalOverlap` 的**默认**电路是 N×M 两两比较（二次），规模上限只能压到 K≈32——**P3 已解除**：新增 sweep 电路后 K=1024 真机跑通。
 
 **P2-1：把定点 scale 改成编译期常量（本版新增）**
 
@@ -754,18 +754,18 @@ export LD_LIBRARY_PATH="$HOME/.local/lib"                      # libgomp.so.1 �
 | 协议 | DistanceLE | WeightedSum | TemporalOverlap |
 |---|---:|---:|---:|
 | REF2K | 0 B | 0 B | 0 B |
-| ABY3 | 4 200 B | 4 112 B | 0.52 MB |
+| ABY3 | 4 200 B | 4 112 B | 0.51 MB |
 | SEMI2K | 8 336 B | 8 192 B | 0.70 MB |
 | SECURENN | 12 032 B | 8 192 B | **25.84 MB** |
-| CHEETAH | **2.41 MB** | **1.47 MB** | 1.76 MB |
+| CHEETAH | **2.42 MB** | **1.47 MB** | 1.76 MB |
 
 三个结论（详见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.4）：
 
-- **墙钟排不出协议**：除 CHEETAH 外四个协议墙钟都在 44–48 ms / 35–39 ms，
-  通信量却从 0 B 跨到 2.41 MB（3 个数量级）——REF2K 的 0 B 说明它不做
+- **墙钟排不出协议**：除 CHEETAH 外四个协议墙钟都在 45–49 ms / 36–39 ms，
+  通信量却从 0 B 跨到 2.42 MB（3 个数量级）——REF2K 的 0 B 说明它不做
   密码学保护（"最快"没有意义）；
-- **`TemporalOverlap` 上墙钟排序被通信量反转**：SECURENN 墙钟 608 ms
-  < CHEETAH 1221 ms，通信量却是 25.84 MB ≫ 1.76 MB（差 14.7×）——
+- **`TemporalOverlap` 上墙钟排序被通信量反转**：SECURENN 墙钟 633 ms
+  < CHEETAH 1242 ms，通信量却是 25.84 MB ≫ 1.76 MB（差 14.7×）——
   二次电路把 SECURENN 的通信量推爆；
 - **取不到就是 `None`**：没开 profiling / 解析不到 / 原生 logger 打不开，
   一律留空并在 `note` 写明原因，**不用推测值填充**。
@@ -777,12 +777,43 @@ export LD_LIBRARY_PATH="$HOME/.local/lib"                      # libgomp.so.1 �
 `[yacl] Get data timeout`；profile 行必须 **fd 级**重定向才拿得到；
 SPU 原生日志是**进程级**开关，PSI 路径会把它关掉，因此 `capture_comm=True`
 会先把它打开。多数组合 ×5 完全确定，但 `TemporalOverlap` 的 ABY3 会抖
-（两次重跑实测 3.6%–10.8%），所以一律报**中位 + 区间**。
+（pairwise 3.0%–6.1%；`sweep` 电路抖得更大：9.5%–12.2%），所以一律报**中位 + 区间**。
 
 > ⚠️ profiling 有开销：**带 profiling 的墙钟不可与不带 profiling 的墙钟比**。
 > `docs/mpc_repeat_baseline.*` 是没开 profiling 的，`docs/mpc_comm_baseline.*` 是开了的。
 
-详见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.2 / §4.3 / §8。
+**P3：`TemporalOverlap` 两套电路的 A/B（本版新增）**
+
+`TemporalOverlap` 现有两套电路：默认的 N×M 两两比较（pairwise，二次）与
+排序归并 + 前缀扫描（`sweep`，O((N+M)log(N+M))）。**谁更省要在同规模上成对比**，
+所以单独开了一个 A/B 模式（混进主扫描会被不同 K 的行稀释掉）：
+
+```bash
+~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py --temporal-ab --comm --repeat 5 \
+    --json docs/mpc_temporal_ab.json --csv docs/mpc_temporal_ab.csv
+```
+
+实测（ABY3 / FM64，send+recv，×5 中位，带 profiling）：
+
+| K | pairwise 通信量 | sweep 通信量 | 谁省 |
+|---:|---:|---:|---|
+| 8 | 95 872 B | 317 968 B | pairwise |
+| 32 | 496 896 B | 1 265 424 B | pairwise |
+| 64 | 1 296 896 B | 2 497 552 B | pairwise |
+| 128 | 3 853 312 B | 5 438 480 B | pairwise |
+| 256 | 12 546 048 B（下界 12.50 MB） | **10 889 232 B**（上界 11.18 MB） | **sweep（区间不重叠）** |
+
+- **交叉点在 K=128 与 256 之间**：K=256 上 sweep 的上界低于 pairwise 的下界，
+  这是排序结论而不是"看着差不多"；故 `strategy="auto"` 以 K=256 为阈值，
+  **拿不到规模时退回 pairwise**（不擅自改既有成本口径）；
+- **换电路省的是通信量，不是时间**：K=256 墙钟 sweep 354 ms vs pairwise 177 ms，
+  区间同样不重叠；
+- **真正的收益是"能跑"**：K≥256 逐对版会拖死进程，sweep 在 K=1024 真机跑通
+  （单次探针 1.8 s / 43.7 MB，**不成对故不参与比价**）；
+- 两套电路**都保留**：`sweep` 的 `sort` 依赖 SPU frontend 补丁（跨 jax 版本易碎），
+  出问题时还有退路。
+
+详见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.1。
 
 ---
 
@@ -854,7 +885,8 @@ PSI 的 `empty-input`（空集合）与 `unavailable`（环境缺失）**都不�
 |---|---|
 | DistanceLE | `subtract, multiply, reduce, add, convert, compare, constant` |
 | WeightedSum | `multiply, reduce, add, constant`（P2-1 前为 `multiply, reduce, add, divide, remainder, compare, select, sign, and, convert, subtract, constant`） |
-| TemporalOverlap | `shift_left, add, broadcast_in_dim, compare, and, or, reduce, constant` |
+| TemporalOverlap（默认 / pairwise） | `shift_left, add, broadcast_in_dim, compare, and, or, reduce, constant` |
+| TemporalOverlap（`sweep` 电路，P3） | `shift_left, shift_right_arithmetic, add, negate, broadcast_in_dim, compare, and, or, select, concatenate, sort, reduce, reduce_window, return, constant` |
 
 **重要发现（已闭合）**：源码中一步写法的定点整除 `acc // scale`，在 HLO 里展开为
 `divide + remainder + select + sign`。即"看起来一步"的操作在密态下代价高得多。
@@ -1391,7 +1423,8 @@ backends/
   ~~把通信量接进基线~~ ——**已闭合（P2-2）**：`--comm` + `capture_comm=True`
   采 SPU 的 pphlo profiling，落到每条记录，产物 `docs/mpc_comm_baseline.json`；
   实测确认墙钟排不出协议优劣、`TemporalOverlap` 上墙钟排序被通信量反转。
-  **未闭合的余项**：`TemporalOverlap` 二次电路改造（K 上限被锁在 32 量级）。
+  ~~`TemporalOverlap` 二次电路改造~~ ——**已闭合（P3）**：新增 `sweep` 电路（排序归并 + 前缀扫描，O((N+M)·log(N+M))），K=1024 真机跑通，原来那条「K 上限被锁在 32 量级」的限制因此解除。但排序在 MPC 里贵（实测交叉点 K≈128–256），故默认 `auto` 以 K=256 为阈值、拿不到规模就退回 pairwise，两套电路都保留（见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.1）。
+  **未闭合的余项**：把电路选择接到实际输入规模上（`size_hint` 目前要调用方给）。
 
 ### 8.4 位平面与打包布局（D3）
 
