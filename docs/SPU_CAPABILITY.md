@@ -102,6 +102,20 @@ SourceIRType : XLA | STABLEHLO
 > CHEETAH 墙钟中位数 1 150 ms → 85 ms。
 > 结论保留的意义：**"SPU 的除法是近似实现"这条平台事实仍然成立**，
 > 只是不再落在该算子的电路里。
+>
+> **补充（2026-10-06，P2-2）：通信量只能从原生日志读，且原生日志是进程级开关**
+> `Context` 上**没有**任何字节计数接口，Python 侧也拿不到执行统计对象——
+> 通信量唯一的来源是把 `RuntimeConfig.enable_pphlo_profile` 打开、再读
+> C 层 spdlog 写出的 `Link details: total send bytes N, recv bytes M`。
+> 两个实测约束：其一，这些行**只有 fd 级重定向**拿得到
+> （`contextlib.redirect_stdout` 不行），见
+> `backends/spu_backend/profile.py::capture_native_logs`；其二，
+> `libspu.logging.setup_logging` 是**进程级单例**配置——本仓库 PSI 路径会用
+> `quiet=True` 把它关掉，**关过之后同一进程里再也不出 profile 行**，
+> 因此采集通信量前必须重新打开（`enable_native_console_log()`），
+> 且 `system_log_path` 要显式改指 `/dev/null`（默认的相对路径 `'spu.log'`
+> 会在当前工作目录落盘）。
+> 数据见 `docs/mpc_comm_baseline.json`；规程见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.4。
 
 ### 2.5 没有 `run_spu_simulation`
 

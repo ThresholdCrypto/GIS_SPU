@@ -24,6 +24,14 @@
 `status` / `note` / `error` / `wall_ms` / `peak_rss_mb` / `memory_mb` / `agreement`。
 MPC 侧新增：`predicted_*`（planner 预测，含位宽对账三件套）与 `pphlo_bytes`
 （平台侧回填的真实编译产物规模）。
+
+通信量（P2-2 起）：`comm_send_bytes` / `comm_recv_bytes` / `comm_total_bytes` /
+`comm_send_actions` / `comm_recv_actions` / `comm_by_primitive` / `profiled`。
+它们只在 `capture_comm=True` 的用例上出现（SPU 的 pphlo profiling 开关），
+**空就是空**：没开 profiling 或解析不出，一律留 `None`，不以推测值填充。
+两条硬约束（见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.4）：
+  1. profiling 有开销——**开了 profiling 的墙钟不能与没开的比**；
+  2. 通信量有 ~1–2% 批间抖动，**不是解析确定量**，报数用重复实验的中位/区间。
 """
 
 from __future__ import annotations
@@ -113,18 +121,22 @@ class MpcBenchmarkCase:
     expect_status: str = ""
     #: 重复次数（>1 时记录变成"多次运行的统计"，见 summarize_repeats）
     repeats: int = 1
+    #: 是否打开 SPU 的 pphlo profiling 采集通信量（开了的墙钟不可与没开的比）
+    capture_comm: bool = False
 
     def label(self) -> str:
         return f"{self.op} {self.protocol} {self.field} K={self.k}"
 
 
 def standard_cases(
-    *, quick: bool = False, repeats: int = 1
+    *, quick: bool = False, repeats: int = 1, capture_comm: bool = False
 ) -> list[MpcBenchmarkCase]:
     """标准扫描用例集（见模块 docstring 的默认扫描策略）。
 
     `repeats > 1` 时每条用例跑多次，记录变成统计口径（`summarize_repeats`）——
     这是"拿方差再谈协议排序"的落地方式，见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8。
+    `capture_comm=True` 时每条用例打开 SPU profiling 采集通信量；注意此时
+    **墙钟含 profiling 开销**，只能和同样开了 profiling 的用例比。
     """
 
     cases: list[MpcBenchmarkCase] = []
@@ -138,6 +150,7 @@ def standard_cases(
                 k=k,
                 expect_status="",
                 repeats=max(1, int(repeats)),
+                capture_comm=capture_comm,
             )
         )
 
@@ -170,6 +183,7 @@ def standard_cases(
                 k=k,
                 execute=False,
                 repeats=max(1, int(repeats)),
+                capture_comm=capture_comm,
                 unavailable_note=(
                     f"未实测：planner 预测 b(K={k})={predicted} > FM32={FIELD_BITS['FM32']}，"
                     "属越界组合；模 2^32 回绕的结果不能当有效数据（不伪造数字）"
@@ -337,6 +351,16 @@ def _blank_record(case: MpcBenchmarkCase) -> dict[str, Any]:
         "memory_mb": None,
         "peak_rss_mb": None,
         "pphlo_bytes": None,
+        # 通信量（P2-2；仅在 capture_comm=True 时填，否则留空不伪造）
+        "profiled": False,
+        "comm_send_bytes": None,
+        "comm_recv_bytes": None,
+        "comm_total_bytes": None,
+        "comm_send_actions": None,
+        "comm_recv_actions": None,
+        "comm_by_primitive": {},
+        # 重复实验（repeats > 1）才填：通信量的 min/p25/median/p75/max
+        "comm_total_bytes_stats": {},
         "agreement": None,
         "output_bits": None,
         "max_abs_error": None,
@@ -403,6 +427,37 @@ def summarize_repeats(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     base["wall_ms_stats"] = _wall_stats(walls)
     base["wall_ms"] = base["wall_ms_stats"]["median"] if walls else None
 
+    # 通信量：抖动是真实的（~1–2% 批间），所以按统计口径报，
+    # 取中位并在 note 里给出区间；逐原语明细取"总通信量最接近中位那次"的快照。
+    base["profiled"] = all(bool(record.get("profiled")) for record in records)
+    fill: list[Mapping[str, Any]] = [
+        record for record in records if record.get("comm_total_bytes") is not None
+    ]
+    totals = _numbers([record.get("comm_total_bytes") for record in records])
+    if totals:
+        median = float(np.percentile(totals, 50))
+        nearest = min(fill, key=lambda rec: abs(float(rec["comm_total_bytes"]) - median))
+        for key in (
+            "comm_send_bytes",
+            "comm_recv_bytes",
+            "comm_send_actions",
+            "comm_recv_actions",
+        ):
+            values = _numbers([record.get(key) for record in records])
+            base[key] = float(np.percentile(values, 50)) if values else None
+        base["comm_total_bytes"] = median
+        base["comm_total_bytes_stats"] = _wall_stats(totals)
+        base["comm_by_primitive"] = dict(nearest.get("comm_by_primitive") or {})
+    else:
+        # 一次都没采到就不填（不伪造）；字段自体仍在，值为 None。
+        base["comm_send_bytes"] = None
+        base["comm_recv_bytes"] = None
+        base["comm_total_bytes"] = None
+        base["comm_send_actions"] = None
+        base["comm_recv_actions"] = None
+        base["comm_by_primitive"] = {}
+        base["comm_total_bytes_stats"] = {}
+
     errors = _numbers([record.get("max_abs_error") for record in records])
     base["value_runs"] = len(errors)
     base["max_abs_error_max"] = max(errors) if errors else None
@@ -432,6 +487,17 @@ def summarize_repeats(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         notes.append(
             f"偏差率 {base['deviation_rate']:.0%}（{base['value_runs']} 次得出数值）"
         )
+    if totals:
+        stats = base["comm_total_bytes_stats"]
+        if stats["min"] == stats["max"]:
+            notes.append(
+                "通信量 {:.0f} B（{} 次逐字节一致）".format(stats["median"], len(totals))
+            )
+        else:
+            notes.append(
+                "通信量中位 {:.0f} B（min {:.0f} / max {:.0f}；抖动是实测现象，"
+                "非解析确定量）".format(stats["median"], stats["min"], stats["max"])
+            )
     base["note"] = "；".join(notes)
     return base
 
@@ -494,10 +560,29 @@ def _run_once(case: MpcBenchmarkCase, *, report: Any = None) -> dict[str, Any]:
         reference_fn=reference,
         tolerance=0.0,
         report=report,
+        capture_comm=case.capture_comm,
     )
     record["wall_ms"] = (time.perf_counter() - start) * 1000.0
     record["memory_mb"] = max(0.0, _peak_rss_mb() - before_peak)
     record["peak_rss_mb"] = _peak_rss_mb()
+
+    # 通信量无论成败都如实回填：失败行也有"跑了多少通信才失败"的参考价值，
+    # 但只在 profiling 真的开出统计时才有值（run_spu_simulation 不做推测）。
+    record["profiled"] = bool(getattr(run, "profiled", False))
+    for key in (
+        "comm_send_bytes",
+        "comm_recv_bytes",
+        "comm_total_bytes",
+        "comm_send_actions",
+        "comm_recv_actions",
+    ):
+        record[key] = getattr(run, key, None)
+    record["comm_by_primitive"] = dict(getattr(run, "comm_by_primitive", {}) or {})
+    # 运行期说明（如"没能取到通信量"的原因）必须能落到基线里，
+    # 否则空栏位看起来就像"这项没测"，而不是"这项测了但取不到"。
+    run_notes = [str(note) for note in getattr(run, "notes", ()) or ()]
+    if run_notes:
+        record["note"] = "；".join(part for part in [record["note"], *run_notes] if part)
 
     if run.ok:
         record["status"] = "ok"
@@ -576,6 +661,12 @@ _CSV_COLUMNS: tuple[str, ...] = (
     "memory_mb",
     "peak_rss_mb",
     "pphlo_bytes",
+    "profiled",
+    "comm_send_bytes",
+    "comm_recv_bytes",
+    "comm_total_bytes",
+    "comm_send_actions",
+    "comm_recv_actions",
     "output_bits",
     "max_abs_error",
     "tolerance",
@@ -676,21 +767,39 @@ def _fmt_bool(value: Any) -> str:
 def format_summary(records: Sequence[Mapping[str, Any]]) -> str:
     """把记录渲染成可读表格（供文档粘贴）。"""
 
-    lines = [
-        "| 用例 | 状态 | 预测 b | 环宽 | 覆盖 | wall_ms | mem_MB | agreement |",
-        "|---|---|---:|---:|---|---:|---:|---|",
-    ]
+    # 有通信量记录时才多出一列（没开 profiling 的基线不硬塞空列）
+    show_comm = any(record.get("comm_total_bytes") is not None for record in records)
+    if show_comm:
+        lines = [
+            "| 用例 | 状态 | 预测 b | 环宽 | 覆盖 | wall_ms | mem_MB | comm_B | agreement |",
+            "|---|---|---:|---:|---|---:|---:|---:|---|",
+        ]
+    else:
+        lines = [
+            "| 用例 | 状态 | 预测 b | 环宽 | 覆盖 | wall_ms | mem_MB | agreement |",
+            "|---|---|---:|---:|---|---:|---:|---|",
+        ]
     for record in records:
+        cells = {
+            "case": record.get("case"),
+            "status": record.get("status"),
+            "pred": record.get("predicted_bits") if record.get("predicted_bits") is not None else "-",
+            "bits": record.get("field_bits"),
+            "covered": _fmt_bool(record.get("bit_width_covered")),
+            "wall": _fmt_num(record.get("wall_ms")),
+            "mem": _fmt_num(record.get("memory_mb")),
+            "agr": _fmt_bool(record.get("agreement")),
+        }
+        if show_comm:
+            lines.append(
+                "| {case} | {status} | {pred} | {bits} | {covered} | {wall} | {mem} | {comm} | {agr} |".format(
+                    comm=_fmt_num(record.get("comm_total_bytes")), **cells
+                )
+            )
+            continue
         lines.append(
             "| {case} | {status} | {pred} | {bits} | {covered} | {wall} | {mem} | {agr} |".format(
-                case=record.get("case"),
-                status=record.get("status"),
-                pred=record.get("predicted_bits") if record.get("predicted_bits") is not None else "-",
-                bits=record.get("field_bits"),
-                covered=_fmt_bool(record.get("bit_width_covered")),
-                wall=_fmt_num(record.get("wall_ms")),
-                mem=_fmt_num(record.get("memory_mb")),
-                agr=_fmt_bool(record.get("agreement")),
+                **cells
             )
         )
     return "\n".join(lines)

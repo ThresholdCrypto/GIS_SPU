@@ -198,7 +198,22 @@ class TestRecordHonesty:
             "predicted_cost", "predicted_bits", "field_bits", "bit_width_covered",
             "status", "note", "error", "wall_ms", "memory_mb", "peak_rss_mb",
             "pphlo_bytes", "agreement", "max_abs_error", "tolerance",
+            # P2-2：通信量字段（未开 profiling 时全为空，但字段必须在）
+            "profiled", "comm_send_bytes", "comm_recv_bytes", "comm_total_bytes",
+            "comm_send_actions", "comm_recv_actions", "comm_by_primitive",
         }
+
+    def test_comm_fields_are_empty_without_profiling(self):
+        """没开 profiling 就不许有通信量——空着比填个猜的数更诚实。"""
+
+        record = run_benchmark_case(
+            MpcBenchmarkCase(op="DistanceLE", protocol="ABY3", k=16)
+        )
+        assert record["profiled"] is False
+        assert record["comm_total_bytes"] is None
+        assert record["comm_send_bytes"] is None
+        assert record["comm_recv_bytes"] is None
+        assert record["comm_by_primitive"] == {}
 
     def test_record_is_jsonable(self):
         record = run_benchmark_case(
@@ -342,6 +357,30 @@ class TestRepeatSummary:
         assert summary["wall_ms_stats"] == {}
         assert summary["deviation_rate"] is None
 
+    def test_comm_is_aggregated_as_a_median_with_a_band(self):
+        """通信量有 ~1–2% 批间抖动：报中位 + 区间，不报单次值。"""
+
+        rows = [
+            _row(profiled=True, comm_total_bytes=t, comm_send_bytes=t // 2,
+                 comm_recv_bytes=t - t // 2, comm_send_actions=10, comm_recv_actions=10)
+            for t in (9286, 9330, 9366)
+        ]
+        summary = summarize_repeats(rows)
+        assert summary["comm_total_bytes_stats"]["min"] == 9286.0
+        assert summary["comm_total_bytes_stats"]["max"] == 9366.0
+        assert summary["comm_total_bytes"] == 9330.0  # 中位
+        assert summary["profiled"] is True
+        assert "抖动" in summary["note"]
+
+    def test_runs_without_comm_leave_the_columns_empty(self):
+        """一次都没采到就不填数——`profiled` 也要跟着说真话。"""
+
+        summary = summarize_repeats([_row(), _row()])
+        assert summary["comm_total_bytes"] is None
+        assert summary["comm_total_bytes_stats"] == {}  # 没采到就没有统计块
+        assert summary["comm_by_primitive"] == {}
+        assert summary["profiled"] is False
+
     def test_mixed_is_only_expected_for_declared_deviation_rows(self):
         mixed = [{"status": MIXED_STATUS, "case": "a"}]
         assert [r["case"] for r in unexpected_records(mixed)] == ["a"]
@@ -353,6 +392,13 @@ class TestRepeatSummary:
         assert all(case.repeats == 1 for case in standard_cases())
         # 非法值不许静默变成 0 次（那次记录会变成空统计）
         assert all(case.repeats == 1 for case in standard_cases(repeats=0))
+
+    def test_standard_cases_carry_capture_comm(self):
+        assert all(case.capture_comm for case in standard_cases(capture_comm=True))
+        assert not any(case.capture_comm for case in standard_cases())
+        # 越界占位行同样带着标记（它不执行，但口径要一致）
+        probes = [c for c in standard_cases(capture_comm=True) if not c.execute]
+        assert probes and all(case.capture_comm for case in probes)
 
 
 # --------------------------------------------------------------------------
@@ -376,6 +422,9 @@ class TestWriters:
         path = write_benchmark_csv([record], str(tmp_path / "b.csv"))
         lines = open(path, encoding="utf-8").read().strip().splitlines()
         assert lines[0].startswith("case,op,protocol,field,k")
+        # P2-2：通信量列必须在表头里（列顺序对表格工具是契约）
+        header = lines[0].split(",")
+        assert header.index("comm_total_bytes") > header.index("pphlo_bytes")
         assert len(lines) == 2
 
     def test_summary_mentions_the_label_and_status(self):
@@ -394,6 +443,72 @@ class TestWriters:
 
 @requires_spu
 class TestRealMpcBenchmark:
+    def test_capture_comm_reports_real_bytes(self):
+        """真跑一遍带 profiling 的 ABY3：必须真采到通信量，且与动作数自洽。
+
+        这条测试的作用不是"验证协议对不对"，而是守住"这一栏有没有真的取到数"：
+        取不到就该是 None，绝不许被填成一个看起来合理的值。
+        """
+
+        record = run_benchmark_case(
+            MpcBenchmarkCase(
+                op="DistanceLE", protocol="ABY3", field="FM64", k=64,
+                capture_comm=True,
+            )
+        )
+        assert record["status"] == "ok", record["error"]
+        assert record["profiled"] is True
+        assert record["comm_total_bytes"] is not None, record["note"]
+        assert record["comm_total_bytes"] > 0
+        assert record["comm_send_actions"] > 0
+        assert record["comm_recv_actions"] > 0
+        # 逐原语明细要么为空（解析不到），要么与总量同量级——不许出现负值/超大值
+        for name, entry in record["comm_by_primitive"].items():
+            assert entry["send_bytes"] >= 0, name
+            assert entry["executions"] >= 1, name
+
+    def test_ref2k_reports_zero_communication(self):
+        """REF2K 是明文参照协议（不做密码学保护），通信量为 0 才是对的。
+
+        这正是 P2-2 想要的对照：**墙钟最快 ≠ 隐私代价最低**，
+        而 REF2K 的"0 字节"直接说明它根本不该被当成隐私协议候选。
+        """
+
+        record = run_benchmark_case(
+            MpcBenchmarkCase(
+                op="DistanceLE", protocol="REF2K", field="FM64", k=64,
+                capture_comm=True,
+            )
+        )
+        assert record["status"] == "ok", record["error"]
+        assert record["comm_total_bytes"] == 0
+
+    def test_comm_capture_survives_a_prior_native_log_shutdown(self):
+        """PSI 路径会**进程级**关掉 SPU 原生日志（`_set_native_log(quiet=True)`）。
+
+        实测坑：只要被关过一次，同一进程里后续 SPU 运行的 pphlo profile 行
+        就再也不会出现，fd 重定向拿到的是空文本——通信量会静默变成"取不到"。
+        所以 `capture_comm=True` 必须自己先把 console logger 打开。
+        这里先按 PSI 的做法关一次，再断言 profiling 仍然取得到数。
+        """
+
+        from backends.psi_backend.runtime import _set_native_log
+
+        _set_native_log(quiet=True)
+        try:
+            record = run_benchmark_case(
+                MpcBenchmarkCase(
+                    op="DistanceLE", protocol="ABY3", field="FM64", k=64,
+                    capture_comm=True,
+                )
+            )
+        finally:
+            # 复原：别把后面用例 / 用户终端弄哑（原生日志开关是进程级的）
+            _set_native_log(quiet=False)
+        assert record["profiled"] is True
+        assert record["comm_total_bytes"] is not None, record["note"]
+        assert record["comm_total_bytes"] > 0
+
     def test_small_case_matches_plain_on_every_protocol(self):
         for protocol in SPU_PROTOCOLS:
             record = run_benchmark_case(

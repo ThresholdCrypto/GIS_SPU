@@ -15,6 +15,10 @@ stdout/stderr，不影响本脚本产出的 JSON/CSV。建议重定向日志：
 - `--ops` / `--protocols`：只测指定组合；
 - `--repeat N`：每条用例重复 N 次，输出统计记录（中位数 / p25 / p75 / 偏差率）。
   拿方差才谈协议排序，见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8。
+- `--comm`：打开 SPU 的 pphlo profiling，采集**通信量**（send/recv bytes、
+  逐原语明细）。两个必读注意（见 §8.4）：(a) profiling 有开销，
+  **开了 profiling 的墙钟不能与没开的比**；(b) 通信量有 ~1–2% 批间抖动，
+  不是解析确定量，报数用重复实验的中位/区间。
 
 退出码：`0` = 没有"预期外"记录；`1` = 存在预期外记录（含"ok 却与明文不一致"
 这类不该发生的行）。位宽越界（预测 b(K) > 环宽）的用例**不实测**，
@@ -69,6 +73,11 @@ def parse_args(argv=None):
     parser.add_argument("--ops", default="", help=f"只测算子（逗号分隔）：{MPC_BENCHMARK_OPS}")
     parser.add_argument("--protocols", default="", help=f"只测协议（逗号分隔）：{SPU_PROTOCOLS}")
     parser.add_argument(
+        "--comm",
+        action="store_true",
+        help="打开 SPU pphlo profiling 采集通信量（墙钟会含 profiling 开销，勿与未开时比）",
+    )
+    parser.add_argument(
         "--json",
         default="docs/mpc_benchmark_baseline.json",
         help="JSON 输出路径（相对项目根）",
@@ -89,7 +98,9 @@ def _split(value: str) -> set[str]:
 
 def build_cases(args):
     repeats = max(1, int(args.repeat))
-    cases = standard_cases(quick=args.quick, repeats=repeats)
+    cases = standard_cases(
+        quick=args.quick, repeats=repeats, capture_comm=bool(args.comm)
+    )
     ops = _split(args.ops)
     protocols = _split(args.protocols)
     if ops:
@@ -115,18 +126,22 @@ def main(argv=None) -> int:
 
     report = check_capabilities()
     repeats = max(1, int(args.repeat))
+    comm_text = "，capture_comm=on（墙钟含 profiling 开销）" if args.comm else ""
     print(
-        f"MPC 基线：{len(cases)} 条用例 × {repeats} 次；json={out_json}；csv={out_csv}",
+        f"MPC 基线：{len(cases)} 条用例 × {repeats} 次；json={out_json}；"
+        f"csv={out_csv}{comm_text}",
         flush=True,
     )
     if not report.runnable:
         print(f"  环境不具备真实 SPU 执行能力：{'; '.join(report.blockers)}", flush=True)
 
     def progress(record) -> None:
+        comm = record.get("comm_total_bytes")
+        comm_text = f"  comm={comm and round(comm)} B" if comm is not None else ""
         print(
             f"  {record['case']}: {record['status']}"
             f"  wall={record['wall_ms'] and round(record['wall_ms'], 1)} ms"
-            f"  agreement={record['agreement']}",
+            f"  agreement={record['agreement']}{comm_text}",
             flush=True,
         )
 

@@ -1,0 +1,3987 @@
+[
+  {
+    "case": "DistanceLE REF2K FM64 K=256",
+    "op": "DistanceLE",
+    "protocol": "REF2K",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 43.405645999882836,
+      "max": 72.00121699861484,
+      "median": 44.607945001189364,
+      "p25": 44.216800000867806,
+      "p75": 45.680451999942306
+    },
+    "wall_ms_samples": [
+      72.00121699861484,
+      44.607945001189364,
+      45.680451999942306,
+      44.216800000867806,
+      43.405645999882836
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=256）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(REF2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 0 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.17660599769442342,
+    "wall_ms": 44.607945001189364,
+    "memory_mb": 39.6796875,
+    "peak_rss_mb": 277.65234375,
+    "pphlo_bytes": 1526,
+    "profiled": true,
+    "comm_send_bytes": 0.0,
+    "comm_recv_bytes": 0.0,
+    "comm_total_bytes": 0.0,
+    "comm_send_actions": 0.0,
+    "comm_recv_actions": 0.0,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000182587
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.4431e-05
+      },
+      "multiply": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.9892e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.7651e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.6557e-05
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.6206e-05
+      },
+      "less": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.1136e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 9.419e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 2.682e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "p25": 0.0,
+      "p75": 0.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE SEMI2K FM64 K=256",
+    "op": "DistanceLE",
+    "protocol": "SEMI2K",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 45.01598800197826,
+      "max": 47.35653900206671,
+      "median": 46.221207001508446,
+      "p25": 46.09585699654417,
+      "p75": 47.187211999698775
+    },
+    "wall_ms_samples": [
+      46.09585699654417,
+      46.221207001508446,
+      47.187211999698775,
+      45.01598800197826,
+      47.35653900206671
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=256）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(SEMI2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 8336 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.15911900118226185,
+    "wall_ms": 46.221207001508446,
+    "memory_mb": 1.171875,
+    "peak_rss_mb": 281.16796875,
+    "pphlo_bytes": 1526,
+    "profiled": true,
+    "comm_send_bytes": 4168.0,
+    "comm_recv_bytes": 4168.0,
+    "comm_total_bytes": 8336.0,
+    "comm_send_actions": 9.0,
+    "comm_recv_actions": 9.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 56,
+        "recv_bytes": 56,
+        "executions": 1,
+        "duration_s": 0.000525666
+      },
+      "multiply": {
+        "send_bytes": 4112,
+        "recv_bytes": 4112,
+        "executions": 2,
+        "duration_s": 0.000184646
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000159058
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 3.5203e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.5792e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.3576e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.139e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.1098e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 4.032e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 8336.0,
+      "max": 8336.0,
+      "median": 8336.0,
+      "p25": 8336.0,
+      "p75": 8336.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE ABY3 FM64 K=256",
+    "op": "DistanceLE",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 44.820663999416865,
+      "max": 55.540418998134555,
+      "median": 46.521678999852156,
+      "p25": 45.97003399976529,
+      "p75": 46.8407570006093
+    },
+    "wall_ms_samples": [
+      45.97003399976529,
+      55.540418998134555,
+      46.521678999852156,
+      46.8407570006093,
+      44.820663999416865
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=256）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4200 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.16718899860279635,
+    "wall_ms": 46.521678999852156,
+    "memory_mb": 1.6875,
+    "peak_rss_mb": 283.69921875,
+    "pphlo_bytes": 1526,
+    "profiled": true,
+    "comm_send_bytes": 2100.0,
+    "comm_recv_bytes": 2100.0,
+    "comm_total_bytes": 4200.0,
+    "comm_send_actions": 11.0,
+    "comm_recv_actions": 11.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 36,
+        "recv_bytes": 36,
+        "executions": 1,
+        "duration_s": 0.000396589
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000202323
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 0.000197564
+      },
+      "multiply": {
+        "send_bytes": 2056,
+        "recv_bytes": 2056,
+        "executions": 2,
+        "duration_s": 7.2952e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.7502e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.6349e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.2976e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.267e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 4.139e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 4200.0,
+      "max": 4200.0,
+      "median": 4200.0,
+      "p25": 4200.0,
+      "p75": 4200.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE CHEETAH FM64 K=256",
+    "op": "DistanceLE",
+    "protocol": "CHEETAH",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 166.83121700043557,
+      "max": 185.19555199964088,
+      "median": 169.21774000002188,
+      "p25": 167.41084399836836,
+      "p75": 169.9183290002111
+    },
+    "wall_ms_samples": [
+      185.19555199964088,
+      167.41084399836836,
+      169.9183290002111,
+      166.83121700043557,
+      169.21774000002188
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=256）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(CHEETAH, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 2414954 B（min 2413534 / max 2415046；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.21153299894649535,
+    "wall_ms": 169.21774000002188,
+    "memory_mb": 114.8359375,
+    "peak_rss_mb": 398.53515625,
+    "pphlo_bytes": 1526,
+    "profiled": true,
+    "comm_send_bytes": 1135682.0,
+    "comm_recv_bytes": 1279195.0,
+    "comm_total_bytes": 2414954.0,
+    "comm_send_actions": 954.0,
+    "comm_recv_actions": 954.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 470363,
+        "recv_bytes": 470315,
+        "executions": 1,
+        "duration_s": 0.074125898
+      },
+      "multiply": {
+        "send_bytes": 665319,
+        "recv_bytes": 808957,
+        "executions": 2,
+        "duration_s": 0.063433898
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000209844
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.5565e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.2711e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.8907e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.3078e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.2686e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 9.458e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 2413534.0,
+      "max": 2415046.0,
+      "median": 2414954.0,
+      "p25": 2414824.0,
+      "p75": 2415009.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE SECURENN FM64 K=256",
+    "op": "DistanceLE",
+    "protocol": "SECURENN",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 46.85699299807311,
+      "max": 48.60821599868359,
+      "median": 47.94017300082487,
+      "p25": 47.12667999774567,
+      "p75": 47.95682999974815
+    },
+    "wall_ms_samples": [
+      47.95682999974815,
+      48.60821599868359,
+      46.85699299807311,
+      47.94017300082487,
+      47.12667999774567
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=256）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(SECURENN, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 12032 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.16513100126758218,
+    "wall_ms": 47.94017300082487,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 414.203125,
+    "pphlo_bytes": 1526,
+    "profiled": true,
+    "comm_send_bytes": 6000.0,
+    "comm_recv_bytes": 6032.0,
+    "comm_total_bytes": 12032.0,
+    "comm_send_actions": 38.0,
+    "comm_recv_actions": 42.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 1888,
+        "recv_bytes": 1920,
+        "executions": 1,
+        "duration_s": 0.001776123
+      },
+      "multiply": {
+        "send_bytes": 4112,
+        "recv_bytes": 4112,
+        "executions": 2,
+        "duration_s": 0.000314999
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.00015571
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.6904e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.4309e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.405e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.1636e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.812e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 4.8e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 12032.0,
+      "max": 12032.0,
+      "median": 12032.0,
+      "p25": 12032.0,
+      "p75": 12032.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum REF2K FM64 K=256",
+    "op": "WeightedSum",
+    "protocol": "REF2K",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 33.783431001211284,
+      "max": 36.82566000134102,
+      "median": 34.72887899988564,
+      "p25": 34.01752300123917,
+      "p75": 36.637576999055455
+    },
+    "wall_ms_samples": [
+      36.637576999055455,
+      33.783431001211284,
+      36.82566000134102,
+      34.01752300123917,
+      34.72887899988564
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=256）",
+      "b": "24（8+8+ceil(log2 K)，K=256）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 256
+    },
+    "predicted_bits": 24,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(REF2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 0 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.21706799816456623,
+    "wall_ms": 34.72887899988564,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 414.203125,
+    "pphlo_bytes": 903,
+    "profiled": true,
+    "comm_send_bytes": 0.0,
+    "comm_recv_bytes": 0.0,
+    "comm_total_bytes": 0.0,
+    "comm_send_actions": 0.0,
+    "comm_recv_actions": 0.0,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000160719
+      },
+      "multiply": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.3384e-05
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.7047e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.2361e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.028e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "p25": 0.0,
+      "p75": 0.0
+    },
+    "agreement": true,
+    "output_bits": 16,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum SEMI2K FM64 K=256",
+    "op": "WeightedSum",
+    "protocol": "SEMI2K",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 37.38719299872173,
+      "max": 39.05635099727078,
+      "median": 38.751002997742034,
+      "p25": 37.70823900049436,
+      "p75": 39.05048100205022
+    },
+    "wall_ms_samples": [
+      38.751002997742034,
+      37.38719299872173,
+      39.05048100205022,
+      39.05635099727078,
+      37.70823900049436
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=256）",
+      "b": "24（8+8+ceil(log2 K)，K=256）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 256
+    },
+    "predicted_bits": 24,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(SEMI2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 8192 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.22282700228970498,
+    "wall_ms": 38.751002997742034,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 414.203125,
+    "pphlo_bytes": 903,
+    "profiled": true,
+    "comm_send_bytes": 4096.0,
+    "comm_recv_bytes": 4096.0,
+    "comm_total_bytes": 8192.0,
+    "comm_send_actions": 1.0,
+    "comm_recv_actions": 1.0,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000170928
+      },
+      "multiply": {
+        "send_bytes": 4096,
+        "recv_bytes": 4096,
+        "executions": 1,
+        "duration_s": 0.000123004
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 3.1921e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 9.067e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.2e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 8192.0,
+      "max": 8192.0,
+      "median": 8192.0,
+      "p25": 8192.0,
+      "p75": 8192.0
+    },
+    "agreement": true,
+    "output_bits": 16,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum ABY3 FM64 K=256",
+    "op": "WeightedSum",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 33.6525429993344,
+      "max": 39.23845500321477,
+      "median": 36.342834999231854,
+      "p25": 34.44409300209372,
+      "p75": 37.75311000208603
+    },
+    "wall_ms_samples": [
+      33.6525429993344,
+      36.342834999231854,
+      39.23845500321477,
+      37.75311000208603,
+      34.44409300209372
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=256）",
+      "b": "24（8+8+ceil(log2 K)，K=256）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 256
+    },
+    "predicted_bits": 24,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4112 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.1646430027903989,
+    "wall_ms": 36.342834999231854,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 414.203125,
+    "pphlo_bytes": 903,
+    "profiled": true,
+    "comm_send_bytes": 2056.0,
+    "comm_recv_bytes": 2056.0,
+    "comm_total_bytes": 4112.0,
+    "comm_send_actions": 2.0,
+    "comm_recv_actions": 2.0,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000149064
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 6.6233e-05
+      },
+      "multiply": {
+        "send_bytes": 2048,
+        "recv_bytes": 2048,
+        "executions": 1,
+        "duration_s": 4.0247e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.0331e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.336e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 4112.0,
+      "max": 4112.0,
+      "median": 4112.0,
+      "p25": 4112.0,
+      "p75": 4112.0
+    },
+    "agreement": true,
+    "output_bits": 16,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum CHEETAH FM64 K=256",
+    "op": "WeightedSum",
+    "protocol": "CHEETAH",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 82.00329199826228,
+      "max": 86.5433530016162,
+      "median": 85.30375400005141,
+      "p25": 83.44666500124731,
+      "p75": 86.24597800007905
+    },
+    "wall_ms_samples": [
+      86.5433530016162,
+      83.44666500124731,
+      86.24597800007905,
+      85.30375400005141,
+      82.00329199826228
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=256）",
+      "b": "24（8+8+ceil(log2 K)，K=256）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 256
+    },
+    "predicted_bits": 24,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(CHEETAH, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 1474167 B（min 1473656 / max 1474642；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.14933200145605952,
+    "wall_ms": 85.30375400005141,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 414.203125,
+    "pphlo_bytes": 903,
+    "profiled": true,
+    "comm_send_bytes": 665190.0,
+    "comm_recv_bytes": 808903.0,
+    "comm_total_bytes": 1474167.0,
+    "comm_send_actions": 6.0,
+    "comm_recv_actions": 6.0,
+    "comm_by_primitive": {
+      "multiply": {
+        "send_bytes": 665305,
+        "recv_bytes": 808862,
+        "executions": 1,
+        "duration_s": 0.05000445
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000182693
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.9274e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.1611e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.217e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 1473656.0,
+      "max": 1474642.0,
+      "median": 1474167.0,
+      "p25": 1473932.0,
+      "p75": 1474313.0
+    },
+    "agreement": true,
+    "output_bits": 16,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum SECURENN FM64 K=256",
+    "op": "WeightedSum",
+    "protocol": "SECURENN",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 34.287323000171455,
+      "max": 37.36824699808494,
+      "median": 35.4394889982359,
+      "p25": 35.0025560001086,
+      "p75": 36.88071999931708
+    },
+    "wall_ms_samples": [
+      35.4394889982359,
+      35.0025560001086,
+      36.88071999931708,
+      37.36824699808494,
+      34.287323000171455
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=256）",
+      "b": "24（8+8+ceil(log2 K)，K=256）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 256
+    },
+    "predicted_bits": 24,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(SECURENN, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 8192 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.15902800078038126,
+    "wall_ms": 35.4394889982359,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 414.203125,
+    "pphlo_bytes": 903,
+    "profiled": true,
+    "comm_send_bytes": 4096.0,
+    "comm_recv_bytes": 4096.0,
+    "comm_total_bytes": 8192.0,
+    "comm_send_actions": 2.0,
+    "comm_recv_actions": 2.0,
+    "comm_by_primitive": {
+      "multiply": {
+        "send_bytes": 4096,
+        "recv_bytes": 4096,
+        "executions": 1,
+        "duration_s": 0.000163308
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000154034
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.6639e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.2002e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.27e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 8192.0,
+      "max": 8192.0,
+      "median": 8192.0,
+      "p25": 8192.0,
+      "p75": 8192.0
+    },
+    "agreement": true,
+    "output_bits": 16,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap REF2K FM64 K=32",
+    "op": "TemporalOverlap",
+    "protocol": "REF2K",
+    "field": "FM64",
+    "k": 32,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 66.1285720016167,
+      "max": 74.53539900234318,
+      "median": 66.72832000185736,
+      "p25": 66.19781100016553,
+      "p75": 67.47211000038078
+    },
+    "wall_ms_samples": [
+      74.53539900234318,
+      66.72832000185736,
+      66.19781100016553,
+      66.1285720016167,
+      67.47211000038078
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(REF2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 0 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.2228049997938797,
+    "wall_ms": 66.72832000185736,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 414.203125,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 0.0,
+    "comm_recv_bytes": 0.0,
+    "comm_total_bytes": 0.0,
+    "comm_send_actions": 0.0,
+    "comm_recv_actions": 0.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 0.003162523
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000233792
+      },
+      "less": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 9.5853e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.6959e-05
+      },
+      "and": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.0911e-05
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.8871e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 1.7078e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.3317e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 3.907e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0,
+      "p25": 0.0,
+      "p75": 0.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap SEMI2K FM64 K=32",
+    "op": "TemporalOverlap",
+    "protocol": "SEMI2K",
+    "field": "FM64",
+    "k": 32,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 94.17788499922608,
+      "max": 100.90250999928685,
+      "median": 94.49210000093444,
+      "p25": 94.19940500083612,
+      "p75": 94.84868499930599
+    },
+    "wall_ms_samples": [
+      94.84868499930599,
+      94.17788499922608,
+      100.90250999928685,
+      94.19940500083612,
+      94.49210000093444
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(SEMI2K, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 696320 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.2016950020333752,
+    "wall_ms": 94.49210000093444,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 414.203125,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 348160.0,
+    "comm_recv_bytes": 348160.0,
+    "comm_total_bytes": 696320.0,
+    "comm_send_actions": 538.0,
+    "comm_recv_actions": 538.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 229376,
+        "recv_bytes": 229376,
+        "executions": 2,
+        "duration_s": 0.028792005
+      },
+      "less": {
+        "send_bytes": 114688,
+        "recv_bytes": 114688,
+        "executions": 2,
+        "duration_s": 0.002565781
+      },
+      "reduce": {
+        "send_bytes": 2048,
+        "recv_bytes": 2048,
+        "executions": 1,
+        "duration_s": 0.000828756
+      },
+      "and": {
+        "send_bytes": 2048,
+        "recv_bytes": 2048,
+        "executions": 1,
+        "duration_s": 6.9195e-05
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 6.6826e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 4.5497e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.5836e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.8933e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 8.775e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 696320.0,
+      "max": 696320.0,
+      "median": 696320.0,
+      "p25": 696320.0,
+      "p75": 696320.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=32",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 32,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 85.82718099933118,
+      "max": 88.18108099876554,
+      "median": 87.32641599999624,
+      "p25": 86.3991949991032,
+      "p75": 87.34946600088733
+    },
+    "wall_ms_samples": [
+      87.32641599999624,
+      88.18108099876554,
+      85.82718099933118,
+      86.3991949991032,
+      87.34946600088733
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 508160 B（min 486400 / max 541440；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.1938739987963345,
+    "wall_ms": 87.32641599999624,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 414.203125,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 255744.0,
+    "comm_recv_bytes": 248320.0,
+    "comm_total_bytes": 508160.0,
+    "comm_send_actions": 579.0,
+    "comm_recv_actions": 583.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 184064,
+        "recv_bytes": 172544,
+        "executions": 2,
+        "duration_s": 0.019433257
+      },
+      "less": {
+        "send_bytes": 73728,
+        "recv_bytes": 73728,
+        "executions": 2,
+        "duration_s": 0.002410501
+      },
+      "reduce": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 0.000731252
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 6.365e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 5.1817e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.6121e-05
+      },
+      "and": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 2.5063e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.7011e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 8.079e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 486400.0,
+      "max": 541440.0,
+      "median": 508160.0,
+      "p25": 495872.0,
+      "p75": 512000.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap CHEETAH FM64 K=32",
+    "op": "TemporalOverlap",
+    "protocol": "CHEETAH",
+    "field": "FM64",
+    "k": 32,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 1078.75826199961,
+      "max": 1259.4913880020613,
+      "median": 1220.7855749984446,
+      "p25": 1205.7381849990634,
+      "p75": 1221.7625080011203
+    },
+    "wall_ms_samples": [
+      1205.7381849990634,
+      1259.4913880020613,
+      1221.7625080011203,
+      1220.7855749984446,
+      1078.75826199961
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(2, RuntimeConfig(CHEETAH, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 1758220 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.18756599820335396,
+    "wall_ms": 1220.7855749984446,
+    "memory_mb": 652.6484375,
+    "peak_rss_mb": 1066.8515625,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 968710.0,
+    "comm_recv_bytes": 789510.0,
+    "comm_total_bytes": 1758220.0,
+    "comm_send_actions": 2910.0,
+    "comm_recv_actions": 2910.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 826534,
+        "recv_bytes": 762022,
+        "executions": 2,
+        "duration_s": 1.104766343
+      },
+      "less": {
+        "send_bytes": 141568,
+        "recv_bytes": 26880,
+        "executions": 2,
+        "duration_s": 0.02201341
+      },
+      "reduce": {
+        "send_bytes": 352,
+        "recv_bytes": 352,
+        "executions": 1,
+        "duration_s": 0.001328494
+      },
+      "and": {
+        "send_bytes": 256,
+        "recv_bytes": 256,
+        "executions": 1,
+        "duration_s": 0.000180034
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000130323
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.8556e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.3042e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.0923e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 1.3935e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 1758220.0,
+      "max": 1758220.0,
+      "median": 1758220.0,
+      "p25": 1758220.0,
+      "p75": 1758220.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap SECURENN FM64 K=32",
+    "op": "TemporalOverlap",
+    "protocol": "SECURENN",
+    "field": "FM64",
+    "k": 32,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 601.3038849996519,
+      "max": 632.0730369989178,
+      "median": 608.2810730003985,
+      "p25": 605.5789029996959,
+      "p75": 628.3641869995336
+    },
+    "wall_ms_samples": [
+      605.5789029996959,
+      608.2810730003985,
+      632.0730369989178,
+      628.3641869995336,
+      601.3038849996519
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(SECURENN, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 25837512 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.20761400082847103,
+    "wall_ms": 608.2810730003985,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 12812260.0,
+    "comm_recv_bytes": 13025252.0,
+    "comm_total_bytes": 25837512.0,
+    "comm_send_actions": 4764.0,
+    "comm_recv_actions": 5348.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 8880128,
+        "recv_bytes": 9027584,
+        "executions": 2,
+        "duration_s": 0.448962796
+      },
+      "less": {
+        "send_bytes": 3866624,
+        "recv_bytes": 3932160,
+        "executions": 2,
+        "duration_s": 0.095613902
+      },
+      "reduce": {
+        "send_bytes": 32740,
+        "recv_bytes": 32740,
+        "executions": 1,
+        "duration_s": 0.001282964
+      },
+      "and": {
+        "send_bytes": 32768,
+        "recv_bytes": 32768,
+        "executions": 1,
+        "duration_s": 0.000134339
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 7.366e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.9489e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.6731e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 1.8534e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.8411e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 25837512.0,
+      "max": 25837512.0,
+      "median": 25837512.0,
+      "p25": 25837512.0,
+      "p75": 25837512.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE ABY3 FM32 K=256",
+    "op": "DistanceLE",
+    "protocol": "ABY3",
+    "field": "FM32",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 43.711567002901575,
+      "max": 45.435942000040086,
+      "median": 43.891354001971195,
+      "p25": 43.86219600201002,
+      "p75": 44.71608099993318
+    },
+    "wall_ms_samples": [
+      44.71608099993318,
+      43.86219600201002,
+      43.711567002901575,
+      43.891354001971195,
+      45.435942000040086
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=256）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 32,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM32, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 2104 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.20527999731712043,
+    "wall_ms": 43.891354001971195,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 1526,
+    "profiled": true,
+    "comm_send_bytes": 1052.0,
+    "comm_recv_bytes": 1052.0,
+    "comm_total_bytes": 2104.0,
+    "comm_send_actions": 10.0,
+    "comm_recv_actions": 10.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 20,
+        "recv_bytes": 20,
+        "executions": 1,
+        "duration_s": 0.00042379
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000172396
+      },
+      "multiply": {
+        "send_bytes": 1028,
+        "recv_bytes": 1028,
+        "executions": 2,
+        "duration_s": 9.5508e-05
+      },
+      "convert": {
+        "send_bytes": 4,
+        "recv_bytes": 4,
+        "executions": 1,
+        "duration_s": 2.7719e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.8472e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.4015e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.2e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.359e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 3.38e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 2104.0,
+      "max": 2104.0,
+      "median": 2104.0,
+      "p25": 2104.0,
+      "p75": 2104.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE ABY3 FM64 K=256",
+    "op": "DistanceLE",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 43.244413998763775,
+      "max": 45.67582600066089,
+      "median": 44.24193099839613,
+      "p25": 43.757065999670886,
+      "p75": 44.25635399820749
+    },
+    "wall_ms_samples": [
+      44.25635399820749,
+      43.244413998763775,
+      44.24193099839613,
+      45.67582600066089,
+      43.757065999670886
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=256）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4200 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.17893200129037723,
+    "wall_ms": 44.24193099839613,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 1526,
+    "profiled": true,
+    "comm_send_bytes": 2100.0,
+    "comm_recv_bytes": 2100.0,
+    "comm_total_bytes": 4200.0,
+    "comm_send_actions": 11.0,
+    "comm_recv_actions": 11.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 36,
+        "recv_bytes": 36,
+        "executions": 1,
+        "duration_s": 0.000487174
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000209141
+      },
+      "multiply": {
+        "send_bytes": 2056,
+        "recv_bytes": 2056,
+        "executions": 2,
+        "duration_s": 5.8028e-05
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 2.8168e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.8935e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.338e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.1644e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 9.13e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 4.167e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 4200.0,
+      "max": 4200.0,
+      "median": 4200.0,
+      "p25": 4200.0,
+      "p75": 4200.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE ABY3 FM128 K=256",
+    "op": "DistanceLE",
+    "protocol": "ABY3",
+    "field": "FM128",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 43.09710900270147,
+      "max": 46.197698000469245,
+      "median": 44.0045880022808,
+      "p25": 43.95075799766346,
+      "p75": 44.44446400157176
+    },
+    "wall_ms_samples": [
+      43.95075799766346,
+      44.44446400157176,
+      46.197698000469245,
+      44.0045880022808,
+      43.09710900270147
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=256）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 128,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM128, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 8392 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.18598200040287338,
+    "wall_ms": 44.0045880022808,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 1526,
+    "profiled": true,
+    "comm_send_bytes": 4196.0,
+    "comm_recv_bytes": 4196.0,
+    "comm_total_bytes": 8392.0,
+    "comm_send_actions": 12.0,
+    "comm_recv_actions": 12.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 68,
+        "recv_bytes": 68,
+        "executions": 1,
+        "duration_s": 0.000497236
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000167748
+      },
+      "multiply": {
+        "send_bytes": 4112,
+        "recv_bytes": 4112,
+        "executions": 2,
+        "duration_s": 0.000154735
+      },
+      "convert": {
+        "send_bytes": 16,
+        "recv_bytes": 16,
+        "executions": 1,
+        "duration_s": 2.6185e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.4248e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.179e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.636e-06
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 7.528e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 3.569e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 8392.0,
+      "max": 8392.0,
+      "median": 8392.0,
+      "p25": 8392.0,
+      "p75": 8392.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum ABY3 FM32 K=256",
+    "op": "WeightedSum",
+    "protocol": "ABY3",
+    "field": "FM32",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 33.468202000221936,
+      "max": 36.621158997149905,
+      "median": 34.24077199815656,
+      "p25": 34.13243999966653,
+      "p75": 35.15465099917492
+    },
+    "wall_ms_samples": [
+      34.13243999966653,
+      34.24077199815656,
+      36.621158997149905,
+      35.15465099917492,
+      33.468202000221936
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=256）",
+      "b": "24（8+8+ceil(log2 K)，K=256）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 256
+    },
+    "predicted_bits": 24,
+    "field_bits": 32,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM32, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 2056 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.15856199752306566,
+    "wall_ms": 34.24077199815656,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 903,
+    "profiled": true,
+    "comm_send_bytes": 1028.0,
+    "comm_recv_bytes": 1028.0,
+    "comm_total_bytes": 2056.0,
+    "comm_send_actions": 2.0,
+    "comm_recv_actions": 2.0,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000183807
+      },
+      "convert": {
+        "send_bytes": 4,
+        "recv_bytes": 4,
+        "executions": 1,
+        "duration_s": 0.000115094
+      },
+      "multiply": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 6.2865e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.1829e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.595e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 2056.0,
+      "max": 2056.0,
+      "median": 2056.0,
+      "p25": 2056.0,
+      "p75": 2056.0
+    },
+    "agreement": true,
+    "output_bits": 16,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum ABY3 FM64 K=256",
+    "op": "WeightedSum",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 33.33426499739289,
+      "max": 37.42696499830345,
+      "median": 35.11518400046043,
+      "p25": 33.79746499922476,
+      "p75": 35.754425000050105
+    },
+    "wall_ms_samples": [
+      33.33426499739289,
+      35.754425000050105,
+      37.42696499830345,
+      35.11518400046043,
+      33.79746499922476
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=256）",
+      "b": "24（8+8+ceil(log2 K)，K=256）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 256
+    },
+    "predicted_bits": 24,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4112 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.1457840007788036,
+    "wall_ms": 35.11518400046043,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 903,
+    "profiled": true,
+    "comm_send_bytes": 2056.0,
+    "comm_recv_bytes": 2056.0,
+    "comm_total_bytes": 4112.0,
+    "comm_send_actions": 2.0,
+    "comm_recv_actions": 2.0,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000187022
+      },
+      "multiply": {
+        "send_bytes": 2048,
+        "recv_bytes": 2048,
+        "executions": 1,
+        "duration_s": 5.7315e-05
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 2.8333e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.3192e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.205e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 4112.0,
+      "max": 4112.0,
+      "median": 4112.0,
+      "p25": 4112.0,
+      "p75": 4112.0
+    },
+    "agreement": true,
+    "output_bits": 16,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum ABY3 FM128 K=256",
+    "op": "WeightedSum",
+    "protocol": "ABY3",
+    "field": "FM128",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 33.240294997085584,
+      "max": 43.45940100029111,
+      "median": 36.10666799795581,
+      "p25": 34.48315800051205,
+      "p75": 36.48370600058115
+    },
+    "wall_ms_samples": [
+      33.240294997085584,
+      34.48315800051205,
+      43.45940100029111,
+      36.48370600058115,
+      36.10666799795581
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=256）",
+      "b": "24（8+8+ceil(log2 K)，K=256）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 256
+    },
+    "predicted_bits": 24,
+    "field_bits": 128,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM128, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 8224 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.14684900088468567,
+    "wall_ms": 36.10666799795581,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 903,
+    "profiled": true,
+    "comm_send_bytes": 4112.0,
+    "comm_recv_bytes": 4112.0,
+    "comm_total_bytes": 8224.0,
+    "comm_send_actions": 2.0,
+    "comm_recv_actions": 2.0,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000210572
+      },
+      "multiply": {
+        "send_bytes": 4096,
+        "recv_bytes": 4096,
+        "executions": 1,
+        "duration_s": 5.1505e-05
+      },
+      "convert": {
+        "send_bytes": 16,
+        "recv_bytes": 16,
+        "executions": 1,
+        "duration_s": 2.6756e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 7.829e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.714e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 8224.0,
+      "max": 8224.0,
+      "median": 8224.0,
+      "p25": 8224.0,
+      "p75": 8224.0
+    },
+    "agreement": true,
+    "output_bits": 16,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM32 K=32",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM32",
+    "k": 32,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 84.77992700136383,
+      "max": 87.37817100336542,
+      "median": 85.29814400026225,
+      "p25": 84.93178400021861,
+      "p75": 86.80749699851731
+    },
+    "wall_ms_samples": [
+      84.93178400021861,
+      86.80749699851731,
+      85.29814400026225,
+      84.77992700136383,
+      87.37817100336542
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 32,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM32, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 269568 B（min 259840 / max 273024；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.20670300000347197,
+    "wall_ms": 85.29814400026225,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 132608.0,
+    "comm_recv_bytes": 133888.0,
+    "comm_total_bytes": 269568.0,
+    "comm_send_actions": 514.0,
+    "comm_recv_actions": 520.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 89600,
+        "recv_bytes": 93952,
+        "executions": 2,
+        "duration_s": 0.020761533
+      },
+      "less": {
+        "send_bytes": 40960,
+        "recv_bytes": 40960,
+        "executions": 2,
+        "duration_s": 0.001980979
+      },
+      "reduce": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 0.000936306
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 5.6156e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.805e-05
+      },
+      "and": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 2.245e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.2106e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.1813e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 7.542e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 259840.0,
+      "max": 273024.0,
+      "median": 269568.0,
+      "p25": 264960.0,
+      "p75": 269696.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=32",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 32,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 85.19445999991149,
+      "max": 89.77405599944177,
+      "median": 88.21267700113822,
+      "p25": 86.83078799731447,
+      "p75": 89.09034400130622
+    },
+    "wall_ms_samples": [
+      86.83078799731447,
+      89.77405599944177,
+      89.09034400130622,
+      88.21267700113822,
+      85.19445999991149
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 507904 B（min 485120 / max 516608；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.19739400158869103,
+    "wall_ms": 88.21267700113822,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 263936.0,
+    "comm_recv_bytes": 247040.0,
+    "comm_total_bytes": 507904.0,
+    "comm_send_actions": 584.0,
+    "comm_recv_actions": 581.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 180480,
+        "recv_bytes": 175872,
+        "executions": 2,
+        "duration_s": 0.022033462
+      },
+      "less": {
+        "send_bytes": 73728,
+        "recv_bytes": 73728,
+        "executions": 2,
+        "duration_s": 0.002481549
+      },
+      "reduce": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 0.000709844
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 5.9963e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 3.936e-05
+      },
+      "and": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 2.8946e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.2399e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.7596e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 8.17e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 485120.0,
+      "max": 516608.0,
+      "median": 507904.0,
+      "p25": 505856.0,
+      "p75": 514816.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM128 K=32",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM128",
+    "k": 32,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 85.6932249989768,
+      "max": 90.32128100079717,
+      "median": 87.82957000221359,
+      "p25": 85.8796930006065,
+      "p75": 89.47331400122494
+    },
+    "wall_ms_samples": [
+      90.32128100079717,
+      89.47331400122494,
+      85.6932249989768,
+      87.82957000221359,
+      85.8796930006065
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 128,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM128, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 962048 B（min 955904 / max 1024512；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.19496100139804184,
+    "wall_ms": 87.82957000221359,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 506368.0,
+    "comm_recv_bytes": 475136.0,
+    "comm_total_bytes": 962048.0,
+    "comm_send_actions": 650.0,
+    "comm_recv_actions": 638.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 365056,
+        "recv_bytes": 314368,
+        "executions": 2,
+        "duration_s": 0.02251599
+      },
+      "less": {
+        "send_bytes": 139264,
+        "recv_bytes": 139264,
+        "executions": 2,
+        "duration_s": 0.002813214
+      },
+      "reduce": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 0.000606718
+      },
+      "and": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 3.6968e-05
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 3.4179e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.6605e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.6187e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.8105e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 8.593e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 955904.0,
+      "max": 1024512.0,
+      "median": 962048.0,
+      "p25": 957952.0,
+      "p75": 990720.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE ABY3 FM64 K=64",
+    "op": "DistanceLE",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 64,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 41.93884600317688,
+      "max": 53.78924600154278,
+      "median": 43.74429599920404,
+      "p25": 43.23318599927006,
+      "p75": 44.92377300266526
+    },
+    "wall_ms_samples": [
+      53.78924600154278,
+      43.23318599927006,
+      41.93884600317688,
+      44.92377300266526,
+      43.74429599920404
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=64）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 1128 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.15122599870665,
+    "wall_ms": 43.74429599920404,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 1517,
+    "profiled": true,
+    "comm_send_bytes": 564.0,
+    "comm_recv_bytes": 564.0,
+    "comm_total_bytes": 1128.0,
+    "comm_send_actions": 11.0,
+    "comm_recv_actions": 11.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 36,
+        "recv_bytes": 36,
+        "executions": 1,
+        "duration_s": 0.000478828
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000122714
+      },
+      "multiply": {
+        "send_bytes": 520,
+        "recv_bytes": 520,
+        "executions": 2,
+        "duration_s": 7.7414e-05
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 6.9833e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.8614e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.2338e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.2189e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.557e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 3.55e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 1128.0,
+      "max": 1128.0,
+      "median": 1128.0,
+      "p25": 1128.0,
+      "p75": 1128.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE ABY3 FM64 K=256",
+    "op": "DistanceLE",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 42.45149000053061,
+      "max": 45.85235800186638,
+      "median": 44.151275000331225,
+      "p25": 43.76200300248456,
+      "p75": 44.26359799981583
+    },
+    "wall_ms_samples": [
+      44.26359799981583,
+      44.151275000331225,
+      45.85235800186638,
+      42.45149000053061,
+      43.76200300248456
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=256）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4200 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.1640150003368035,
+    "wall_ms": 44.151275000331225,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 1526,
+    "profiled": true,
+    "comm_send_bytes": 2100.0,
+    "comm_recv_bytes": 2100.0,
+    "comm_total_bytes": 4200.0,
+    "comm_send_actions": 11.0,
+    "comm_recv_actions": 11.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 36,
+        "recv_bytes": 36,
+        "executions": 1,
+        "duration_s": 0.000433257
+      },
+      "multiply": {
+        "send_bytes": 2056,
+        "recv_bytes": 2056,
+        "executions": 2,
+        "duration_s": 0.000173163
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.00016199
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 2.9153e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.0941e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.5177e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.3893e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 9.94e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 3.562e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 4200.0,
+      "max": 4200.0,
+      "median": 4200.0,
+      "p25": 4200.0,
+      "p75": 4200.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE ABY3 FM64 K=1024",
+    "op": "DistanceLE",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 1024,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 44.15821899965522,
+      "max": 53.26127399894176,
+      "median": 44.62627999964752,
+      "p25": 44.354337002005195,
+      "p75": 45.30335500021465
+    },
+    "wall_ms_samples": [
+      53.26127399894176,
+      44.354337002005195,
+      44.62627999964752,
+      45.30335500021465,
+      44.15821899965522
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=1024）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 16488 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.23335599689744413,
+    "wall_ms": 44.62627999964752,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 1535,
+    "profiled": true,
+    "comm_send_bytes": 8244.0,
+    "comm_recv_bytes": 8244.0,
+    "comm_total_bytes": 16488.0,
+    "comm_send_actions": 11.0,
+    "comm_recv_actions": 11.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 36,
+        "recv_bytes": 36,
+        "executions": 1,
+        "duration_s": 0.000408198
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000195624
+      },
+      "multiply": {
+        "send_bytes": 8200,
+        "recv_bytes": 8200,
+        "executions": 2,
+        "duration_s": 0.00015282
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 4.5842e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.6639e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.7518e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.599e-06
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.545e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 4.088e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 16488.0,
+      "max": 16488.0,
+      "median": 16488.0,
+      "p25": 16488.0,
+      "p75": 16488.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "DistanceLE ABY3 FM64 K=4096",
+    "op": "DistanceLE",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 4096,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 45.21888900126214,
+      "max": 55.62213400116889,
+      "median": 46.0253230012313,
+      "p25": 45.420425001793774,
+      "p75": 52.22128899913514
+    },
+    "wall_ms_samples": [
+      55.62213400116889,
+      45.420425001793774,
+      46.0253230012313,
+      45.21888900126214,
+      52.22128899913514
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/候选点（K=4096）",
+      "b": "8（量化箱号）",
+      "d": "1（平方后求和，无开方）",
+      "R": "1（归约）",
+      "basis": "避 sqrt：比较距离平方与阈值平方，d=1 即可"
+    },
+    "predicted_bits": 8,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 65640 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.5580500001087785,
+    "wall_ms": 46.0253230012313,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 1535,
+    "profiled": true,
+    "comm_send_bytes": 32820.0,
+    "comm_recv_bytes": 32820.0,
+    "comm_total_bytes": 65640.0,
+    "comm_send_actions": 11.0,
+    "comm_recv_actions": 11.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 36,
+        "recv_bytes": 36,
+        "executions": 1,
+        "duration_s": 0.000558952
+      },
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000292986
+      },
+      "multiply": {
+        "send_bytes": 32776,
+        "recv_bytes": 32776,
+        "executions": 2,
+        "duration_s": 0.000206659
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 6.1037e-05
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 5.5486e-05
+      },
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 4.7258e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.4265e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.856e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 4.224e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 65640.0,
+      "max": 65640.0,
+      "median": 65640.0,
+      "p25": 65640.0,
+      "p75": 65640.0
+    },
+    "agreement": true,
+    "output_bits": 0,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum ABY3 FM64 K=64",
+    "op": "WeightedSum",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 64,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 33.01392499997746,
+      "max": 38.40322999894852,
+      "median": 34.35140399960801,
+      "p25": 33.508751999761444,
+      "p75": 36.87580999758211
+    },
+    "wall_ms_samples": [
+      33.508751999761444,
+      34.35140399960801,
+      33.01392499997746,
+      38.40322999894852,
+      36.87580999758211
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=64）",
+      "b": "22（8+8+ceil(log2 K)，K=64）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 64
+    },
+    "predicted_bits": 22,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 1040 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.1458000006095972,
+    "wall_ms": 34.35140399960801,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 898,
+    "profiled": true,
+    "comm_send_bytes": 520.0,
+    "comm_recv_bytes": 520.0,
+    "comm_total_bytes": 1040.0,
+    "comm_send_actions": 2.0,
+    "comm_recv_actions": 2.0,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000133875
+      },
+      "multiply": {
+        "send_bytes": 512,
+        "recv_bytes": 512,
+        "executions": 1,
+        "duration_s": 0.000100591
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 4.4561e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.1462e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.335e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 1040.0,
+      "max": 1040.0,
+      "median": 1040.0,
+      "p25": 1040.0,
+      "p75": 1040.0
+    },
+    "agreement": true,
+    "output_bits": 14,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum ABY3 FM64 K=256",
+    "op": "WeightedSum",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 256,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 34.80119900268619,
+      "max": 36.4560359994357,
+      "median": 35.16652699909173,
+      "p25": 35.08558600151446,
+      "p75": 35.25055999853066
+    },
+    "wall_ms_samples": [
+      35.25055999853066,
+      35.16652699909173,
+      34.80119900268619,
+      36.4560359994357,
+      35.08558600151446
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=256）",
+      "b": "24（8+8+ceil(log2 K)，K=256）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 256
+    },
+    "predicted_bits": 24,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 4112 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.15994799832697026,
+    "wall_ms": 35.16652699909173,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 903,
+    "profiled": true,
+    "comm_send_bytes": 2056.0,
+    "comm_recv_bytes": 2056.0,
+    "comm_total_bytes": 4112.0,
+    "comm_send_actions": 2.0,
+    "comm_recv_actions": 2.0,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000154813
+      },
+      "multiply": {
+        "send_bytes": 2048,
+        "recv_bytes": 2048,
+        "executions": 1,
+        "duration_s": 0.000100088
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 4.8993e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.3614e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.319e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 4112.0,
+      "max": 4112.0,
+      "median": 4112.0,
+      "p25": 4112.0,
+      "p75": 4112.0
+    },
+    "agreement": true,
+    "output_bits": 16,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum ABY3 FM64 K=1024",
+    "op": "WeightedSum",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 1024,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 34.62276100253803,
+      "max": 36.70358499948634,
+      "median": 35.157205998984864,
+      "p25": 34.64995399917825,
+      "p75": 36.395702001755126
+    },
+    "wall_ms_samples": [
+      36.395702001755126,
+      34.62276100253803,
+      34.64995399917825,
+      36.70358499948634,
+      35.157205998984864
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=1024）",
+      "b": "26（8+8+ceil(log2 K)，K=1024）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 1024
+    },
+    "predicted_bits": 26,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 16400 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.286358997982461,
+    "wall_ms": 35.157205998984864,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 908,
+    "profiled": true,
+    "comm_send_bytes": 8200.0,
+    "comm_recv_bytes": 8200.0,
+    "comm_total_bytes": 16400.0,
+    "comm_send_actions": 2.0,
+    "comm_recv_actions": 2.0,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000227914
+      },
+      "multiply": {
+        "send_bytes": 8192,
+        "recv_bytes": 8192,
+        "executions": 1,
+        "duration_s": 7.0113e-05
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 4.3996e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.4273e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.793e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 16400.0,
+      "max": 16400.0,
+      "median": 16400.0,
+      "p25": 16400.0,
+      "p75": 16400.0
+    },
+    "agreement": true,
+    "output_bits": 18,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum ABY3 FM64 K=4096",
+    "op": "WeightedSum",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 4096,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 35.70389599917689,
+      "max": 37.575131998892175,
+      "median": 36.295485002483474,
+      "p25": 35.81611399931717,
+      "p75": 36.5489189971413
+    },
+    "wall_ms_samples": [
+      36.295485002483474,
+      35.70389599917689,
+      36.5489189971413,
+      37.575131998892175,
+      35.81611399931717
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=4096）",
+      "b": "28（8+8+ceil(log2 K)，K=4096）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 4096
+    },
+    "predicted_bits": 28,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量 65552 B（5 次逐字节一致）",
+    "error": "",
+    "setup_ms": 0.561273998755496,
+    "wall_ms": 36.295485002483474,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 908,
+    "profiled": true,
+    "comm_send_bytes": 32776.0,
+    "comm_recv_bytes": 32776.0,
+    "comm_total_bytes": 65552.0,
+    "comm_send_actions": 2.0,
+    "comm_recv_actions": 2.0,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000276458
+      },
+      "multiply": {
+        "send_bytes": 32768,
+        "recv_bytes": 32768,
+        "executions": 1,
+        "duration_s": 0.000140437
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 2.9456e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.3394e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.921e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 65552.0,
+      "max": 65552.0,
+      "median": 65552.0,
+      "p25": 65552.0,
+      "p75": 65552.0
+    },
+    "agreement": true,
+    "output_bits": 20,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=8",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 8,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 80.49733500229195,
+      "max": 94.00621500026318,
+      "median": 82.32592399872374,
+      "p25": 81.10174800094683,
+      "p75": 82.61556000070414
+    },
+    "wall_ms_samples": [
+      94.00621500026318,
+      80.49733500229195,
+      82.61556000070414,
+      81.10174800094683,
+      82.32592399872374
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=8）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 97856 B（min 96000 / max 102208；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.22055099907447584,
+    "wall_ms": 82.32592399872374,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 2593,
+    "profiled": true,
+    "comm_send_bytes": 52928.0,
+    "comm_recv_bytes": 48320.0,
+    "comm_total_bytes": 97856.0,
+    "comm_send_actions": 582.0,
+    "comm_recv_actions": 569.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 42048,
+        "recv_bytes": 46336,
+        "executions": 2,
+        "duration_s": 0.018822316
+      },
+      "less": {
+        "send_bytes": 4608,
+        "recv_bytes": 4608,
+        "executions": 2,
+        "duration_s": 0.00091862
+      },
+      "reduce": {
+        "send_bytes": 64,
+        "recv_bytes": 64,
+        "executions": 1,
+        "duration_s": 0.000454617
+      },
+      "and": {
+        "send_bytes": 64,
+        "recv_bytes": 64,
+        "executions": 1,
+        "duration_s": 5.8996e-05
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 3.8332e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.2952e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 1.9608e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.5983e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 7.15e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 96000.0,
+      "max": 102208.0,
+      "median": 97856.0,
+      "p25": 96384.0,
+      "p75": 100416.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=16",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 16,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 81.34571699702065,
+      "max": 90.17653000046266,
+      "median": 84.30842600137112,
+      "p25": 82.36043099896051,
+      "p75": 84.76975599842262
+    },
+    "wall_ms_samples": [
+      90.17653000046266,
+      82.36043099896051,
+      81.34571699702065,
+      84.76975599842262,
+      84.30842600137112
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=16）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 215936 B（min 211584 / max 219392；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.1826029983931221,
+    "wall_ms": 84.30842600137112,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 108544.0,
+    "comm_recv_bytes": 107392.0,
+    "comm_total_bytes": 215936.0,
+    "comm_send_actions": 578.0,
+    "comm_recv_actions": 584.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 91776,
+        "recv_bytes": 86272,
+        "executions": 2,
+        "duration_s": 0.020447757
+      },
+      "less": {
+        "send_bytes": 18432,
+        "recv_bytes": 18432,
+        "executions": 2,
+        "duration_s": 0.001689768
+      },
+      "reduce": {
+        "send_bytes": 256,
+        "recv_bytes": 256,
+        "executions": 1,
+        "duration_s": 0.000518123
+      },
+      "and": {
+        "send_bytes": 256,
+        "recv_bytes": 256,
+        "executions": 1,
+        "duration_s": 6.5861e-05
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 3.7383e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 2.7208e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.5133e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.1881e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 1.4249e-05
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 211584.0,
+      "max": 219392.0,
+      "median": 215936.0,
+      "p25": 211968.0,
+      "p75": 219008.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "TemporalOverlap ABY3 FM64 K=32",
+    "op": "TemporalOverlap",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "k": 32,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "ok": 5
+    },
+    "deviation_rate": 0.0,
+    "wall_ms_stats": {
+      "min": 82.92910099771689,
+      "max": 85.8983719990647,
+      "median": 84.10535300208721,
+      "p25": 83.89849000013783,
+      "p75": 85.76192399777938
+    },
+    "wall_ms_samples": [
+      84.10535300208721,
+      85.8983719990647,
+      82.92910099771689,
+      83.89849000013783,
+      85.76192399777938
+    ],
+    "max_abs_error_max": 0.0,
+    "predicted_cost": {
+      "N_ct": "≤ 2·Lt_max = 28 条/格网（K=32）",
+      "b": "18（Toff 14 + Lt 4）",
+      "d": "1（区间比较）",
+      "R": "1（归约）",
+      "basis": "段式编码使节点数上界为 2·Lt_max，避免 720× 逐分钟物化"
+    },
+    "predicted_bits": 18,
+    "field_bits": 64,
+    "bit_width_covered": true,
+    "status": "ok",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；重复 5 次：{'ok': 5}；通信量中位 516608 B（min 504576 / max 530944；抖动是实测现象，非解析确定量）",
+    "error": "",
+    "setup_ms": 0.189461003174074,
+    "wall_ms": 84.10535300208721,
+    "memory_mb": 0.0,
+    "peak_rss_mb": 1074.5625,
+    "pphlo_bytes": 2653,
+    "profiled": true,
+    "comm_send_bytes": 255232.0,
+    "comm_recv_bytes": 252928.0,
+    "comm_total_bytes": 516608.0,
+    "comm_send_actions": 583.0,
+    "comm_recv_actions": 587.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 187904,
+        "recv_bytes": 177152,
+        "executions": 2,
+        "duration_s": 0.019488162
+      },
+      "less": {
+        "send_bytes": 73728,
+        "recv_bytes": 73728,
+        "executions": 2,
+        "duration_s": 0.00238246
+      },
+      "reduce": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 0.000699693
+      },
+      "and": {
+        "send_bytes": 1024,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 0.000197313
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 9.9578e-05
+      },
+      "convert": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.9025e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.9819e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 1.8373e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 8.59e-06
+      }
+    },
+    "comm_total_bytes_stats": {
+      "min": 504576.0,
+      "max": 530944.0,
+      "median": 516608.0,
+      "p25": 507392.0,
+      "p75": 521216.0
+    },
+    "agreement": true,
+    "output_bits": 1,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "value_runs": 5
+  },
+  {
+    "case": "WeightedSum ABY3 FM32 K=1048576",
+    "op": "WeightedSum",
+    "protocol": "ABY3",
+    "field": "FM32",
+    "k": 1048576,
+    "expect_status": "",
+    "repeat": 5,
+    "status_counts": {
+      "unavailable": 5
+    },
+    "deviation_rate": null,
+    "wall_ms_stats": {},
+    "wall_ms_samples": [],
+    "max_abs_error_max": null,
+    "predicted_cost": {
+      "N_ct": "1 条/属性通道（K=1048576）",
+      "b": "36（8+8+ceil(log2 K)，K=1048576）",
+      "d": "1（乘加）",
+      "R": "1（归约）",
+      "basis": "定点乘加；位宽按 log2(K) 预留累加余量",
+      "bit_width_rule": "b(K) = 8 + 8 + ceil(log2 K)",
+      "K": 1048576
+    },
+    "predicted_bits": 36,
+    "field_bits": 32,
+    "bit_width_covered": false,
+    "status": "unavailable",
+    "note": "未实测：planner 预测 b(K=1048576)=36 > FM32=32，属越界组合；模 2^32 回绕的结果不能当有效数据（不伪造数字）；重复 5 次：{'unavailable': 5}",
+    "error": "",
+    "setup_ms": null,
+    "wall_ms": null,
+    "memory_mb": null,
+    "peak_rss_mb": null,
+    "pphlo_bytes": null,
+    "profiled": false,
+    "comm_send_bytes": null,
+    "comm_recv_bytes": null,
+    "comm_total_bytes": null,
+    "comm_send_actions": null,
+    "comm_recv_actions": null,
+    "comm_by_primitive": {},
+    "comm_total_bytes_stats": {},
+    "agreement": null,
+    "output_bits": null,
+    "max_abs_error": null,
+    "tolerance": null,
+    "value_runs": 0
+  }
+]

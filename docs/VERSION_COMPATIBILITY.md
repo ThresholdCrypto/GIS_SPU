@@ -86,6 +86,14 @@ cd GIS_SPU
 | 2026-10-04 | `5daf60e`（工作区含未提交改动） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | PSI 真机全协议 + SPU/MPC + 全量测试 | **verified**（`653 passed`，0 failed，0 skipped） |
 | 2026-10-05 | `423946d` + 工作区未提交改动（P0 MPC 协议入 planner / P1 MPC 代价基线 / P1.5 重复实验） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + MPC 协议矩阵（5 协议 × 3 算子 × 3 环宽）+ MPC 代价基线 + 重复实验（×5 / ×30） | **verified**（`748 passed`，0 failed，0 skipped） |
 | 2026-10-06 | `bd151ae` + 工作区未提交改动（P2-1：`WeightedSum` 定点 scale 改编译期常量、生成代码去除法） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + MPC 基线重跑（单次 / ×5 / ×30）+ 三环宽精确性 + 通信量探针 | **verified**（`753 passed`，0 failed，0 skipped） |
+| 2026-10-06 | `5a79c2c` + 工作区未提交改动（P2-2：通信量入基线，`capture_comm` / `--comm`） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + 通信量基线（全量 ×5，带 profiling）+ MPC 基线重跑（单次 / ×5 / ×30） | **verified**（`773 passed`，0 failed，0 skipped） |
+
+> 2026-10-06 第二行（P2-2）的要点：通信量接进 `run_spu_simulation(capture_comm=True)`
+> 与每条基线记录，新增产物 `docs/mpc_comm_baseline.json` / `.csv`。
+> 关键实测：SPU 原生日志是**进程级**开关，PSI 路径会关掉它（`_set_native_log(quiet=True)`），
+> 关过之后同一进程里 pphlo profile 行不再出现——所以 `capture_comm=True` 必须先
+> 用 `libspu.logging.setup_logging` 把它打开（`system_log_path` 指 `/dev/null`）。
+> 这条"跨模块的全局状态耦合"有回归测试守（`test_comm_capture_survives_a_prior_native_log_shutdown`）。
 
 > 同日第二验证（无 SPU 环境，Python 3.10 / 3.14）：`555 passed / 87 skipped / 11 failed`。
 > 11 项失败全部为"SPU 不可用"的环境门断言（期望 `error`、实得 `unavailable`），

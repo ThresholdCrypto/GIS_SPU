@@ -713,7 +713,8 @@ export LD_LIBRARY_PATH="$HOME/.local/lib"                      # libgomp.so.1 �
 | 与明文一致（K=4096，×30） | 偏差率 93% | **0/30，逐位精确** |
 | `FM32` 环宽 | 崩溃 | **ok** |
 | PPHLO 字节数 | 2 400 | **938** |
-| 通信量（ABY3 / SEMI2K / CHEETAH） | 9 286 / 51 544 / 5 246 783 B | **4 112 / 16 384 / 1 474 286 B** |
+| 通信量（ABY3 / SEMI2K / CHEETAH，探针口径） | 9 286 / 51 544 / 5 246 783 B | **4 112 / 16 384 / 1 474 286 B** |
+| 通信量（同上，P2-2 基线口径：SEMI2K 改 2 方） | — | **4 112 / 8 192 / 1 474 167 B** |
 | CHEETAH 墙钟中位数 | 1 149.8 ms | **85.2 ms** |
 
 生成规则：`scale == 1` → 直接返回累加和；`scale == 2^s` → 右移（精确）；
@@ -736,15 +737,50 @@ export LD_LIBRARY_PATH="$HOME/.local/lib"                      # libgomp.so.1 �
 - CHEETAH 仍慢一个数量级，但 SPU 模拟器**不含真实网络**，省通信量的优势
   在带宽受限部署下**不可外推**——通信量口径见下。
 
-**通信量可以测（P2-2 的探针结论）**
+**P2-2：通信量已入基线（本版新增）**
 
 `RuntimeConfig.enable_pphlo_profile = True` 后 SPU 自己的日志会给出逐算子
 `send bytes / recv bytes` 与 `Link details: total send bytes N, recv bytes M`
-（需在 fd 级重定向，Python 的 `redirect_stdout` 抓不到）。实测 `WeightedSum`
-K=256：REF2K **0 B**（完全不通信，不是可用的隐私协议）、ABY3 4.1 KB、
-SECURENN 8.2 KB、SEMI2K 16.4 KB、CHEETAH 1.47 MB。
-**这张表与墙钟排序完全对不上**——所以协议选型必须落到通信量，不能拿墙钟排。
-（两个坑：CHEETAH 必须 2 方，否则 `[yacl] Get data timeout`；通信量有 ~1–2% 批间抖动。）
+（需在 fd 级重定向，Python 的 `redirect_stdout` 抓不到），
+现已接进 `run_spu_simulation(capture_comm=True)` 与每条基线记录。
+
+```bash
+~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py --comm --repeat 5 \
+    --json docs/mpc_comm_baseline.json --csv docs/mpc_comm_baseline.csv
+```
+
+实测（send+recv 合计，K=256 / `TemporalOverlap` K=32）：
+
+| 协议 | DistanceLE | WeightedSum | TemporalOverlap |
+|---|---:|---:|---:|
+| REF2K | 0 B | 0 B | 0 B |
+| ABY3 | 4 200 B | 4 112 B | 0.52 MB |
+| SEMI2K | 8 336 B | 8 192 B | 0.70 MB |
+| SECURENN | 12 032 B | 8 192 B | **25.84 MB** |
+| CHEETAH | **2.41 MB** | **1.47 MB** | 1.76 MB |
+
+三个结论（详见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.4）：
+
+- **墙钟排不出协议**：除 CHEETAH 外四个协议墙钟都在 44–48 ms / 35–39 ms，
+  通信量却从 0 B 跨到 2.41 MB（3 个数量级）——REF2K 的 0 B 说明它不做
+  密码学保护（"最快"没有意义）；
+- **`TemporalOverlap` 上墙钟排序被通信量反转**：SECURENN 墙钟 608 ms
+  < CHEETAH 1221 ms，通信量却是 25.84 MB ≫ 1.76 MB（差 14.7×）——
+  二次电路把 SECURENN 的通信量推爆；
+- **取不到就是 `None`**：没开 profiling / 解析不到 / 原生 logger 打不开，
+  一律留空并在 `note` 写明原因，**不用推测值填充**。
+
+参与方数量按各协议下限取默认值（ABY3/SECURENN 3 方、SEMI2K/CHEETAH/REF2K 2 方）：
+**这个数必须跟着通信量一起报**——实测 SEMI2K 同一组合 2 方 8 192 B、3 方 16 384 B。
+
+三个实测坑（都会让通信量静默变成"取不到"）：CHEETAH 必须 2 方，否则
+`[yacl] Get data timeout`；profile 行必须 **fd 级**重定向才拿得到；
+SPU 原生日志是**进程级**开关，PSI 路径会把它关掉，因此 `capture_comm=True`
+会先把它打开。多数组合 ×5 完全确定，但 `TemporalOverlap` 的 ABY3 会抖
+（两次重跑实测 3.6%–10.8%），所以一律报**中位 + 区间**。
+
+> ⚠️ profiling 有开销：**带 profiling 的墙钟不可与不带 profiling 的墙钟比**。
+> `docs/mpc_repeat_baseline.*` 是没开 profiling 的，`docs/mpc_comm_baseline.*` 是开了的。
 
 详见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.2 / §4.3 / §8。
 
@@ -1352,8 +1388,10 @@ backends/
   的环宽下限；重复实验（×5 / ×30）已完成。
   **两处缺口已在 P2-1 闭合**（`scale` 改编译期常量 → 生成代码无除法：
   与明文逐位一致、FM32 可用、PPHLO 2400→938、通信量降 56–93%、CHEETAH 快 13×）。
-  **未闭合的余项**：把通信量接进基线（P2-2，探针已验证可行）、
-  `TemporalOverlap` 二次电路改造。
+  ~~把通信量接进基线~~ ——**已闭合（P2-2）**：`--comm` + `capture_comm=True`
+  采 SPU 的 pphlo profiling，落到每条记录，产物 `docs/mpc_comm_baseline.json`；
+  实测确认墙钟排不出协议优劣、`TemporalOverlap` 上墙钟排序被通信量反转。
+  **未闭合的余项**：`TemporalOverlap` 二次电路改造（K 上限被锁在 32 量级）。
 
 ### 8.4 位平面与打包布局（D3）
 

@@ -20,6 +20,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Sequence
 
+from .profile import (
+    capture_native_logs,
+    enable_native_console_log,
+    parse_comm_profile,
+)
 from .capability import (
     CapabilityReport,
     check_capabilities,
@@ -49,6 +54,16 @@ class SpuRunResult:
     within_tolerance: bool | None = None
     tolerance: float | None = None
     pphlo_bytes: int | None = None
+    #: 通信量（仅在 `capture_comm=True` 时填；单位：字节，模拟链路计数）
+    comm_send_bytes: int | None = None
+    comm_recv_bytes: int | None = None
+    comm_total_bytes: int | None = None
+    comm_send_actions: int | None = None
+    comm_recv_actions: int | None = None
+    #: 逐原语通信量 {op: {send_bytes, recv_bytes, executions, duration_s}}
+    comm_by_primitive: Mapping[str, Any] = field(default_factory=dict)
+    #: 本次是否真的开了 profiling（开了的墙钟不可与没开的直接比）
+    profiled: bool = False
     blockers: tuple[str, ...] = ()
     error: str | None = None
     notes: tuple[str, ...] = ()
@@ -70,6 +85,13 @@ class SpuRunResult:
             "within_tolerance": self.within_tolerance,
             "tolerance": self.tolerance,
             "pphlo_bytes": self.pphlo_bytes,
+            "comm_send_bytes": self.comm_send_bytes,
+            "comm_recv_bytes": self.comm_recv_bytes,
+            "comm_total_bytes": self.comm_total_bytes,
+            "comm_send_actions": self.comm_send_actions,
+            "comm_recv_actions": self.comm_recv_actions,
+            "comm_by_primitive": _jsonable(self.comm_by_primitive),
+            "profiled": self.profiled,
             "blockers": list(self.blockers),
             "error": self.error,
             "notes": list(self.notes),
@@ -91,6 +113,11 @@ class SpuRunResult:
                 )
             if self.pphlo_bytes is not None:
                 lines.append(f"  pphlo bytes : {self.pphlo_bytes}")
+            if self.comm_total_bytes is not None:
+                lines.append(
+                    f"  comm bytes  : send={self.comm_send_bytes} "
+                    f"recv={self.comm_recv_bytes} total={self.comm_total_bytes}"
+                )
             for note in self.notes:
                 lines.append(f"  note        : {note}")
             return "\n".join(lines)
@@ -134,6 +161,7 @@ def run_spu_simulation(
     report: CapabilityReport | None = None,
     copts: Any = None,
     static_argnums: Sequence[int] = (),
+    capture_comm: bool = False,
 ) -> SpuRunResult:
     """在 SPU 模拟器上执行一个 jax 函数。
 
@@ -146,6 +174,15 @@ def run_spu_simulation(
         reference_fn: 明文参考实现；给出后会计算误差并做容差判定。
         tolerance: 容差；缺省 0.0（整数路径应为精确）。
         report:   已探测的能力报告，避免重复探测。
+        capture_comm: 打开 SPU 的 pphlo profiling 以采集**通信量**
+                   （`comm_send_bytes` / `comm_recv_bytes` / 逐原语明细）。
+                   注意三点：(a) profiling 有开销，**开了的墙钟不能与没开的比**；
+                   (b) 通信量并非每条都确定：多数组合五次一致，但
+                   `TemporalOverlap` 的 ABY3、CHEETAH 的线性算子会抖
+                   （实测 0.03%–10.1%），报数要给中位/区间；
+                   (c) 原生日志是**进程级**开关，本函数会先把它打开
+                   （PSI 路径会关掉它，关过就再也取不到通信量）。
+                   实现依据见 `backends/spu_backend/profile.py` 的模块说明。
 
     Returns:
         SpuRunResult。能力不足时 status="unavailable"，绝不返回伪造数值。
@@ -208,7 +245,15 @@ def run_spu_simulation(
     try:
         protocol_kind = getattr(libspu.ProtocolKind, protocol_name)
         field_type = getattr(libspu.FieldType, field_name)
-        sim = spu_simulation.Simulator.simple(size, protocol_kind, field_type)
+        if capture_comm:
+            # 通信量只在 pphlo profiling 打开时才会被 SPU 统计。
+            # 这里故意不复用 Simulator.simple：它内部构造的 RuntimeConfig
+            # 不给外部改 profile 开关的机会。
+            config = libspu.RuntimeConfig(protocol_kind, field_type)
+            config.enable_pphlo_profile = True
+            sim = spu_simulation.Simulator(size, config)
+        else:
+            sim = spu_simulation.Simulator.simple(size, protocol_kind, field_type)
     except Exception as exc:
         result.status = "error"
         result.error = (
@@ -223,7 +268,34 @@ def run_spu_simulation(
         if copts is not None:
             kwargs["copts"] = copts
         spu_fn = spu_simulation.sim_jax(sim, jax_fn, **kwargs)
-        outputs = spu_fn(*[np.asarray(x) for x in inputs])
+        flat = [np.asarray(x) for x in inputs]
+        if capture_comm:
+            # 原生日志是进程级开关，PSI 路径会把它关掉；不先打开就必然取不到数。
+            console_on = enable_native_console_log()
+            # profile 行走 C 层 spdlog，只有 fd 级重定向拿得到。
+            # 解析必须在 with 块内做：离开块时临时 fd 就被关掉了。
+            with capture_native_logs() as logs:
+                outputs = spu_fn(*flat)
+                measured = parse_comm_profile(logs.read())
+            result.profiled = True
+            for key in (
+                "comm_send_bytes", "comm_recv_bytes", "comm_total_bytes",
+                "comm_send_actions", "comm_recv_actions",
+            ):
+                setattr(result, key, measured.get(key))
+            result.comm_by_primitive = measured.get("comm_by_primitive", {})
+            if result.comm_total_bytes is None:
+                reason = (
+                    "SPU 原生 console logger 打不开（C++ 侧接口不可用）"
+                    if not console_on
+                    else "已开 profiling 但日志里没有通信量行"
+                )
+                result.notes = result.notes + (
+                    f"未能取到通信量（{reason}）——该栏位留空，不以推测值填充"
+                    "（见 docs/MPC_BENCHMARK_PROTOCOL.md §8.4）",
+                )
+        else:
+            outputs = spu_fn(*flat)
     except Exception as exc:
         result.status = "error"
         result.error = f"SPU 模拟执行失败：{type(exc).__name__}: {exc}"
@@ -237,9 +309,16 @@ def run_spu_simulation(
     if isinstance(pphlo, str):
         result.pphlo_bytes = len(pphlo)
 
+    execution_path = (
+        f"spu.utils.simulation.Simulator.simple({size}, {protocol_name}, {field_name})"
+        if not capture_comm
+        else (
+            f"spu.utils.simulation.Simulator({size}, RuntimeConfig("
+            f"{protocol_name}, {field_name}, enable_pphlo_profile=True))"
+        )
+    )
     result.notes = result.notes + (
-        f"执行路径：spu.utils.simulation.Simulator.simple({size}, {protocol_name}, {field_name}) "
-        "→ sim_jax → frontend.compile(Kind.JAX)",
+        f"执行路径：{execution_path} → sim_jax → frontend.compile(Kind.JAX)",
     )
 
     # ---------------- 步骤 4：误差与容差 ----------------
