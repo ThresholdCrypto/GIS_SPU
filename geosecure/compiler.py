@@ -56,6 +56,7 @@ from frontend import ParseResult, parse_source
 from frontend.analyzer import _coerce_geotype, _coerce_sensitivity
 from ir import GeoProgram, encode_grid_code, render_table
 from planner import (
+    MPC_RULE_DEFAULT_PROTOCOL,
     PLAN_TABLE_HEADERS,
     PlannedStep,
     PrivacyPlan,
@@ -255,7 +256,9 @@ class Compiler:
     def __init__(
         self,
         *,
-        protocol: str = "ABY3",
+        #: MPC（SPU）协议；**None = 按实测代价自动选择**（见 planner.select_mpc_protocol，
+        #: 依据是 docs/mpc_comm_baseline.json）。给了具体协议则是显式覆盖。
+        protocol: str | None = None,
         field: str | int = 64,
         world_size: int | None = None,
         tolerance: float | None = None,
@@ -272,7 +275,10 @@ class Compiler:
         sensitivities: Mapping[str, Any] | None = None,
         type_hints: Mapping[str, Any] | None = None,
     ) -> None:
+        #: 编译器**显式**指定的 MPC 协议；None = 让规划器按实测代价选。
+        #: 执行期真正使用的具体值见 `protocol_in_use`（规划完一次性定型）。
         self.protocol = protocol
+        self._protocol_in_use: str | None = None
         self.field = field
         self.world_size = world_size
         self.tolerance = tolerance
@@ -339,6 +345,20 @@ class Compiler:
         self.type_hints = {k: _coerce_geotype(v) for k, v in (type_hints or {}).items()}
 
     # ---------------- 主流程 ----------------
+
+    @property
+    def protocol_in_use(self) -> str:
+        """执行期实际使用的 MPC 协议（具体值，不会为 None）。
+
+        `self.protocol` 为 None 时取**方案里按实测代价选出**的协议；
+        方案也没有（纯 PSI 程序，没有 MPC 步骤）→ 回落到登记默认值。
+        """
+
+        return (
+            self._protocol_in_use
+            or self.protocol
+            or MPC_RULE_DEFAULT_PROTOCOL
+        )
 
     def compile_source(
         self, source: str, filename: str = "<source>", *, entry: str | None = None
@@ -427,6 +447,13 @@ class Compiler:
                 plan,
                 f"{len(plan.steps)} 步方案，{len(plan.crypto_steps)} 步需密态",
             )
+        )
+
+        # 执行期协议一次性定型：显式指定 > 方案里的实测选择 > 登记默认值。
+        # "自动选择"的依据来自方案本身（planner 已按实测通信量选过），这里只把
+        # 方案的结论取出来交给执行层，不另做一次判断——两道闸门只留一道判断源。
+        self._protocol_in_use = self.protocol or next(
+            (step.mpc_protocol for step in plan.steps if step.mpc_protocol), None
         )
 
         # ---- 阶段 4：JAX generation ----
@@ -565,7 +592,7 @@ class Compiler:
                 run = run_spu_simulation(
                     fn,
                     [np.asarray(x) for x in examples],
-                    protocol=self.protocol,
+                    protocol=self.protocol_in_use,
                     field=self.field,
                     world_size=self.world_size,
                     reference_fn=reference_fn if reference is not None else None,
@@ -579,7 +606,7 @@ class Compiler:
                 # `geo-secure build x.py --protocol SPDZ2K` 就是这样崩的。
                 run = SpuRunResult(
                     status="error",
-                    protocol=str(self.protocol),
+                    protocol=self.protocol_in_use,
                     field=str(self.field),
                     world_size=self.world_size or 2,
                     error=str(exc),
@@ -848,7 +875,7 @@ class Compiler:
                 subset_via=self.psi_subset,
                 # 子集判定这条 MPC 电路沿用编译器的协议/环宽，与其它 MPC 算子
                 # 共用同一套开关，不另开一个配置面。
-                mpc_protocol=self.protocol,
+                mpc_protocol=self.protocol_in_use,
                 mpc_field=self.field,
                 mpc_world_size=self.world_size,
                 mpc_report=self._capability,

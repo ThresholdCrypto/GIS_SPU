@@ -90,6 +90,7 @@ cd GIS_SPU
 | 2026-10-06 | `bd151ae` + 工作区未提交改动（P2-1：`WeightedSum` 定点 scale 改编译期常量、生成代码去除法） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + MPC 基线重跑（单次 / ×5 / ×30）+ 三环宽精确性 + 通信量探针 | **verified**（`753 passed`，0 failed，0 skipped） |
 | 2026-10-06 | `5a79c2c` + 工作区未提交改动（P2-2：通信量入基线，`capture_comm` / `--comm`） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + 通信量基线（全量 ×5，带 profiling）+ MPC 基线重跑（单次 / ×5 / ×30） | **verified**（`773 passed`，0 failed，0 skipped） |
 | 2026-10-06 | `4716f4b` + 工作区未提交改动（P3：`TemporalOverlap` 第二套电路 `sweep` + 两套电路的成对 A/B） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + MPC 基线重跑（单次 / ×5 / ×30）+ 通信量基线（×5）+ `sweep` A/B（×5，含 `sort` / `reduce_window` 真机实测） | **verified**（`793 passed`，0 failed，0 skipped） |
+| 2026-10-06 | `b79da30` + 工作区未提交改动（P4：MPC 协议按实测代价选择，`REF2K` 不再自动选中） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + `DistanceLE` 自动协议真跑 + 排序第二协议（SEMI2K）真跑 | **verified**（`815 passed`，0 failed，0 skipped） |
 
 > 2026-10-06 第二行（P2-2）的要点：通信量接进 `run_spu_simulation(capture_comm=True)`
 > 与每条基线记录，新增产物 `docs/mpc_comm_baseline.json` / `.csv`。
@@ -97,6 +98,14 @@ cd GIS_SPU
 > 关过之后同一进程里 pphlo profile 行不再出现——所以 `capture_comm=True` 必须先
 > 用 `libspu.logging.setup_logging` 把它打开（`system_log_path` 指 `/dev/null`）。
 > 这条"跨模块的全局状态耦合"有回归测试守（`test_comm_capture_survives_a_prior_native_log_shutdown`）。
+
+> 2026-10-06 末行（P4）的要点：`--protocol` 缺省从固定 `ABY3` 改为**自动**，
+> 依据是 `docs/mpc_comm_baseline.json` 的实测发送+接收（`planner.select_mpc_protocol`）；
+> 候选集带实测代价（`mpc_protocol_candidates_for`）；`REF2K` 留在候选里但被
+> `SPU_PROTOCOLS_WITHOUT_CRYPTO` 挡在自动选择之外。**注意口径**：这不是
+> "实测跑赢/跑输"的新测量，而是把已有产物接进规划层——本轮**没有**重跑基线，
+> 排序数字全部来自既有产物（`tests/test_protocol_selection.py` 直接读产物核对）。
+> 见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.5 与 `README.md` §5.5。
 
 > 同日第二验证（无 SPU 环境，Python 3.10 / 3.14）：`555 passed / 87 skipped / 11 failed`。
 > 11 项失败全部为"SPU 不可用"的环境门断言（期望 `error`、实得 `unavailable`），

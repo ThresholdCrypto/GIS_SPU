@@ -80,6 +80,13 @@ SourceIRType : XLA | STABLEHLO
 
 参与方数量下限（按协议定义）：`ABY3 = 3`、`SECURENN = 3`、`SEMI2K = 2`、`CHEETAH = 2`、`REF2K = 2`。
 
+**无密码学保护的协议**（`SPU_PROTOCOLS_WITHOUT_CRYPTO = ("REF2K",)`，P4）：
+判据不是上游文档的措辞，而是本项目的实测——`REF2K` 在三个 MPC 算子上
+send+recv 恒为 **0 B**（`docs/mpc_comm_baseline.json`，`--comm --repeat 5`；
+见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.4）。它**留在**协议候选清单里（对拍 /
+排查要能显式选），但**不参与自动选择**；显式选它时规划与 CLI 会带披露。
+规划侧如何用它排序见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.5。
+
 > **实测补充（2026-10-05，P1）**：5 个协议 × 3 个环宽（FM32 / FM64 / FM128）
 > 已逐条真跑（`DistanceLE` / `WeightedSum` / `TemporalOverlap`，
 > 数据见 `docs/mpc_benchmark_baseline.json`）。两条**平台侧限制**（真机实测，

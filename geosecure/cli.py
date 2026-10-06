@@ -30,7 +30,13 @@ from ir import (
     render_relations,
     render_table,
 )
-from planner import PLAN_TABLE_HEADERS, plan_table_rows
+from planner import (
+    PLAN_TABLE_HEADERS,
+    SELECTION_BASIS_DECLARED_DEFAULT,
+    SELECTION_BASIS_EXPLICIT,
+    SELECTION_BASIS_MEASURED,
+    plan_table_rows,
+)
 
 BANNER = "geo-secure — 地理信息行业低门槛隐私计算编译器"
 
@@ -61,6 +67,16 @@ def _stage_line(index: int, total: int, result: CompileResult, name: str) -> Non
     if stage is None:
         return
     _emit(f"[{index}/{total}] {stage.title:<22} {stage.icon} {stage.status.upper():<8} {stage.message}")
+
+
+def _mpc_basis_note(basis: str | None) -> str:
+    """MPC 协议来源的可读后缀：选了什么都不说清楚，等于没有留痕。"""
+
+    return {
+        SELECTION_BASIS_MEASURED: "（按实测代价自动选择）",
+        SELECTION_BASIS_DECLARED_DEFAULT: "（无实测依据，用登记默认值）",
+        SELECTION_BASIS_EXPLICIT: "（编译器显式指定）",
+    }.get(basis or "", "")
 
 
 def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool = False) -> None:
@@ -111,6 +127,13 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
         summary = result.plan.summary()
         _emit()
         _emit(f"  后端: {summary['backends']}   表征: {summary['representations']}   安全级别: {summary['security_levels']}")
+        picks = [
+            f"{step.operation} → {step.mpc_protocol}{_mpc_basis_note(step.mpc_protocol_basis)}"
+            for step in result.plan.steps
+            if step.mpc_protocol
+        ]
+        if picks:
+            _emit(f"  MPC 协议: {'; '.join(picks)}")
     else:
         _emit("  （无方案）")
     _emit()
@@ -361,7 +384,7 @@ def _parse_name_path_pairs(
 
 
 def build_command(args: argparse.Namespace) -> int:
-    if args.protocol not in SPU_PROTOCOLS:
+    if args.protocol is not None and args.protocol not in SPU_PROTOCOLS:
         _emit(f"警告：协议 {args.protocol} 不在 SPU 支持清单 {SPU_PROTOCOLS} 中，仍将尝试。")
 
     # PSI 协议/曲线先解析。放在构造 Compiler 之前，非法名就以可读错误退出，
@@ -505,7 +528,15 @@ def build_parser() -> argparse.ArgumentParser:
     build = sub.add_parser("build", help="编译一个地理业务源码文件")
     build.add_argument("source", help="待编译的 .py 文件路径")
     build.add_argument("--entry", default=None, help="入口函数名（缺省分析全部函数）")
-    build.add_argument("--protocol", default="ABY3", help=f"SPU 协议，可选 {SPU_PROTOCOLS}")
+    build.add_argument(
+        "--protocol",
+        default=None,
+        help=(
+            f"SPU 协议，可选 {SPU_PROTOCOLS}；"
+            "缺省 = 按实测通信代价自动选择（依据 docs/mpc_comm_baseline.json，"
+            "显式指定可覆盖；REF2K 无密码学保护，不会被自动选中）"
+        ),
+    )
     build.add_argument("--field", default="64", help="环宽：32/64/128 或 FM32/FM64/FM128")
     build.add_argument(
         "--psi-protocol",

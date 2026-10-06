@@ -40,6 +40,15 @@ SPU_PROTOCOLS: tuple[str, ...] = ("REF2K", "SEMI2K", "ABY3", "CHEETAH", "SECUREN
 #: `spu.libspu.FieldType` 的成员（0.9.5 实测）
 SPU_FIELDS: tuple[str, ...] = ("FM32", "FM64", "FM128")
 
+#: **不提供密码学保护**的协议：不得被自动选中（只有显式指定才放行）。
+#:
+#: 判据是我们自己的实测，不是对上游文档的推断：`REF2K` 在三个 MPC 算子上
+#: send+recv 恒为 **0 B**（`docs/mpc_comm_baseline.json`，`--comm --repeat 5`），
+#: 即它不产生任何网络通信——把它当成"等价但更快的隐私后端"是不成立的，
+#: "最快"在这里没有意义（`docs/MPC_BENCHMARK_PROTOCOL.md` §8.4 同结论）。
+#: tests/test_protocol_selection.py 会拿实测产物核对这条，防止它变成口号。
+SPU_PROTOCOLS_WITHOUT_CRYPTO: tuple[str, ...] = ("REF2K",)
+
 #: 各协议要求的参与方数量下限（来自协议定义）
 PROTOCOL_MIN_WORLD_SIZE: Mapping[str, int] = {
     "REF2K": 2,

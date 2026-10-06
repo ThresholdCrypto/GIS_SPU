@@ -18,9 +18,12 @@ from ir import GeoOperation, GeoProgram, Sensitivity, requires_crypto
 
 from .registry import (
     OPERATOR_REGISTRY,
+    SELECTION_BASIS_EXPLICIT,
     OperatorRule,
     get_rule,
+    mpc_protocol_ranking_hint,
     resolve_cost,
+    select_mpc_protocol,
     validate_mpc_protocol_for_operation,
     validate_protocol_for_operation,
 )
@@ -41,10 +44,15 @@ class PlannedStep:
     #: 协议级参数（如 RR22 的 low_comm_mode）。协议属于规划/后端层，
     #: 不进入 Geo-IR 的任何数据模型。
     protocol_params: Mapping[str, Any] = field(default_factory=dict)
-    #: MPC（SPU）族算子选用的协议（来自算子规则 default_mpc_protocol，或编译器
-    #: 显式指定）。命名空间与上面的 PSI `protocol` 不同，故单列一个字段。
-    #: None = 该算子不走 SPU 协议化后端。
+    #: MPC（SPU）族算子选用的协议。三种来源：编译器显式指定 > 按实测代价自动
+    #: 选择（`select_mpc_protocol`）> 算子规则 default_mpc_protocol（无实测依据时）。
+    #: 命名空间与上面的 PSI `protocol` 不同，故单列一个字段。
+    #: None = 该算子不走 SPU 协议化后端。选择依据写在 `reasons` 里（可留痕可复核）。
     mpc_protocol: str | None = None
+    #: 上面这个协议是怎么来的（SELECTION_BASIS_* 之一）：
+    #: 按实测代价自动选 / 无依据时退回登记默认值 / 编译器显式指定。
+    #: None = 该算子不走 SPU 协议化后端。"选了什么"与"凭什么"要一起留痕。
+    mpc_protocol_basis: str | None = None
     inputs: tuple[str, ...] = ()
     output_name: str | None = None
     sensitivity: Sensitivity = Sensitivity.INTERNAL
@@ -73,6 +81,7 @@ class PlannedStep:
             "protocol": self.protocol,
             "protocol_params": dict(self.protocol_params),
             "mpc_protocol": self.mpc_protocol,
+            "mpc_protocol_basis": self.mpc_protocol_basis,
             "inputs": list(self.inputs),
             "output_name": self.output_name,
             "sensitivity": str(self.sensitivity),
@@ -141,7 +150,8 @@ class Planner:
         self.psi_protocol = psi_protocol
         #: 随协议变化的协议级参数（如 RR22 的 low_comm_mode）
         self.psi_protocol_params = dict(psi_protocol_params or {})
-        #: 编译器显式选择的 MPC（SPU）协议；None = 各算子用规则里的默认协议
+        #: 编译器显式选择的 MPC（SPU）协议；None = 该算子按实测代价自动选择
+        #: （`select_mpc_protocol`），没有实测依据时退回登记默认值。
         self.mpc_protocol = mpc_protocol
 
     def plan(self, program: GeoProgram) -> PrivacyPlan:
@@ -181,14 +191,35 @@ class Planner:
             protocol_params.update(self.psi_protocol_params)
 
         # MPC（SPU）协议与 PSI 协议是两套命名空间，分开登记与校验。
+        # 自动路径按**实测代价**挑（`select_mpc_protocol`），不再直接取登记默认值：
+        # 登记默认值只是"没有实测依据"时的退化，不是"最省"的结论。
         mpc_protocol: str | None = None
+        mpc_protocol_basis: str | None = None
+        mpc_reason: str | None = None
         if rule.default_mpc_protocol is not None:
-            mpc_protocol = self.mpc_protocol or rule.default_mpc_protocol
+            if self.mpc_protocol:
+                mpc_protocol = self.mpc_protocol
+                mpc_protocol_basis = SELECTION_BASIS_EXPLICIT
+                mpc_reason = (
+                    f"MPC 协议 {mpc_protocol} 由编译器显式指定（覆盖实测代价排序）"
+                )
+            else:
+                selection = select_mpc_protocol(operation.op)
+                mpc_protocol = (
+                    selection.protocol
+                    if selection is not None
+                    else rule.default_mpc_protocol
+                )
+                if selection is not None:
+                    mpc_protocol_basis = selection.basis
+                    mpc_reason = selection.reason
 
         reasons = [
             f"算子 {operation.op} 的默认表征为 {rule.representation}",
             f"首选后端 {rule.primary_backend}，安全级别 {rule.security_level}",
         ]
+        if mpc_reason:
+            reasons.append(mpc_reason)
         status = "planned"
 
         if not requires_crypto(sensitivity):
@@ -239,6 +270,7 @@ class Planner:
                 suggestion=(
                     "改用该算子的候选 MPC 协议："
                     f"{list(rule.mpc_protocol_candidates) or '（无）'}"
+                    f"；{mpc_protocol_ranking_hint(operation.op)}"
                 ),
                 estimated_cost=dict(cost),
             )
@@ -252,6 +284,7 @@ class Planner:
             protocol=protocol,
             protocol_params=protocol_params,
             mpc_protocol=mpc_protocol,
+            mpc_protocol_basis=mpc_protocol_basis,
             inputs=operation.inputs,
             output_name=operation.output_name,
             sensitivity=sensitivity,

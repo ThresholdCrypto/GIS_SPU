@@ -16,6 +16,7 @@ from .capability import (
     SPU_JAX_PIN,
     SPU_JAX_PRIVATE_DEPS,
     SPU_PROTOCOLS,
+    SPU_PROTOCOLS_WITHOUT_CRYPTO,
     CapabilityReport,
     JaxProbe,
     OpCapability,
@@ -30,6 +31,7 @@ from .capability import (
     probe_spu,
     protocol_min_world_size,
 )
+from .cost_baseline import MeasuredComm, measured_comm_table
 from .runtime import SpuRunResult, TripleResult, run_spu_simulation
 from .benchmark import (
     EXPECT_DEVIATION,
@@ -56,6 +58,7 @@ __all__ = [
     "FIELD_BITS",
     "JaxProbe",
     "MPC_BENCHMARK_OPS",
+    "MeasuredComm",
     "MpcBenchmarkCase",
     "OP_HLO_PRIMITIVES",
     "OP_HLO_PRIMITIVES_BY_STRATEGY",
@@ -69,6 +72,7 @@ __all__ = [
     "SPU_JAX_PIN",
     "SPU_JAX_PRIVATE_DEPS",
     "SPU_PROTOCOLS",
+    "SPU_PROTOCOLS_WITHOUT_CRYPTO",
     "SpuProbe",
     "SpuRunResult",
     "TripleResult",
@@ -81,6 +85,7 @@ __all__ = [
     "predicted_cost",
     "probe_jax",
     "probe_platform",
+    "measured_comm_table",
     "probe_spu",
     "protocol_min_world_size",
     "reconcile_bit_width",

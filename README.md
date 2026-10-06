@@ -570,6 +570,52 @@ geo-secure build examples/distance_check.py --protocol SPDZ2K    # 规划期即�
 编译期诊断，**不再等到运行时才崩**。`PlannedStep.mpc_protocol` 与编译 JSON
 都带该值，可逐层对拍。
 
+**MPC 协议按代价选择（P4，本版新增）**
+
+P0 那条开关解决的是"能不能选"，P4 解决的是"**凭什么选**"。此前自动路径直接取
+登记默认值 `MPC_RULE_DEFAULT_PROTOCOL`（`ABY3`）——"协议选择"在编译期其实没有
+选择依据。现在补上三段：
+
+1. **候选集带实测代价**。`planner.mpc_protocol_candidates_for(op)` 从
+   `docs/mpc_comm_baseline.json`（§8.4 的 `--comm --repeat 5` 产物）读每个协议在
+   **同一比价规模**上的发送+接收字节数。比价规模取"能覆盖最多协议的 K"
+   （FM64、默认电路），不取各协议各自的最大 K——否则 ABY3 会取到 K=4096、
+   其余协议只有 K=256，比的就不是同一个量了；
+2. **自动选择取实测最省**。`--protocol` 缺省=**自动**
+   （`planner.select_mpc_protocol`）；显式给了协议才覆盖。选到什么、凭什么，
+   写进 `PlannedStep.mpc_protocol_basis`（`measured-comm` / `declared-default` /
+   `explicit`）与 `PlannedStep.reasons`，CLI 的 Privacy planning 段直接印出来：
+
+   ```
+   MPC 协议: DistanceLE → ABY3（按实测代价自动选择）
+   ```
+3. **无密码学保护的协议不参与自动选择**。`REF2K` 实测 send+recv 恒为 **0 B**
+   （§8.4），把它当"等价但更快的隐私后端"不成立。它仍留在
+   `mpc_protocol_candidates` 里——对拍/排查要能显式选——但被
+   `SPU_PROTOCOLS_WITHOUT_CRYPTO` 挡在自动选择之外，且显式选它时规划里会
+   带一条披露。
+
+| 算子（比价 K） | 实测发送+接收（升序，可自动选） | 排除 |
+|---|---|---|
+| `DistanceLE`（K=256） | **ABY3** 4 200 B < SEMI2K 8 336 B < SECURENN 12 032 B < CHEETAH 2 415 124 B | REF2K 0 B |
+| `WeightedSum`（K=256） | **ABY3** 4 112 B < SEMI2K 8 192 B = SECURENN 8 192 B < CHEETAH 1 473 970 B | REF2K 0 B |
+| `TemporalOverlap`（K=32） | **ABY3** 508 672 B < SEMI2K 696 320 B < CHEETAH 1 758 220 B < SECURENN 25 837 512 B | REF2K 0 B |
+
+- **现有实测下 ABY3 恰好是最省的**，所以自动选择与 P0 的登记默认值一致——
+  行为不变，但**依据换成了实测**；一旦排序翻转，选择会跟着翻转，并在
+  `reasons` 里写明"与登记默认值不同、如需保守可显式指定"；
+- **除 ABY3 外没有稳定的全局顺序**：`SECURENN` 与 `CHEETAH` 在两个算子上位置
+  互换（`DistanceLE` 上 SECURENN 更省，`TemporalOverlap` 上反过来差 14.7×）
+  ——代价由电路形态主导，所以**按算子各排各的**，不搞一张全局协议优先级表；
+- **产物缺失时不编数字**：退回登记默认值，`basis="declared-default"`，
+  理由里明说"这是登记默认值，不是实测结论"；
+- **拒绝信息要可操作**：非法协议名 / 候选清单外的协议，`PROTOCOL_UNSUPPORTED`
+  的 `suggestion` 会带上这行排序（含"已排除 REF2K"的原因），而不是只报"不支持"。
+
+口径细节见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.5，测试见
+`tests/test_protocol_selection.py`（21 条，含"拿产物核对候选上的每个数字"与
+"排序第二的协议也真跑通"）。
+
 **四个实测坑**（详见 `docs/PSI_CAPABILITY.md`）：
 
 1. `PROTOCOL_ECDH` 不显式给 `curve` → `RuntimeError: Curve type is not specified.`
@@ -1349,6 +1395,13 @@ MPC 电路输出一个比特  k == n
 > （`tests/benchmarks/benchmark_psi.py` → `docs/psi_benchmark_baseline.json`）。
 > 版本矩阵见 `docs/VERSION_COMPATIBILITY.md`；重复键实测（RR22/KKRT 报错）与新阶段设计
 > 见 `docs/GEO_RR22_DESIGN.md`。
+
+> 已闭合（本版）：**MPC 协议"按代价/能力选"**。`--protocol` 缺省从固定
+> `ABY3` 改为**自动**（`planner.select_mpc_protocol` 按 `docs/mpc_comm_baseline.json`
+> 的实测发送+接收排序）；候选集带实测代价（`mpc_protocol_candidates_for`）；
+> 无密码学保护的 `REF2K` 留在候选里但不参与自动选择，显式选它会附披露；
+> 选择依据落到 `PlannedStep.mpc_protocol_basis` 与 CLI 输出；拒绝信息带
+> "能用什么、多贵、为什么排除"。见 5.5 与 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.5。
 
 ### 8.1 接入新增隐私后端
 
