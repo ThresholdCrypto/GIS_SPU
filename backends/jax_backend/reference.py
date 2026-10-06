@@ -43,11 +43,20 @@ def jax_distance_le(left: Any, right: Any, threshold: Any) -> Any:
     return dist_sq <= jnp.square(threshold)
 
 
-def jax_weighted_sum(values: Any, weights: Any, scale: Any = 1) -> Any:
-    """定点加权和。"""
+def jax_weighted_sum(values: Any, weights: Any, scale: int = 1) -> Any:
+    """定点加权和（与 codegen 生成代码逐行对应）。
+
+    `scale` 是**静态**参数（Python int），因此这里的分支在追踪期就消解，
+    `scale == 1` 时不会留下除法电路——见 `generate_weighted_sum` 的说明。
+    """
 
     jnp = _require_jax()
     acc = jnp.sum(values * weights)
+    scale = int(scale)
+    if scale == 1:
+        return acc
+    if scale & (scale - 1) == 0:
+        return jnp.right_shift(acc, scale.bit_length() - 1)
     return acc // scale
 
 

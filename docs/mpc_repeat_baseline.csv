@@ -1,109 +1,37 @@
 case,op,protocol,field,k,predicted_bits,field_bits,bit_width_covered,status,wall_ms,memory_mb,peak_rss_mb,pphlo_bytes,output_bits,max_abs_error,tolerance,agreement,note,error,repeat,status_counts,value_runs,deviation_rate,wall_ms_p25,wall_ms_median,wall_ms_p75
-DistanceLE REF2K FM64 K=256,DistanceLE,REF2K,FM64,256,8,64,true,ok,44.061696999960986,39.453125,277.03125,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-DistanceLE SEMI2K FM64 K=256,DistanceLE,SEMI2K,FM64,256,8,64,true,ok,45.729547000064485,1.171875,280.546875,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-DistanceLE ABY3 FM64 K=256,DistanceLE,ABY3,FM64,256,8,64,true,ok,44.69255799995153,1.68359375,283.07421875,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-DistanceLE CHEETAH FM64 K=256,DistanceLE,CHEETAH,FM64,256,8,64,true,ok,171.6141179999795,116.24609375,399.3203125,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-DistanceLE SECURENN FM64 K=256,DistanceLE,SECURENN,FM64,256,8,64,true,ok,46.224985999742785,0.0,412.4140625,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-WeightedSum REF2K FM64 K=256,WeightedSum,REF2K,FM64,256,24,64,true,ok,63.098043000081816,0.0,412.4140625,2400,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-WeightedSum SEMI2K FM64 K=256,WeightedSum,SEMI2K,FM64,256,24,64,true,ok,77.09658000021591,0.0,412.4140625,2400,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,75.24491899994246,0.0,412.4140625,2400,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-WeightedSum CHEETAH FM64 K=256,WeightedSum,CHEETAH,FM64,256,24,64,true,ok,1232.5691469995945,650.60546875,1063.01953125,2400,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-WeightedSum SECURENN FM64 K=256,WeightedSum,SECURENN,FM64,256,24,64,true,ok,115.22539399993548,0.0,1078.6484375,2400,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-TemporalOverlap REF2K FM64 K=32,TemporalOverlap,REF2K,FM64,32,18,64,true,ok,63.383319999957166,0.0,1078.6484375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-TemporalOverlap SEMI2K FM64 K=32,TemporalOverlap,SEMI2K,FM64,32,18,64,true,ok,92.12846499985972,0.0,1078.6484375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-TemporalOverlap ABY3 FM64 K=32,TemporalOverlap,ABY3,FM64,32,18,64,true,ok,89.89818700001706,0.0,1078.6484375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-TemporalOverlap CHEETAH FM64 K=32,TemporalOverlap,CHEETAH,FM64,32,18,64,true,ok,1237.81604099986,0.0078125,1078.65625,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-TemporalOverlap SECURENN FM64 K=32,TemporalOverlap,SECURENN,FM64,32,18,64,true,ok,623.7596709997888,0.0,1079.27734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-DistanceLE ABY3 FM32 K=256,DistanceLE,ABY3,FM32,256,8,32,true,ok,43.98103500034267,0.0,1079.27734375,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-DistanceLE ABY3 FM64 K=256,DistanceLE,ABY3,FM64,256,8,64,true,ok,44.01324899981773,0.0,1079.27734375,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-DistanceLE ABY3 FM128 K=256,DistanceLE,ABY3,FM128,256,8,128,true,ok,43.47928900006082,0.0,1079.27734375,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-WeightedSum ABY3 FM32 K=256,WeightedSum,ABY3,FM32,256,24,32,true,error,67.39560699998037,0.0,1079.27734375,,,,,,"SPU 模拟执行失败：RuntimeError: what: 
-	[Enforce fail at external/spulib~/libspu/core/encoding.cc:106] (sizeof(ring2k_t) >= sizeof(Integer)). integer encoding failed, ring=FM32 could not represent PT_I64
-Stacktrace:
-#0 spu::encodeToRing()+0x7d555a073a9b
-#1 spu::kernel::hal::constant()+0x7d555a065271
-#2 spu::kernel::hal::detail::maskNumberOfBits()+0x7d555a04c34d
-#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x7d555a04f050
-#4 spu::kernel::hal::detail::div_goldschmidt()+0x7d555a050ed7
-#5 spu::kernel::hal::f_div()+0x7d555a051438
-#6 spu::kernel::hal::div()+0x7d555a035bc5
-#7 spu::kernel::hal::idiv()+0x7d555a03606d
-#8 spu::kernel::hal::div()+0x7d555a035b8e
-#9 spu::kernel::hlo::Remainder()+0x7d5559fd7fb1
-#10 spu::device::pphlo::dispatchOp<>()+0x7d5558c515d7
-#11 spu::device::pphlo::dispatchOp<>()+0x7d5558c541e6
-#12 spu::device::pphlo::dispatchOp<>()+0x7d5558c56738
-#13 spu::device::pphlo::dispatchOp<>()+0x7d5558c593c9
-#14 spu::device::pphlo::dispatchOp<>()+0x7d5558c5b71d
-#15 spu::device::pphlo::dispatchOp<>()+0x7d5558c5e272
-
-stacktrace: 
-#0 spu::encodeToRing()+0x7d555a073a9b
-#1 spu::kernel::hal::constant()+0x7d555a065271
-#2 spu::kernel::hal::detail::maskNumberOfBits()+0x7d555a04c34d
-#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x7d555a04f050
-#4 spu::kernel::hal::detail::div_goldschmidt()+0x7d555a050ed7
-#5 spu::kernel::hal::f_div()+0x7d555a051438
-#6 spu::kernel::hal::div()+0x7d555a035bc5
-#7 spu::kernel::hal::idiv()+0x7d555a03606d
-#8 spu::kernel::hal::div()+0x7d555a035b8e
-#9 spu::kernel::hlo::Remainder()+0x7d5559fd7fb1
-#10 spu::device::pphlo::dispatchOp<>()+0x7d5558c515d7
-#11 spu::device::pphlo::dispatchOp<>()+0x7d5558c541e6
-#12 spu::device::pphlo::dispatchOp<>()+0x7d5558c56738
-#13 spu::device::pphlo::dispatchOp<>()+0x7d5558c593c9
-#14 spu::device::pphlo::dispatchOp<>()+0x7d5558c5b71d
-#15 spu::device::pphlo::dispatchOp<>()+0x7d5558c5e272；已知限制：WeightedSum 的定点除法需要 64 位环内部表示（ring=FM32 could not represent PT_I64）；预测位宽 b(K) 只算数据位宽，未覆盖该下限 ⇒ FM32 下本组合不可用，与预测位宽是否被环宽覆盖无关；重复 5 次：{'error': 5}","SPU 模拟执行失败：RuntimeError: what: 
-	[Enforce fail at external/spulib~/libspu/core/encoding.cc:106] (sizeof(ring2k_t) >= sizeof(Integer)). integer encoding failed, ring=FM32 could not represent PT_I64
-Stacktrace:
-#0 spu::encodeToRing()+0x7d555a073a9b
-#1 spu::kernel::hal::constant()+0x7d555a065271
-#2 spu::kernel::hal::detail::maskNumberOfBits()+0x7d555a04c34d
-#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x7d555a04f050
-#4 spu::kernel::hal::detail::div_goldschmidt()+0x7d555a050ed7
-#5 spu::kernel::hal::f_div()+0x7d555a051438
-#6 spu::kernel::hal::div()+0x7d555a035bc5
-#7 spu::kernel::hal::idiv()+0x7d555a03606d
-#8 spu::kernel::hal::div()+0x7d555a035b8e
-#9 spu::kernel::hlo::Remainder()+0x7d5559fd7fb1
-#10 spu::device::pphlo::dispatchOp<>()+0x7d5558c515d7
-#11 spu::device::pphlo::dispatchOp<>()+0x7d5558c541e6
-#12 spu::device::pphlo::dispatchOp<>()+0x7d5558c56738
-#13 spu::device::pphlo::dispatchOp<>()+0x7d5558c593c9
-#14 spu::device::pphlo::dispatchOp<>()+0x7d5558c5b71d
-#15 spu::device::pphlo::dispatchOp<>()+0x7d5558c5e272
-
-stacktrace: 
-#0 spu::encodeToRing()+0x7d555a073a9b
-#1 spu::kernel::hal::constant()+0x7d555a065271
-#2 spu::kernel::hal::detail::maskNumberOfBits()+0x7d555a04c34d
-#3 spu::kernel::hal::detail::div_goldschmidt_general()+0x7d555a04f050
-#4 spu::kernel::hal::detail::div_goldschmidt()+0x7d555a050ed7
-#5 spu::kernel::hal::f_div()+0x7d555a051438
-#6 spu::kernel::hal::div()+0x7d555a035bc5
-#7 spu::kernel::hal::idiv()+0x7d555a03606d
-#8 spu::kernel::hal::div()+0x7d555a035b8e
-#9 spu::kernel::hlo::Remainder()+0x7d5559fd7fb1
-#10 spu::device::pphlo::dispatchOp<>()+0x7d5558c515d7
-#11 spu::device::pphlo::dispatchOp<>()+0x7d5558c541e6
-#12 spu::device::pphlo::dispatchOp<>()+0x7d5558c56738
-#13 spu::device::pphlo::dispatchOp<>()+0x7d5558c593c9
-#14 spu::device::pphlo::dispatchOp<>()+0x7d5558c5b71d
-#15 spu::device::pphlo::dispatchOp<>()+0x7d5558c5e272",5,"{""error"": 5}",0,,,,
-WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,75.51298500038683,0.0,1079.27734375,2400,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-WeightedSum ABY3 FM128 K=256,WeightedSum,ABY3,FM128,256,24,128,true,ok,76.12064999966606,0.0,1079.27734375,2400,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-TemporalOverlap ABY3 FM32 K=32,TemporalOverlap,ABY3,FM32,32,18,32,true,ok,83.9052010001069,0.0,1079.27734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-TemporalOverlap ABY3 FM64 K=32,TemporalOverlap,ABY3,FM64,32,18,64,true,ok,83.77332300005946,0.0,1079.27734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-TemporalOverlap ABY3 FM128 K=32,TemporalOverlap,ABY3,FM128,32,18,128,true,ok,86.00381999985984,0.0,1079.27734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-DistanceLE ABY3 FM64 K=64,DistanceLE,ABY3,FM64,64,8,64,true,ok,47.48288200016759,0.0,1079.27734375,1517,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-DistanceLE ABY3 FM64 K=256,DistanceLE,ABY3,FM64,256,8,64,true,ok,46.439217000170174,0.0,1079.27734375,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-DistanceLE ABY3 FM64 K=1024,DistanceLE,ABY3,FM64,1024,8,64,true,ok,45.87822000030428,0.0,1079.27734375,1535,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-DistanceLE ABY3 FM64 K=4096,DistanceLE,ABY3,FM64,4096,8,64,true,ok,46.1798500000441,0.0,1079.27734375,1535,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-WeightedSum ABY3 FM64 K=64,WeightedSum,ABY3,FM64,64,22,64,true,ok,78.26750399999582,0.0,1079.27734375,2395,14,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,79.80597300002046,0.0,1079.27734375,2400,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-WeightedSum ABY3 FM64 K=1024,WeightedSum,ABY3,FM64,1024,26,64,true,ok,79.23292699979356,0.0,1079.27734375,2405,18,0.0,0.0,true,已知偏差（**非确定**）：生成代码的 `acc // scale` 在 SPU 上为近似除法（scale==1 亦然）；同一组合重跑可能逐位一致、也可能偏 1–4，本轮实测见 `max_abs_error`；不代表该组合可作稳定通过；重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-WeightedSum ABY3 FM64 K=4096,WeightedSum,ABY3,FM64,4096,28,64,true,mixed,81.45949900017513,0.0,1079.27734375,2405,20,4.0,0.0,,"结果超出容差：max_abs_error=4.0 > tolerance=0.0；已知偏差（**非确定**）：生成代码的 `acc // scale` 在 SPU 上为近似除法（scale==1 亦然）；同一组合重跑可能逐位一致、也可能偏 1–4，本轮实测见 `max_abs_error`；不代表该组合可作稳定通过；重复 5 次：{'error': 3, 'ok': 2}；多次运行结果不一致（非确定路径），不能当稳定通过；偏差率 60%（5 次得出数值）",结果超出容差：max_abs_error=4.0 > tolerance=0.0,5,"{""error"": 3, ""ok"": 2}",5,0.6,,,
-TemporalOverlap ABY3 FM64 K=8,TemporalOverlap,ABY3,FM64,8,18,64,true,ok,88.8717490001909,0.0,1079.27734375,2593,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-TemporalOverlap ABY3 FM64 K=16,TemporalOverlap,ABY3,FM64,16,18,64,true,ok,89.30915800010553,0.0,1079.27734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
-TemporalOverlap ABY3 FM64 K=32,TemporalOverlap,ABY3,FM64,32,18,64,true,ok,86.6206619998593,0.0,1079.27734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE REF2K FM64 K=256,DistanceLE,REF2K,FM64,256,8,64,true,ok,46.6571440010739,39.43359375,277.62109375,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE SEMI2K FM64 K=256,DistanceLE,SEMI2K,FM64,256,8,64,true,ok,47.54831200261833,0.890625,280.85546875,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE ABY3 FM64 K=256,DistanceLE,ABY3,FM64,256,8,64,true,ok,50.0131250009872,1.546875,283.38671875,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE CHEETAH FM64 K=256,DistanceLE,CHEETAH,FM64,256,8,64,true,ok,174.17922299864586,114.33203125,397.859375,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE SECURENN FM64 K=256,DistanceLE,SECURENN,FM64,256,8,64,true,ok,47.46837700076867,0.0,414.453125,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum REF2K FM64 K=256,WeightedSum,REF2K,FM64,256,24,64,true,ok,33.42542899918044,0.0,414.453125,903,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum SEMI2K FM64 K=256,WeightedSum,SEMI2K,FM64,256,24,64,true,ok,35.92705600021873,0.0,414.453125,903,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,33.419282000977546,0.0,414.453125,903,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum CHEETAH FM64 K=256,WeightedSum,CHEETAH,FM64,256,24,64,true,ok,86.8527089987765,0.0,414.453125,903,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum SECURENN FM64 K=256,WeightedSum,SECURENN,FM64,256,24,64,true,ok,36.43118199761375,0.0,414.453125,903,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+TemporalOverlap REF2K FM64 K=32,TemporalOverlap,REF2K,FM64,32,18,64,true,ok,69.09463199917809,0.0,414.453125,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+TemporalOverlap SEMI2K FM64 K=32,TemporalOverlap,SEMI2K,FM64,32,18,64,true,ok,101.11206999863498,0.0,414.453125,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+TemporalOverlap ABY3 FM64 K=32,TemporalOverlap,ABY3,FM64,32,18,64,true,ok,95.75178399973083,0.0,414.453125,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+TemporalOverlap CHEETAH FM64 K=32,TemporalOverlap,CHEETAH,FM64,32,18,64,true,ok,1239.8894269972516,648.90625,1063.359375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+TemporalOverlap SECURENN FM64 K=32,TemporalOverlap,SECURENN,FM64,32,18,64,true,ok,827.1559380009421,0.0,1070.52734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE ABY3 FM32 K=256,DistanceLE,ABY3,FM32,256,8,32,true,ok,49.72070900112158,0.0,1070.52734375,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE ABY3 FM64 K=256,DistanceLE,ABY3,FM64,256,8,64,true,ok,47.8915669991693,0.0,1070.52734375,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE ABY3 FM128 K=256,DistanceLE,ABY3,FM128,256,8,128,true,ok,47.95702000046731,0.0,1070.52734375,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum ABY3 FM32 K=256,WeightedSum,ABY3,FM32,256,24,32,true,ok,36.418866002350114,0.0,1070.52734375,903,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,36.65870300028473,0.0,1070.52734375,903,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum ABY3 FM128 K=256,WeightedSum,ABY3,FM128,256,24,128,true,ok,35.82838700094726,0.0,1070.52734375,903,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+TemporalOverlap ABY3 FM32 K=32,TemporalOverlap,ABY3,FM32,32,18,32,true,ok,93.48501100248541,0.0,1070.52734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+TemporalOverlap ABY3 FM64 K=32,TemporalOverlap,ABY3,FM64,32,18,64,true,ok,106.09383699920727,0.0,1070.52734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+TemporalOverlap ABY3 FM128 K=32,TemporalOverlap,ABY3,FM128,32,18,128,true,ok,111.1047009981121,0.0,1070.52734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE ABY3 FM64 K=64,DistanceLE,ABY3,FM64,64,8,64,true,ok,54.11287900278694,0.0,1070.52734375,1517,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE ABY3 FM64 K=256,DistanceLE,ABY3,FM64,256,8,64,true,ok,53.26408300243202,0.0,1070.52734375,1526,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE ABY3 FM64 K=1024,DistanceLE,ABY3,FM64,1024,8,64,true,ok,48.70388900235412,0.0,1070.52734375,1535,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+DistanceLE ABY3 FM64 K=4096,DistanceLE,ABY3,FM64,4096,8,64,true,ok,49.45243999827653,0.0,1070.52734375,1535,0,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum ABY3 FM64 K=64,WeightedSum,ABY3,FM64,64,22,64,true,ok,36.25583200118854,0.0,1070.52734375,898,14,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum ABY3 FM64 K=256,WeightedSum,ABY3,FM64,256,24,64,true,ok,35.311824998643715,0.0,1070.52734375,903,16,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum ABY3 FM64 K=1024,WeightedSum,ABY3,FM64,1024,26,64,true,ok,36.002613000164274,0.0,1070.52734375,908,18,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+WeightedSum ABY3 FM64 K=4096,WeightedSum,ABY3,FM64,4096,28,64,true,ok,36.58965799695579,0.0,1070.52734375,908,20,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+TemporalOverlap ABY3 FM64 K=8,TemporalOverlap,ABY3,FM64,8,18,64,true,ok,97.46067200103425,0.0,1070.52734375,2593,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+TemporalOverlap ABY3 FM64 K=16,TemporalOverlap,ABY3,FM64,16,18,64,true,ok,108.80620999887469,0.0,1070.52734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
+TemporalOverlap ABY3 FM64 K=32,TemporalOverlap,ABY3,FM64,32,18,64,true,ok,110.65471500114654,0.0,1070.52734375,2653,1,0.0,0.0,true,重复 5 次：{'ok': 5},,5,"{""ok"": 5}",5,0.0,,,
 WeightedSum ABY3 FM32 K=1048576,WeightedSum,ABY3,FM32,1048576,36,32,false,unavailable,,,,,,,,,未实测：planner 预测 b(K=1048576)=36 > FM32=32，属越界组合；模 2^32 回绕的结果不能当有效数据（不伪造数字）；重复 5 次：{'unavailable': 5},,5,"{""unavailable"": 5}",0,,,,

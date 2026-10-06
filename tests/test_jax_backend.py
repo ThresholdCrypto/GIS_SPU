@@ -92,11 +92,17 @@ class TestGenerators:
         assert "sqrt" not in called
         assert "rsqrt" not in called
 
-    def test_weighted_sum_scale_is_a_parameter_not_closure(self):
-        """scale 必须是参数：闭包捕获会破坏 jax.jit 追踪。"""
+    def test_weighted_sum_scale_is_baked_in_not_a_runtime_input(self):
+        """scale 是**编译期常量**（P2-1）。
+
+        旧实现把它作为运行时参数传入。实测证明那样会留下 divide+remainder
+        电路：结果与明文不再逐位一致、FM32 直接崩、且占该算子 56% 的通信量。
+        """
 
         function = generate_weighted_sum("f")
-        assert "scale" in function.inputs
+        assert "scale" not in function.inputs
+        assert function.inputs == ("values", "weights")
+        assert "//" not in function.source, "生成代码不得含整除运算符"
 
     def test_temporal_overlap_uses_broadcast_not_loops(self):
         source = generate_temporal_overlap("f").source
@@ -119,9 +125,7 @@ class TestTraceability:
     def test_weighted_sum_traceable(self):
         function = generate_weighted_sum("f")
         fn = load_generated_function(function.source, function.name)
-        check = check_traceable(
-            fn, (np.array([1, 2, 3]), np.array([1, 1, 1]), np.int32(1))
-        )
+        check = check_traceable(fn, (np.array([1, 2, 3]), np.array([1, 1, 1])))
         assert check.traceable, check.error
 
     def test_temporal_overlap_traceable(self):
@@ -197,7 +201,7 @@ class TestHloAndPrimitives:
     def test_hlo_lowering_works_for_all_generated_ops(self):
         cases = {
             "DistanceLE": ((np.array([1, 2, 3]), np.array([1, 3, 3]), np.int32(2)), generate_distance_le),
-            "WeightedSum": ((np.array([1, 2, 3]), np.array([1, 1, 1]), np.int32(1)), generate_weighted_sum),
+            "WeightedSum": ((np.array([1, 2, 3]), np.array([1, 1, 1])), generate_weighted_sum),
             "TemporalOverlap": (
                 (np.array([0, 4]), np.array([3, 2]), np.array([4]), np.array([3])),
                 generate_temporal_overlap,
@@ -221,7 +225,7 @@ class TestHloAndPrimitives:
 
         cases = {
             "DistanceLE": ((np.array([1, 2, 3]), np.array([1, 3, 3]), np.int32(2)), generate_distance_le),
-            "WeightedSum": ((np.array([1, 2, 3]), np.array([1, 1, 1]), np.int32(1)), generate_weighted_sum),
+            "WeightedSum": ((np.array([1, 2, 3]), np.array([1, 1, 1])), generate_weighted_sum),
             "TemporalOverlap": (
                 (np.array([0, 4]), np.array([3, 2]), np.array([4]), np.array([3])),
                 generate_temporal_overlap,
@@ -275,16 +279,54 @@ class TestJaxMatchesPlain:
     def test_weighted_sum_matches_plain(self):
         function = generate_weighted_sum("f")
         fn = load_generated_function(function.source, function.name)
-        values, weights, scale = np.array([10, 20, 30]), np.array([1, 2, 1]), 1
-        jax_value = int(run_jax_jit(fn, (values, weights, np.int32(scale))))
-        plain_value = run_plain("WeightedSum", list(values), list(weights), int(scale)).value
+        values, weights = np.array([10, 20, 30]), np.array([1, 2, 1])
+        jax_value = int(run_jax_jit(fn, (values, weights)))
+        plain_value = run_plain("WeightedSum", list(values), list(weights)).value
         assert jax_value == plain_value == 80
 
-    def test_weighted_sum_respects_scale(self):
+    def test_weighted_sum_takes_no_runtime_scale(self):
+        """scale 是编译期常量：生成函数只吃 (values, weights)。"""
+
+        function = generate_weighted_sum("f")
+        assert function.inputs == ("values", "weights")
+        fn = load_generated_function(function.source, function.name)
+        with pytest.raises(TypeError):
+            run_jax_jit(fn, (np.array([1]), np.array([1]), np.int32(1)))
+
+    def test_weighted_sum_default_has_no_division(self):
+        """默认路径（scale=1）不能有除法原语——它是近似除法与 FM32 崩溃的根因。"""
+
         function = generate_weighted_sum("f")
         fn = load_generated_function(function.source, function.name)
+        text, error = lower_to_hlo_text(fn, (np.array([1, 2, 3]), np.array([1, 1, 1])))
+        assert error is None, error
+        measured = set(extract_hlo_ops(text))
+        assert not ({"divide", "remainder"} & measured), sorted(measured)
+
+    def test_weighted_sum_power_of_two_scale_shifts_exactly(self):
+        """scale=2^s → 右移，结果与明文整除一致（精确）。"""
+
+        function = generate_weighted_sum("f", scale=4)
+        assert function.inputs == ("values", "weights")
+        fn = load_generated_function(function.source, function.name)
         values, weights = np.array([100, 200]), np.array([1, 1])
-        assert int(run_jax_jit(fn, (values, weights, np.int32(10)))) == 30
+        assert int(run_jax_jit(fn, (values, weights))) == 75
+        assert int(run_plain("WeightedSum", [100, 200], [1, 1], 4).value) == 75
+        assert "右移" in function.notes[-1]
+
+    def test_weighted_sum_non_power_of_two_scale_keeps_and_warns(self):
+        """非 2 的幂：保留整除，但 notes 必须写明它在 SPU 上是近似除法。"""
+
+        function = generate_weighted_sum("f", scale=10)
+        fn = load_generated_function(function.source, function.name)
+        values, weights = np.array([100, 200]), np.array([1, 1])
+        assert int(run_jax_jit(fn, (values, weights))) == 30
+        assert "近似除法" in function.notes[-1]
+        assert "FM64" in function.notes[-1]
+
+    def test_weighted_sum_rejects_non_positive_scale(self):
+        with pytest.raises(ValueError):
+            generate_weighted_sum("f", scale=0)
 
     @pytest.mark.parametrize(
         "left_nodes,right_nodes,expected",

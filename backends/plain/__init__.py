@@ -117,7 +117,9 @@ def plain_weighted_sum(
 ) -> PlainResult:
     """定点加权和 → 整数。
 
-    scale 与 JAX 实现保持同一签名：三份实现（明文 / JAX / SPU）必须可直接对拍。
+    `scale` 是**编译期常量**（自 P2-1 起不占生成代码的运行时输入）：调用方
+    必须传入与 `generate_weighted_sum(scale=...)` 一致的值，才能在"明文 /
+    JAX / SPU"三份实现之间直接对拍。管线默认 scale=1（生成代码无除法）。
     """
 
     if len(values) != len(weights):

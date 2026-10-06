@@ -98,31 +98,71 @@ def generate_distance_le(fn_name: str, *, dtype: str = "int32") -> GeneratedFunc
     )
 
 
-def generate_weighted_sum(fn_name: str, *, dtype: str = "int32") -> GeneratedFunction:
-    """生成 WeightedSum 的 JAX 实现。"""
+def generate_weighted_sum(
+    fn_name: str, *, scale: int = 1, dtype: str = "int32"
+) -> GeneratedFunction:
+    """生成 WeightedSum 的 JAX 实现。
+
+    `scale` 是**编译期常量**，不是运行时输入。理由（都有实测依据，
+    见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.2 / §4.3）：
+
+    - SPU 的整数除法是迭代近似实现（`div_goldschmidt`），`scale == 1` 也不是
+      恒等映射：K≥1024 实测与明文不一致（偏差率 43%–93%），而 `jnp.sum(w*v)`
+      本身精确且确定；
+    - 除法路径内部要求 **64 位环**：`WeightedSum × FM32` 直接报
+      `ring=FM32 could not represent PT_I64`，起不来；
+    - 代价：`//` 在 HLO 里展开为 divide + remainder + select + sign，
+      实测占该算子 PPHLO 字节数的 61%、通信量的 56%（ABY3, K=256）。
+
+    三种取值三条路径：
+
+    - `scale == 1`（管线里的唯一路径）→ 直接返回累加和，**电路里没有除法**；
+    - `scale == 2^s` → 右移代替整除，精确；
+    - 其它 → 保留整除，并在 notes 里明确写出"SPU 上是近似除法、需要 ≥FM64"。
+    """
+
+    scale = int(scale)
+    if scale < 1:
+        raise ValueError("scale 必须为正整数（定点缩放因子）")
+
+    if scale == 1:
+        body = "return acc"
+        scale_note = "scale=1：直接返回累加和（无除法电路）"
+    elif scale & (scale - 1) == 0:
+        shift = scale.bit_length() - 1
+        body = f"return jnp.right_shift(acc, {shift})"
+        scale_note = f"scale={scale}=2^{shift}：右移代替整除，精确"
+    else:
+        body = f"return acc // {scale}"
+        scale_note = (
+            f"scale={scale} 不是 2 的幂：保留整除——SPU 上为近似除法"
+            "（结果可能与明文不一致），且除法路径需要 ≥FM64"
+        )
 
     source = textwrap.dedent(
         f'''
         import jax.numpy as jnp
 
 
-        def {fn_name}(values, weights, scale):
-            """定点加权和：sum(w * v) / scale。"""
+        def {fn_name}(values, weights):
+            """定点加权和：sum(w * v)，scale 已折进生成代码。"""
             acc = jnp.sum(values * weights)
-            return acc // scale
+            {body}
         '''
     ).strip()
     return GeneratedFunction(
         op="WeightedSum",
         name=fn_name,
         source=source,
-        inputs=("values", "weights", "scale"),
-        signature=f"({fn_name}(values: f32[K], weights: f32[K], scale: f32 scalar) -> f32 scalar)",
+        inputs=("values", "weights"),
+        signature=f"({fn_name}(values: f32[K], weights: f32[K]) -> f32 scalar)",
         tolerance=TOLERANCES["WeightedSum"],
         dtype=dtype,
         notes=(
             "定点乘加 d=1；位宽按 8+8+ceil(log2 K) 预留累加余量",
-            "scale 作为参数传入而非闭包捕获，保证 jax.jit 可追踪",
+            "scale 是编译期常量（不占运行时输入），因此 jax.jit 可追踪；"
+            "与 Geo-IR 的 2 输入形态一致",
+            scale_note,
         ),
     )
 

@@ -93,6 +93,15 @@ SourceIRType : XLA | STABLEHLO
 >    即该算子的环宽下限是 **FM64**，这与 planner 的位宽预测 b(K) 是两件事。
 >
 > 规程、扫描策略与全部数据：`docs/MPC_BENCHMARK_PROTOCOL.md`。
+>
+> **补充（2026-10-06，P2-1 已闭合）**：上面第 1、2 条的根因是**生成代码里的
+> 一步整数除法**。把 `WeightedSum` 的定点 scale 改成编译期常量、`scale == 1`
+> 时不再发射除法后：除法原语（`divide/remainder/select/sign`）从生成代码里消失，
+> `WeightedSum × FM32` 实测可用，K=64…4096 全部与明文逐位一致，
+> PPHLO 字节数 2 400 → 938、通信量（ABY3, K=256）9 286 B → 4 112 B、
+> CHEETAH 墙钟中位数 1 150 ms → 85 ms。
+> 结论保留的意义：**"SPU 的除法是近似实现"这条平台事实仍然成立**，
+> 只是不再落在该算子的电路里。
 
 ### 2.5 没有 `run_spu_simulation`
 
@@ -139,7 +148,7 @@ result = spu_fn(*inputs)
 | 算子 | 实测发射的 StableHLO 原语 |
 |---|---|
 | DistanceLE | `subtract, multiply, reduce, add, convert, compare, constant` |
-| WeightedSum | `multiply, reduce, add, divide, remainder, compare, select, sign, and, convert, subtract, constant` |
+| WeightedSum | `multiply, reduce, add, constant`（P2-1 后；修前为 `multiply, reduce, add, divide, remainder, compare, select, sign, and, convert, subtract, constant`） |
 | TemporalOverlap | `shift_left, add, broadcast_in_dim, compare, and, or, reduce, constant` |
 
 **重要发现（正是"不要假设 SPU API"的实例）**：
@@ -149,6 +158,11 @@ result = spu_fn(*inputs)
 也就是说，"看起来一步"的操作在密态下的乘法深度与通信轮次远高于直觉。
 `backends/spu_backend/capability.py` 因此把 `divide` / `remainder` 列入
 **高代价原语**并在能力核查时输出告警。
+
+> **P2-1 落地（2026-10-06）**：`WeightedSum` 的定点 `scale` 改成**编译期常量**，
+> 生成代码里不再有除法 ⇒ 上表该行的原语集合收窄为
+> `multiply, reduce, add, constant`，除法告警也随之消失
+> （有反向回归用例守着：把运行时除法加回去就会失败）。
 
 该表由 `tests/test_jax_backend.py::TestHloAndPrimitives::test_measured_primitives_match_registry`
 锁定：若生成代码变动导致原语集合超出登记清单，测试会失败。
@@ -186,7 +200,7 @@ spu       : 0.9.5（libspu 可加载）
 | 算子 | SPU 输出 | 明文输出 | max_abs_error | pphlo 字节 |
 |---|---|---|---|---|
 | DistanceLE | True | True | 0.0 | 1508 |
-| WeightedSum | 80 | 80 | 0.0 | 2390 |
+| WeightedSum | 80 | 80 | 0.0 | **938**（P2-1 前 2390） |
 | TemporalOverlap | True | True | 0.0 | 2593 |
 
 实际运行报告：`docs/spu_capability_report_wsl.json`。

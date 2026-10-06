@@ -281,9 +281,8 @@ OPERATOR_REGISTRY: dict[str, OperatorRule] = {
         bit_width_formula=weighted_sum_bit_width,
         notes=(
             "位宽随属性数 K 上升：b(K) = 8 + 8 + ceil(log2 K)；"
-            "另需环宽 ≥ FM64——定点除法路径内部要求 64 位环，"
-            "FM32 下该算子起不来（预测位宽 b(K) 只算数据位宽，覆盖不了这个下限，"
-            "见 docs/MPC_BENCHMARK_PROTOCOL.md §4.3）"
+            "定点 scale 是编译期常量且不再进电路（P2-1），故无除法路径，"
+            "FM32/FM64/FM128 三档环宽实测均可用"
         ),
     ),
     "TemporalOverlap": OperatorRule(

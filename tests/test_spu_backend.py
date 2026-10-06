@@ -192,11 +192,19 @@ class TestOperationCapability:
         capability = check_operation_capability("DistanceLE")
         json.dumps(capability.to_dict())
 
-    def test_expensive_primitives_produce_warnings(self):
-        """WeightedSum 用到 divide/remainder，必须产生代价告警。"""
+    def test_division_removal_kills_the_expensive_primitive_warning(self):
+        """P2-1 之后 WeightedSum 不再有 divide/remainder，也就没有除法告警。
+
+        反向回归：一旦有人把运行时 `scale` 加回生成代码，这条会立刻失败。
+        """
 
         capability = check_operation_capability("WeightedSum")
-        assert any("除法" in w or "divide" in w or "余" in w for w in capability.warnings)
+        assert not any(
+            "除法" in w or "divide" in w or "余" in w for w in capability.warnings
+        )
+        from backends.spu_backend import OP_HLO_PRIMITIVES
+
+        assert "divide" not in OP_HLO_PRIMITIVES["WeightedSum"]
 
     def test_64bit_grid_code_triggers_overflow_warning(self):
         """grid_code 是 64 位定长键，在 FM64 下有溢出风险，必须告警。"""
@@ -310,14 +318,38 @@ class TestRealSpuSimulation:
 
         function = generate_weighted_sum("f")
         fn = load_generated_function(function.source, function.name)
-        values, weights, scale = np.array([10, 20, 30]), np.array([1, 2, 1]), np.array(1)
+        values, weights = np.array([10, 20, 30]), np.array([1, 2, 1])
 
         run = run_spu_simulation(
             fn,
-            [values, weights, scale],
+            [values, weights],
             protocol="ABY3",
             field=64,
-            reference_fn=lambda v, w, s: run_plain("WeightedSum", list(v), list(w), int(s)).value,
+            reference_fn=lambda v, w: run_plain("WeightedSum", list(v), list(w)).value,
+            tolerance=0.0,
+        )
+        assert run.ok, run.describe()
+        assert run.within_tolerance is True
+
+    def test_weighted_sum_runs_on_narrow_ring_after_division_removal(self):
+        """P2-1 的回归：去掉除法后 `WeightedSum × FM32` 不再崩。
+
+        修复前该组合是 `ring=FM32 could not represent PT_I64`
+        （见 docs/MPC_BENCHMARK_PROTOCOL.md §4.3）。
+        """
+
+        from backends.plain import run_plain
+
+        function = generate_weighted_sum("f")
+        fn = load_generated_function(function.source, function.name)
+        values, weights = np.array([10, 20, 30]), np.array([1, 2, 1])
+
+        run = run_spu_simulation(
+            fn,
+            [values, weights],
+            protocol="ABY3",
+            field=32,
+            reference_fn=lambda v, w: run_plain("WeightedSum", list(v), list(w)).value,
             tolerance=0.0,
         )
         assert run.ok, run.describe()
@@ -355,9 +387,9 @@ def _sweep_case(op_name: str):
     elif op_name == "WeightedSum":
         function = generate_weighted_sum("f")
         fn = load_generated_function(function.source, function.name)
-        args = [np.array([10, 20, 30]), np.array([1, 2, 1]), np.array(1)]
-        reference = lambda v, w, s: run_plain(  # noqa: E731
-            "WeightedSum", list(v), list(w), int(s)
+        args = [np.array([10, 20, 30]), np.array([1, 2, 1])]
+        reference = lambda v, w: run_plain(  # noqa: E731
+            "WeightedSum", list(v), list(w)
         ).value
     elif op_name == "TemporalOverlap":
         # 段式节点 (Toff, Lt) → 4 个数组；判据见 backends/plain.plain_temporal_overlap

@@ -529,8 +529,8 @@ TemporalOverlap  TimeInterval      MPC/SPU  b=18（Toff 14 + Lt 4） d=1（区�
 
 ------------------------------------------------------------------------
 JAX generation
-  + geo_weightedsum_0(values, weights, scale) [jax.jit 可追踪, HLO 3948 B]
-  + geo_temporaloverlap_1(left_toff, left_lt, right_toff, right_lt) [jax.jit 可追踪, HLO 4668 B]
+  + geo_weightedsum_0(values, weights) [jax.jit 可追踪, HLO 1753 B]
+  + geo_temporaloverlap_1(left_toff, left_lt, right_toff, right_lt) [jax.jit 可追踪, HLO 4698 B]
 
 ------------------------------------------------------------------------
 SPU capability check

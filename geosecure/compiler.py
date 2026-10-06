@@ -98,7 +98,7 @@ PSI_ZONE_CODES: tuple[int, ...] = (
 #: 每个算子用于追踪验证与模拟的样例输入
 DEFAULT_EXAMPLE_INPUTS: Mapping[str, tuple[Any, ...]] = {
     "DistanceLE": ((1, 2, 3), (1, 3, 3), 2),
-    "WeightedSum": ((10, 20, 30), (1, 2, 1), 1),
+    "WeightedSum": ((10, 20, 30), (1, 2, 1)),
     "TemporalOverlap": ((0, 4), (3, 2), (4,), (3,)),
     "Intersects": (PSI_ROUTE_CODES, PSI_ZONE_CODES),
     "Contains": (PSI_ZONE_CODES, PSI_ROUTE_CODES),
@@ -108,7 +108,7 @@ DEFAULT_EXAMPLE_INPUTS: Mapping[str, tuple[Any, ...]] = {
 #: 明文参考调用的参数拆分位置：TemporalOverlap 需要把节点数组还原为节点列表
 PLAIN_ARG_BUILDERS: Mapping[str, Any] = {
     "DistanceLE": lambda a: (list(a[0]), list(a[1]), int(a[2])),
-    "WeightedSum": lambda a: (list(a[0]), list(a[1]), int(a[2])),
+    "WeightedSum": lambda a: (list(a[0]), list(a[1])),
     "TemporalOverlap": lambda a: (
         list(zip(a[0], a[1])),
         list(zip(a[2], a[3])),

@@ -1,8 +1,13 @@
 # MPC 性能基线规程与结果（P1：预测代价 ↔ 实测代价对账）
 
-> 状态：已执行（2026-10-05）。产物：`docs/mpc_benchmark_baseline.json` / `.csv`（单次扫描）、
+> 状态：已执行，并在 P2-1 后重跑（2026-10-06）。产物：
+> `docs/mpc_benchmark_baseline.json` / `.csv`（单次扫描）、
 > `docs/mpc_repeat_baseline.json` / `.csv`（全量 ×5）、
-> `docs/mpc_deviation_repeat.json` / `.csv`（`WeightedSum` ×30）。
+> `docs/mpc_exactness_repeat.json` / `.csv`（`WeightedSum` ×30，精确性）。
+>
+> **P2-1（2026-10-06）**：`WeightedSum` 的定点 scale 改为编译期常量，
+> 生成代码不再含除法 ⇒ §4.2 的近似除法与 §4.3 的 FM32 崩溃**均已闭合**，
+> 两处"已知偏差登记"作废；修前/修后的对照留在各节内。
 > 运行器：`tests/benchmarks/benchmark_mpc.py`；模块：`backends/spu_backend/benchmark.py`。
 > 环境：WSL2 / Ubuntu / x86_64 / Python 3.11.16 / spu 0.9.5 / jax 0.4.34
 > （见 `docs/VERSION_COMPATIBILITY.md`）。
@@ -81,6 +86,21 @@ planner 预测的是**结构代价**（`N_ct` / `b` / `d` / `R`），**不是墙
 
 ### 4.2 `WeightedSum` 的定点整除在 SPU 上是**近似且非确定**的
 
+> **已闭合（P2-1，2026-10-06）**：`scale` 已改为**编译期常量**，`scale == 1`
+> 时生成代码里不再有除法。修前/修后（K=256，`WeightedSum`）：
+>
+> | 指标 | 修前 | 修后 |
+> |---|---:|---:|
+> | PPHLO 字节数 | 2 400 | **938** |
+> | 通信量 ABY3 | 9 286 B | **4 112 B**（−56%） |
+> | 通信量 SEMI2K | 51 544 B | **16 384 B**（−68%） |
+> | 通信量 SECURENN | 125 368 B | **8 192 B**（−93%） |
+> | 通信量 CHEETAH | 5 246 783 B | **1 474 286 B**（−72%） |
+> | CHEETAH 墙钟中位数 | 1 149.8 ms | **85.2 ms**（−93%） |
+> | K=4096 与明文一致 | 偏差率 93% | **0/30** |
+>
+> 下面这段是**修复前的实测记录**，作为"为什么不能把除法留在电路里"的证据保留。
+
 生成代码的 `acc // scale` 在 HLO 里展开为 `divide + remainder + select + sign`
 （见 README §6.2），SPU 的除法是迭代近似实现（栈里是 `div_goldschmidt`）。
 `jnp.sum` 与 `sum(w*v)` 本身**精确且确定**——偏差**只**来自 `//`：
@@ -99,6 +119,12 @@ planner 预测的是**结构代价**（`N_ct` / `b` / `d` / `R`），**不是墙
    而写成 `expect_status="deviation"`（§4.4）。
 
 ### 4.3 新发现的缺陷：`WeightedSum` × FM32 起不来（预测 ≠ 实测）
+
+> **已闭合（P2-1，2026-10-06）**：除法移除后 `WeightedSum × FM32` 实测为
+> `ok` 且与明文逐位一致（`tests/test_spu_backend.py` 有回归用例）。
+> 注意"预测 ≠ 实测"这个**教训**仍然成立：planner 的位宽预测 b(K) 描述的是
+> **数据**位宽，永远覆盖不了"实现路径对环宽的额外要求"这类第二约束；
+> 这次的实例是除法路径内部要 64 位环。下面保留当时的现场记录。
 
 ```
 WeightedSum ABY3 FM32 K=256 → error
@@ -132,60 +158,67 @@ integer encoding failed, ring=FM32 could not represent PT_I64
 **稳定** ok，`unexpected_records` 不会报警——但文档与 `note` 会一直写着
 "这是非确定偏差"，需要人工复核后清理。**登记而不掩盖**是基线的作用。
 
+> **P2-1 之后**：`standard_cases()` **不再产出任何**带 `expect_status` 的行——
+> 上表里的 `error` / `deviation` 两类登记都已随除法移除而作废（§4.2 / §4.3）。
+> 机制保留：`EXPECT_DEVIATION` 与 `unexpected_records` 的处理逻辑仍在，
+> 遇到非确定路径时不必重新发明；测试用合成行覆盖它的语义。
+> 反过来，**若有人把运行时除法加回生成代码**，基线会立刻以
+> "非 ok 记录"报出来（而不是被提前登记成预期失败）。
+
 ## 5. 结果摘要
 
 | 用例 | 状态 | 预测 b | 环宽 | 覆盖 | wall_ms | mem_MB | max_err | agreement |
 |---|---|---:|---:|---|---:|---:|---:|---|
-| DistanceLE REF2K FM64 K=256 | ok | 8 | 64 | True | 77.7 | 39.5 | 0 | True |
-| DistanceLE SEMI2K FM64 K=256 | ok | 8 | 64 | True | 53.6 | 1.4 | 0 | True |
-| DistanceLE ABY3 FM64 K=256 | ok | 8 | 64 | True | 52.2 | 2.0 | 0 | True |
-| DistanceLE CHEETAH FM64 K=256 | ok | 8 | 64 | True | 210.7 | 116.5 | 0 | True |
-| DistanceLE SECURENN FM64 K=256 | ok | 8 | 64 | True | 49.8 | 0.0 | 0 | True |
-| WeightedSum REF2K FM64 K=256 | ok | 24 | 64 | True | 79.2 | 0.0 | 0 | True |
-| WeightedSum SEMI2K FM64 K=256 | ok | 24 | 64 | True | 83.6 | 0.0 | 0 | True |
-| WeightedSum ABY3 FM64 K=256 | ok | 24 | 64 | True | 83.1 | 0.0 | 0 | True |
-| WeightedSum CHEETAH FM64 K=256 | ok | 24 | 64 | True | 1263.5 | 649.3 | 0 | True |
-| WeightedSum SECURENN FM64 K=256 | ok | 24 | 64 | True | 126.3 | 0.0 | 0 | True |
-| TemporalOverlap REF2K FM64 K=32 | ok | 18 | 64 | True | 77.8 | 0.0 | 0 | True |
-| TemporalOverlap SEMI2K FM64 K=32 | ok | 18 | 64 | True | 102.4 | 0.0 | 0 | True |
-| TemporalOverlap ABY3 FM64 K=32 | ok | 18 | 64 | True | 99.3 | 0.0 | 0 | True |
-| TemporalOverlap CHEETAH FM64 K=32 | ok | 18 | 64 | True | 1334.4 | 12.0 | 0 | True |
-| TemporalOverlap SECURENN FM64 K=32 | ok | 18 | 64 | True | 733.0 | 0.0 | 0 | True |
-| DistanceLE ABY3 FM32 K=256 | ok | 8 | 32 | True | 52.8 | 0.0 | 0 | True |
-| DistanceLE ABY3 FM64 K=256 | ok | 8 | 64 | True | 51.8 | 0.0 | 0 | True |
-| DistanceLE ABY3 FM128 K=256 | ok | 8 | 128 | True | 49.1 | 0.0 | 0 | True |
-| WeightedSum ABY3 FM32 K=256 | error | 24 | 32 | True | 183.5 | 0.0 | — | — |
-| WeightedSum ABY3 FM64 K=256 | ok | 24 | 64 | True | 90.0 | 0.0 | 0 | True |
-| WeightedSum ABY3 FM128 K=256 | ok | 24 | 128 | True | 81.4 | 0.0 | 0 | True |
-| TemporalOverlap ABY3 FM32 K=32 | ok | 18 | 32 | True | 86.0 | 0.0 | 0 | True |
-| TemporalOverlap ABY3 FM64 K=32 | ok | 18 | 64 | True | 103.4 | 0.0 | 0 | True |
-| TemporalOverlap ABY3 FM128 K=32 | ok | 18 | 128 | True | 106.3 | 0.0 | 0 | True |
-| DistanceLE ABY3 FM64 K=64 | ok | 8 | 64 | True | 58.2 | 0.0 | 0 | True |
-| DistanceLE ABY3 FM64 K=256 | ok | 8 | 64 | True | 52.6 | 0.0 | 0 | True |
-| DistanceLE ABY3 FM64 K=1024 | ok | 8 | 64 | True | 58.5 | 0.0 | 0 | True |
-| DistanceLE ABY3 FM64 K=4096 | ok | 8 | 64 | True | 57.8 | 0.0 | 0 | True |
-| WeightedSum ABY3 FM64 K=64 | ok | 22 | 64 | True | 83.9 | 0.0 | 0 | True |
-| WeightedSum ABY3 FM64 K=256 | ok | 24 | 64 | True | 82.4 | 0.0 | 0 | True |
-| WeightedSum ABY3 FM64 K=1024 | ok | 26 | 64 | True | 86.2 | 0.0 | 0 | True |
-| WeightedSum ABY3 FM64 K=4096 | error | 28 | 64 | True | 85.1 | 0.0 | 4 | — |
-| TemporalOverlap ABY3 FM64 K=8 | ok | 18 | 64 | True | 110.3 | 0.0 | 0 | True |
-| TemporalOverlap ABY3 FM64 K=16 | ok | 18 | 64 | True | 103.3 | 0.0 | 0 | True |
-| TemporalOverlap ABY3 FM64 K=32 | ok | 18 | 64 | True | 87.0 | 0.0 | 0 | True |
+| DistanceLE REF2K FM64 K=256 | ok | 8 | 64 | True | 74.4 | 39.5 | 0 | True |
+| DistanceLE SEMI2K FM64 K=256 | ok | 8 | 64 | True | 46.9 | 1.2 | 0 | True |
+| DistanceLE ABY3 FM64 K=256 | ok | 8 | 64 | True | 46.0 | 1.9 | 0 | True |
+| DistanceLE CHEETAH FM64 K=256 | ok | 8 | 64 | True | 186.4 | 115.3 | 0 | True |
+| DistanceLE SECURENN FM64 K=256 | ok | 8 | 64 | True | 48.4 | 0.0 | 0 | True |
+| WeightedSum REF2K FM64 K=256 | ok | 24 | 64 | True | 33.5 | 0.0 | 0 | True |
+| WeightedSum SEMI2K FM64 K=256 | ok | 24 | 64 | True | 36.3 | 0.0 | 0 | True |
+| WeightedSum ABY3 FM64 K=256 | ok | 24 | 64 | True | 38.0 | 0.0 | 0 | True |
+| WeightedSum CHEETAH FM64 K=256 | ok | 24 | 64 | True | 90.5 | 0.0 | 0 | True |
+| WeightedSum SECURENN FM64 K=256 | ok | 24 | 64 | True | 35.7 | 0.0 | 0 | True |
+| TemporalOverlap REF2K FM64 K=32 | ok | 18 | 64 | True | 79.6 | 0.0 | 0 | True |
+| TemporalOverlap SEMI2K FM64 K=32 | ok | 18 | 64 | True | 119.0 | 0.0 | 0 | True |
+| TemporalOverlap ABY3 FM64 K=32 | ok | 18 | 64 | True | 92.9 | 0.0 | 0 | True |
+| TemporalOverlap CHEETAH FM64 K=32 | ok | 18 | 64 | True | 1380.1 | 643.8 | 0 | True |
+| TemporalOverlap SECURENN FM64 K=32 | ok | 18 | 64 | True | 871.4 | 0.0 | 0 | True |
+| DistanceLE ABY3 FM32 K=256 | ok | 8 | 32 | True | 50.6 | 0.0 | 0 | True |
+| DistanceLE ABY3 FM64 K=256 | ok | 8 | 64 | True | 61.2 | 0.0 | 0 | True |
+| DistanceLE ABY3 FM128 K=256 | ok | 8 | 128 | True | 55.6 | 0.0 | 0 | True |
+| WeightedSum ABY3 FM32 K=256 | ok | 24 | 32 | True | 42.9 | 0.0 | 0 | True |
+| WeightedSum ABY3 FM64 K=256 | ok | 24 | 64 | True | 37.3 | 0.0 | 0 | True |
+| WeightedSum ABY3 FM128 K=256 | ok | 24 | 128 | True | 40.0 | 0.0 | 0 | True |
+| TemporalOverlap ABY3 FM32 K=32 | ok | 18 | 32 | True | 109.5 | 0.0 | 0 | True |
+| TemporalOverlap ABY3 FM64 K=32 | ok | 18 | 64 | True | 117.0 | 0.0 | 0 | True |
+| TemporalOverlap ABY3 FM128 K=32 | ok | 18 | 128 | True | 122.5 | 0.0 | 0 | True |
+| DistanceLE ABY3 FM64 K=64 | ok | 8 | 64 | True | 68.2 | 0.0 | 0 | True |
+| DistanceLE ABY3 FM64 K=256 | ok | 8 | 64 | True | 50.9 | 0.0 | 0 | True |
+| DistanceLE ABY3 FM64 K=1024 | ok | 8 | 64 | True | 54.0 | 0.0 | 0 | True |
+| DistanceLE ABY3 FM64 K=4096 | ok | 8 | 64 | True | 61.5 | 0.0 | 0 | True |
+| WeightedSum ABY3 FM64 K=64 | ok | 22 | 64 | True | 38.0 | 0.0 | 0 | True |
+| WeightedSum ABY3 FM64 K=256 | ok | 24 | 64 | True | 39.5 | 0.0 | 0 | True |
+| WeightedSum ABY3 FM64 K=1024 | ok | 26 | 64 | True | 38.1 | 0.0 | 0 | True |
+| WeightedSum ABY3 FM64 K=4096 | ok | 28 | 64 | True | 40.1 | 0.0 | 0 | True |
+| TemporalOverlap ABY3 FM64 K=8 | ok | 18 | 64 | True | 127.4 | 0.0 | 0 | True |
+| TemporalOverlap ABY3 FM64 K=16 | ok | 18 | 64 | True | 130.2 | 0.0 | 0 | True |
+| TemporalOverlap ABY3 FM64 K=32 | ok | 18 | 64 | True | 119.7 | 0.0 | 0 | True |
 | WeightedSum ABY3 FM32 K=1048576 | unavailable | 36 | 32 | False | — | — | — | — |
 
 （每行数值来自 `docs/mpc_benchmark_baseline.json`，本表为可读渲染；字段口径见 §3。）
 
-本次汇总：**36 条 → ok 33 / error 2 / unavailable 1 / 预期外 0**。
+本次汇总（P2-1 修复后重跑）：**36 条 → ok 35 / error 0 / unavailable 1 / 预期外 0**。
 
 ## 6. 观察与解读（不得过度引申）
 
-- **同规模下 CHEETAH 明显更慢**（`WeightedSum` K=256：CHEETAH 1.26 s vs
-  ABY3 0.08 s），且 `memory_mb` 抬升 649 MB——但本基线**未测通信量**，
-  单次时间差不足以断言优劣；`CHEETAH` 的目标是低通信，不在本次测量范围；
-- **REF2K / SEMI2K / ABY3 / SECURENN 在本量级差别不大**（50–130 ms 量级），
-  差异小于单次运行的噪声；要排序必须做重复实验（§7）；
-- **所有 executor 的 PPHLO 字节数只取决于算子与 K**（`DistanceLE` 1526、
-  `WeightedSum` 2400、`TemporalOverlap` 2653 量级），与协议无关——
+- **CHEETAH 的"慢"几乎全部来自那一步除法**（P2-1 修前 1.15–1.26 s、
+  含 649 MB 内存抬升；删掉除法后中位数 **85 ms**，−93%）。这一条同时说明：
+  拿"某协议更慢"当结论之前，要先确认电路本身有没有可去掉的高代价原语；
+- **REF2K / SEMI2K / ABY3 / SECURENN 在本量级仍难以排序**（33–40 ms，
+  差异 ≤ 10%）；要排序必须用重复实验的 p25/p75（§8）与通信量（§7-2）；
+- **PPHLO 字节数只取决于算子与 K**（`DistanceLE` 1526、`TemporalOverlap` 2653；
+  `WeightedSum` 由 2400 降到 **938**——降幅来自删除法），与协议无关——
   印证"协议选择不改电路，只改执行方案"；
 - 本基线是**单次运行**，无重复实验与方差数据；作为方向性参考，
   回归门禁需在重复实验与阈值讨论之后再启用（口径与 PSI 基线一致）；
@@ -194,36 +227,36 @@ integer encoding failed, ring=FM32 could not represent PT_I64
 
 ## 7. 下一步
 
-1. **环宽下限约束**：planner 需要一类"第二约束"——位宽覆盖之外，
-   还要表达"该算子的实现路径要求环宽 ≥ N 位"（`WeightedSum` ≥ FM64）。
-   落地方式候选：(a) `OperatorRule` 增加 `min_field_bits` 字段，
-   编译期对显式 `--field` 给诊断；(b) 只在文档与 `notes` 里声明。
-   **建议 (a)**，但需先在 validator 侧定义"用户显式指定 field"这条路径；
-2. **除法替代方案实测**：用 `jax.lax.div` 之外的写法（先按位截断、或把
-   `scale` 折进权重避免除）消除近似除法——**先实测**再改生成器；
-   `docs/mpc_deviation_repeat.json` 提供了"改之前"的基线；
-3. ~~重复实验~~ ——**已完成（P1.5）**：主扫描 ×5 与 `WeightedSum` ×30
-   见 §8。**余项**：偏差率跨批次不一致（§8.2），需要定位它是
-   抽样波动还是进程内状态；
-4. **通信量测量**：CHEETAH / SEMI2K / ABY3 的优劣判定必须落到通信量上，
-   当前 SPU 模拟器不暴露该指标，需要另行接入（独立工作项）；
-   §8.1 已证明"本机墙钟不能替代通信量结论"；
+1. **通信量入基线（P2-2，优先级最高）**：`RuntimeConfig.enable_pphlo_profile = True`
+   后，SPU 自己的日志里就有逐算子 `send bytes / recv bytes` 与
+   `Link details: total send bytes N, recv bytes M`。**已用探针验证可行**
+   （命令见 §8.4），需要做的是把它接进 `run_spu_simulation` 并在每条记录上
+   落 `comm_send_bytes` / `comm_recv_bytes`。落地后协议选型才有站得住的判据
+   ——§8.1 已经证明本机墙钟不能替代通信量结论；
+2. ~~除法替代方案实测~~ ——**已完成（P2-1）**：`scale` 改编译期常量，
+   `scale == 1` 无除法、`scale == 2^s` 用右移、其它情形保留并显式告警。
+   证据见 §4.2 / §4.3 的修前修后对照；
+3. **环宽下限约束**：P2-1 之后 `WeightedSum` 已不需要它，但"实现路径对环宽的
+   额外要求"这类**第二约束**仍然没有地方表达。落地方式候选：
+   (a) `OperatorRule` 增加 `min_field_bits`，(b) 只写文档。
+   当前**没有**已知实例，建议**不先实现**，等第二个实例出现再抽公共机制；
+4. ~~重复实验~~ ——**已完成（P1.5 + P2-1 重跑）**：见 §8；
 5. **`TemporalOverlap` 电路改造**：把 N×M 两两比较换成分段扫描 / 排序归并，
-   否则 K 上限被锁死在 32 量级。
+   否则 K 上限被锁死在 32 量级（P2-1 的经验说明：电路形态比协议选择更能决定代价）。
 
-## 8. 重复实验（P1.5：先拿方差，再谈排序）
+## 8. 重复实验（P1.5 起，P2-1 后重跑）
 
 单次运行不足以支撑任何排序结论（§6 已声明）。本节把主扫描重复 5 次、
-把偏差最可疑的 `WeightedSum` 重复 30 次，产出两个独立产物：
+把 `WeightedSum` 重复 30 次，产出两个独立产物：
 
 ```bash
 # 方差：全量标准扫描 × 5
 ~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py --repeat 5 \
     --json docs/mpc_repeat_baseline.json --csv docs/mpc_repeat_baseline.csv
-# 偏差率：WeightedSum × 30（K 覆盖 64 / 256 / 1024 / 4096）
+# 精确性：WeightedSum × 30（K 覆盖 64 / 256 / 1024 / 4096，三个环宽）
 ~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py \
     --ops WeightedSum --repeat 30 \
-    --json docs/mpc_deviation_repeat.json --csv docs/mpc_deviation_repeat.csv
+    --json docs/mpc_exactness_repeat.json --csv docs/mpc_exactness_repeat.csv
 ```
 
 记录口径（`summarize_repeats`）与前几节一致，新增：
@@ -239,87 +272,113 @@ integer encoding failed, ring=FM32 could not represent PT_I64
 
 | 用例 | 状态 | median | p25 | p75 | p75/p25 |
 |---|---|---:|---:|---:|---:|
-| DistanceLE REF2K FM64 K=256 | ok | 44.1 | 43.8 | 45.1 | 1.029 |
-| DistanceLE SEMI2K FM64 K=256 | ok | 45.7 | 45.4 | 46.2 | 1.016 |
-| DistanceLE ABY3 FM64 K=256 | ok | 44.7 | 44.5 | 45.1 | 1.014 |
-| DistanceLE CHEETAH FM64 K=256 | ok | 171.6 | 168.0 | 173.8 | 1.035 |
-| DistanceLE SECURENN FM64 K=256 | ok | 46.2 | 46.1 | 46.3 | 1.005 |
-| WeightedSum REF2K FM64 K=256 | ok | 63.1 | 63.0 | 64.0 | 1.016 |
-| WeightedSum SEMI2K FM64 K=256 | ok | 77.1 | 76.3 | 77.4 | 1.014 |
-| WeightedSum ABY3 FM64 K=256 | ok | 75.2 | 74.9 | 76.3 | 1.020 |
-| WeightedSum CHEETAH FM64 K=256 | ok | 1232.6 | 1186.3 | 1378.9 | 1.162 |
-| WeightedSum SECURENN FM64 K=256 | ok | 115.2 | 115.1 | 118.1 | 1.027 |
-| TemporalOverlap REF2K FM64 K=32 | ok | 63.4 | 62.9 | 65.0 | 1.034 |
-| TemporalOverlap SEMI2K FM64 K=32 | ok | 92.1 | 90.5 | 93.7 | 1.036 |
-| TemporalOverlap ABY3 FM64 K=32 | ok | 89.9 | 89.4 | 91.6 | 1.025 |
-| TemporalOverlap CHEETAH FM64 K=32 | ok | 1237.8 | 1122.8 | 1255.8 | 1.118 |
-| TemporalOverlap SECURENN FM64 K=32 | ok | 623.8 | 612.8 | 631.1 | 1.030 |
-| DistanceLE ABY3 FM32 K=256 | ok | 44.0 | 43.6 | 45.6 | 1.047 |
-| DistanceLE ABY3 FM64 K=256 | ok | 44.0 | 42.9 | 44.1 | 1.028 |
-| DistanceLE ABY3 FM128 K=256 | ok | 43.5 | 43.3 | 43.5 | 1.007 |
-| WeightedSum ABY3 FM32 K=256 | error | 67.4 | 65.7 | 163.5 | 2.487 |
-| WeightedSum ABY3 FM64 K=256 | ok | 75.5 | 75.2 | 76.2 | 1.014 |
-| WeightedSum ABY3 FM128 K=256 | ok | 76.1 | 75.8 | 78.3 | 1.034 |
-| TemporalOverlap ABY3 FM32 K=32 | ok | 83.9 | 82.4 | 84.6 | 1.027 |
-| TemporalOverlap ABY3 FM64 K=32 | ok | 83.8 | 82.5 | 85.3 | 1.034 |
-| TemporalOverlap ABY3 FM128 K=32 | ok | 86.0 | 85.0 | 86.3 | 1.015 |
-| DistanceLE ABY3 FM64 K=64 | ok | 47.5 | 45.5 | 51.6 | 1.134 |
-| DistanceLE ABY3 FM64 K=256 | ok | 46.4 | 46.2 | 46.7 | 1.012 |
-| DistanceLE ABY3 FM64 K=1024 | ok | 45.9 | 45.7 | 46.9 | 1.026 |
-| DistanceLE ABY3 FM64 K=4096 | ok | 46.2 | 45.8 | 49.7 | 1.086 |
-| WeightedSum ABY3 FM64 K=64 | ok | 78.3 | 77.7 | 79.1 | 1.017 |
-| WeightedSum ABY3 FM64 K=256 | ok | 79.8 | 78.7 | 80.8 | 1.027 |
-| WeightedSum ABY3 FM64 K=1024 | ok | 79.2 | 78.6 | 80.7 | 1.027 |
-| WeightedSum ABY3 FM64 K=4096 | mixed | 81.5 | 78.7 | 87.7 | 1.114 |
-| TemporalOverlap ABY3 FM64 K=8 | ok | 88.9 | 86.4 | 99.0 | 1.146 |
-| TemporalOverlap ABY3 FM64 K=16 | ok | 89.3 | 86.2 | 89.8 | 1.041 |
-| TemporalOverlap ABY3 FM64 K=32 | ok | 86.6 | 86.4 | 86.7 | 1.003 |
+| DistanceLE REF2K FM64 K=256 | ok | 46.7 | 45.9 | 48.1 | 1.046 |
+| DistanceLE SEMI2K FM64 K=256 | ok | 47.5 | 46.1 | 48.4 | 1.048 |
+| DistanceLE ABY3 FM64 K=256 | ok | 50.0 | 48.3 | 50.4 | 1.044 |
+| DistanceLE CHEETAH FM64 K=256 | ok | 174.2 | 172.4 | 175.6 | 1.019 |
+| DistanceLE SECURENN FM64 K=256 | ok | 47.5 | 46.3 | 48.0 | 1.036 |
+| WeightedSum REF2K FM64 K=256 | ok | 33.4 | 33.4 | 35.1 | 1.052 |
+| WeightedSum SEMI2K FM64 K=256 | ok | 35.9 | 34.2 | 36.0 | 1.052 |
+| WeightedSum ABY3 FM64 K=256 | ok | 33.4 | 33.2 | 35.7 | 1.076 |
+| WeightedSum CHEETAH FM64 K=256 | ok | 86.9 | 84.7 | 91.2 | 1.078 |
+| WeightedSum SECURENN FM64 K=256 | ok | 36.4 | 36.0 | 36.6 | 1.019 |
+| TemporalOverlap REF2K FM64 K=32 | ok | 69.1 | 68.6 | 69.7 | 1.015 |
+| TemporalOverlap SEMI2K FM64 K=32 | ok | 101.1 | 98.4 | 103.2 | 1.049 |
+| TemporalOverlap ABY3 FM64 K=32 | ok | 95.8 | 93.3 | 97.7 | 1.047 |
+| TemporalOverlap CHEETAH FM64 K=32 | ok | 1239.9 | 1132.8 | 1313.8 | 1.160 |
+| TemporalOverlap SECURENN FM64 K=32 | ok | 827.2 | 815.6 | 835.9 | 1.025 |
+| DistanceLE ABY3 FM32 K=256 | ok | 49.7 | 49.2 | 50.0 | 1.015 |
+| DistanceLE ABY3 FM64 K=256 | ok | 47.9 | 47.7 | 48.2 | 1.011 |
+| DistanceLE ABY3 FM128 K=256 | ok | 48.0 | 47.6 | 53.4 | 1.120 |
+| WeightedSum ABY3 FM32 K=256 | ok | 36.4 | 36.1 | 37.9 | 1.052 |
+| WeightedSum ABY3 FM64 K=256 | ok | 36.7 | 36.6 | 37.9 | 1.035 |
+| WeightedSum ABY3 FM128 K=256 | ok | 35.8 | 34.7 | 35.8 | 1.034 |
+| TemporalOverlap ABY3 FM32 K=32 | ok | 93.5 | 91.4 | 94.0 | 1.028 |
+| TemporalOverlap ABY3 FM64 K=32 | ok | 106.1 | 94.5 | 107.7 | 1.139 |
+| TemporalOverlap ABY3 FM128 K=32 | ok | 111.1 | 110.6 | 116.5 | 1.053 |
+| DistanceLE ABY3 FM64 K=64 | ok | 54.1 | 52.4 | 54.2 | 1.034 |
+| DistanceLE ABY3 FM64 K=256 | ok | 53.3 | 47.0 | 54.3 | 1.157 |
+| DistanceLE ABY3 FM64 K=1024 | ok | 48.7 | 45.1 | 50.0 | 1.108 |
+| DistanceLE ABY3 FM64 K=4096 | ok | 49.5 | 47.2 | 53.3 | 1.128 |
+| WeightedSum ABY3 FM64 K=64 | ok | 36.3 | 34.6 | 38.4 | 1.110 |
+| WeightedSum ABY3 FM64 K=256 | ok | 35.3 | 33.6 | 36.2 | 1.078 |
+| WeightedSum ABY3 FM64 K=1024 | ok | 36.0 | 35.5 | 36.4 | 1.024 |
+| WeightedSum ABY3 FM64 K=4096 | ok | 36.6 | 35.3 | 37.1 | 1.052 |
+| TemporalOverlap ABY3 FM64 K=8 | ok | 97.5 | 90.4 | 98.8 | 1.092 |
+| TemporalOverlap ABY3 FM64 K=16 | ok | 108.8 | 108.0 | 111.4 | 1.031 |
+| TemporalOverlap ABY3 FM64 K=32 | ok | 110.7 | 108.7 | 114.4 | 1.053 |
 | WeightedSum ABY3 FM32 K=1048576 | unavailable | — | — | — | — |
 
-（来自 `docs/mpc_repeat_baseline.json`；36 条汇总 = ok 33 / error 1 / unavailable 1 / 预期外 0。）
+（来自 `docs/mpc_repeat_baseline.json`；36 条汇总 = ok 35 / unavailable 1 / 预期外 0。）
 
 结论：
 
 - **除 CHEETAH 外，同一会话内的抖动很小**：`p75/p25` 基本 ≤ 1.05。
-  这意味着**差异大于 5% 的协议排序是可信的**，小于 5% 的不是；
-- `CHEETAH` 的抖动更大（1.12–1.16），且绝对值高一个数量级（`WeightedSum`
-  K=256：1232 ms vs ABY3 75 ms，≈16×）——**注意**：SPU 模拟器把各参与方跑在
-  同一进程里，**不含真实网络**，而 CHEETAH 的设计目标是省**通信量**；
-  这个倍数在带宽受限的真实部署下**不可外推**；
-- 4 个非 CHEETAH 协议在 `DistanceLE` / `TemporalOverlap` 上差异
-  （44–92 ms 量级）**与本机抖动同量级**，本基线**不支持**给它们排序；
-- `WeightedSum` 上 REF2K（63.1 ms）比 ABY3 / SEMI2K（75.2 / 77.1 ms）低约 16%，
-  超出抖动范围，属**本机本量级**的观察值；REF2K 的安全假设与其它协议不同，
-  不能只按这一个数字选型；
-- `WeightedSum ABY3 FM32 K=256` 5 次全失败（`p75/p25 = 2.49` 是"失败耗时"的抖动，
-  不是性能），与 §4.3 的稳定失败一致。
+  ⇒ **差异大于 5% 的协议排序才值得采信**，小于 5% 的不是；
+- CHEETAH 的抖动更大（1.06–1.15）且绝对值仍高一个数量级
+  （`WeightedSum` K=256：87 ms vs ABY3 33 ms）。**注意**：SPU 模拟器把各参与方
+  跑在同一进程里，**不含真实网络**，而 CHEETAH 的设计目标是省**通信量**——
+  这个倍数在带宽受限的真实部署下**不可外推**（§8.4 给了通信量口径）；
+- **4 个非 CHEETAH 协议在 3 个算子上都难以排序**（差异与抖动同量级）：
+  `WeightedSum` K=256 上是 33.4/33.4/35.9/36.4/36.7 ms（ABY3/REF2K/SEMI2K/
+  SECURENN…），差 10% 也就是 3 ms，**不足以支撑选型**；
+- `TemporalOverlap` 上 SECURENN（827 ms）与 CHEETAH（1240 ms）明显更高——
+  这是**本轮唯一**超出抖动的排序结论（K=32，二次电路，见 §4.1）。
 
-### 8.2 偏差率：`WeightedSum` × 30
+### 8.2 精确性：`WeightedSum` × 30（P2-1 之后）
 
-| K | ok 次数 | 得出数值次数 | 偏差率 | 最大偏差 | median ms |
-|---:|---:|---:|---:|---:|---:|
-| 64 | 30 / 30 | 30/30 | 0.0% | 0 | 76.3 |
-| 256 | 30 / 30 | 30/30 | 0.0% | 0 | 76.3 |
-| 1024 | 17 / 30 | 30/30 | 43.3% | 1 | 77.0 |
-| 4096 | 2 / 30 | 30/30 | 93.3% | 4 | 77.5 |
+| K | ok 次数 | 得出数值次数 | 偏差率 | median ms |
+|---:|---:|---:|---:|---:|
+| 64 | 30 / 30 | 30/30 | 0% | 34.7 |
+| 256 | 30 / 30 | 30/30 | 0% | 39.6 |
+| 1024 | 30 / 30 | 30/30 | 0% | 35.5 |
+| 4096 | 30 / 30 | 30/30 | 0% | 36.5 |
 
 结论：
 
-- **K ≤ 256：30/30 逐位一致**——小累加量级下整数路径是精确的；
-- **K = 1024：偏差率 43.3%（13/30）**，最大偏差 1；
-- **K = 4096：偏差率 93.3%（28/30）**，最大偏差 4；
-- 偏差率**随 K 上升**，方向明确；
-- **但偏差率不是一个稳定常数**：全量 ×5 那一批里 K=4096 是 3/5 偏差（60%），
-  这一批是 28/30（93%）。若真值是 93%，5 次里只出 3 次偏差的概率约 0.3%——
-  两批的差异**超出抽样噪声**。可能的解释是进程内状态（JIT 缓存 / 参与方
-  初始化顺序）会影响舍入路径，但**本轮没有证据定位**，故只记录、不解释。
-  ⇒ 对外只给"偏差会发生、且随 K 上升"，**不给精确概率**。
+- **K = 64 / 256 / 1024 / 4096 全部 30/30 与明文逐位一致**（`deviation_rate = 0`）；
+  修前 K=1024 是 43%、K=4096 是 93%（§4.2）；
+- 环宽 FM32 / FM64 / FM128 三档同样 30/30 一致（含修前必崩的 `FM32 × K=256`）；
+- **注意这不是"除法变准了"**：是除法已经不在电路里了。`scale == 1` 时
+  生成代码直接返回 `jnp.sum(w*v)`；`jnp.sum` 与 `w*v` 本来就是精确且确定的。
 
 ### 8.3 本节能得出什么、不能得出什么
 
 | 能得出 | 不能得出 |
 |---|---|
-| `WeightedSum` 的整除偏差**确实发生**，且随 K 上升 | 偏差的精确概率（两批不一致，见 §8.2） |
-| CHEETAH 在本机模拟器里慢一个数量级 | CHEETAH 在真实网络下更慢（省的是通信量） |
-| `p75/p25` 给了"多小的差异是噪声"的标尺 | 跨机器 / 跨负载的抖动（只有一台机器一台次） |
-| 协议选择**不改电路**（§6 的 PPHLO 观察） | 任何协议的绝对性能承诺 |
+| `WeightedSum` 的整除偏差**已随 P2-1 消失**（0/30，全 K 全环宽） | 其它算子是否也有隐藏的近似路径（未逐个探测） |
+| 会话内 `p75/p25` 多数 ≤ 1.05，给了"多小算噪声"的标尺 | 跨机器 / 跨负载的抖动（只有一台机器） |
+| `TemporalOverlap` 上 SECURENN / CHEETAH 显著更慢 | 其余 4 个协议之间的排序（差异在噪声内） |
+| 协议选择**不改电路**（PPHLO 字节数与协议无关） | CHEETAH 在真实网络下的表现（模拟器不含网络） |
+
+### 8.4 通信量测量（P2-2 的探针结论）
+
+`RuntimeConfig.enable_pphlo_profile = True` 之后，SPU 自己会把逐算子与链路级
+通信量写进日志：
+
+```
+pphlo.multiply, executed 1 times, duration ..., send bytes 2048 recv bytes 2048, ...
+Link details: total send bytes 4681, recv bytes 4605, send actions 321, recv actions 316
+```
+
+要拿到这段输出，**必须在 fd 级重定向**（`enable_hal_profile` 的输出走 C 层
+spdlog，Python 的 `redirect_stdout` 抓不到）：把执行放到子进程里、重定向
+stdout/stderr，再解析 `Link details:` 行。两点实测坑：
+
+- **CHEETAH 必须用 2 方**（`Simulator(2, ...)`）；用 3 方会
+  `[yacl] Get data timeout, key=root:P2P-2:1->0`；
+- 通信量有 ~1–2% 的批间抖动（同参数两次运行 9 286 B vs 9 366 B），
+  不是解析确定量；报数时给区间或重复取中位。
+
+测得（`WeightedSum` K=256，send+recv 合计）：
+
+| 协议 | 修前 | 修后 | 说明 |
+|---|---:|---:|---|
+| REF2K | 0 B | 0 B | **完全不通信**——它不是可用的隐私协议，"最快"没有意义 |
+| ABY3（3 方） | 9 286 B | 4 112 B | |
+| SEMI2K（2 方） | 51 544 B | 16 384 B | 修后仍是 ABY3 的 4× |
+| SECURENN（3 方） | 125 368 B | 8 192 B | |
+| CHEETAH（2 方） | 5 246 783 B | 1 474 286 B | 本环境本算子上**通信量最大** |
+
+**这张表和 §8.1 的墙钟排序完全对不上**——这正是"必须把通信量接进基线、
+而不是拿墙钟排协议"的理由。

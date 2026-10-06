@@ -539,11 +539,13 @@ OP_HLO_PRIMITIVES: Mapping[str, tuple[str, ...]] = {
         "subtract", "multiply", "reduce", "add", "convert", "compare", "constant",
     ),
     "WeightedSum": (
-        # 注意：定点整除 // 在 HLO 里展开为 divide + remainder + select + sign 组合，
-        # 不是单个原语。这正是"不要假设 SPU API"的典型案例——
-        # 源看起来是一步，密态代价却是多步。
-        "multiply", "reduce", "add", "divide", "remainder", "compare",
-        "select", "sign", "and", "convert", "subtract", "constant",
+        # P2-1：定点 scale 改为编译期常量后，管线里的生成代码（scale=1）
+        # 不再有除法。历史记录：旧的 `acc // scale` 在 HLO 里展开为
+        # divide + remainder + select + sign（源看起来一步，密态代价多步），
+        # 实测占该算子 PPHLO 字节数的 61%、通信量的 56%，
+        # 且结果与明文不再逐位一致、FM32 直接崩。
+        # 见 docs/MPC_BENCHMARK_PROTOCOL.md §4.2 / §4.3。
+        "multiply", "reduce", "add", "constant",
     ),
     "TemporalOverlap": (
         "shift_left", "add", "broadcast_in_dim", "compare", "and", "or",
@@ -569,7 +571,7 @@ OP_PROTOCOL_HINT: Mapping[str, tuple[str, int]] = {
 #: 兼容旧名：语义层原语（供文档与人工阅读），能力核查用 OP_HLO_PRIMITIVES
 OP_PRIMITIVES: Mapping[str, tuple[str, ...]] = {
     "DistanceLE": ("sub", "mul", "sum", "comparisons"),
-    "WeightedSum": ("mul", "sum", "div"),
+    "WeightedSum": ("mul", "sum"),
     "TemporalOverlap": ("add", "shift_left", "comparisons", "and", "or", "reduce_any"),
 }
 

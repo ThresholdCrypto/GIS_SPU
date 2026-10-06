@@ -71,7 +71,12 @@ cd GIS_SPU
 > 2026-10-05 这一行的解释器是 `~/.spuenv/bin/python`（uv 建，Python 3.11.16；
 > 依赖同为 `spu==0.9.5` / `jax 0.4.34` / `numpy<2`），不是本文件其他段落写的
 > `/opt/miniconda3/envs/spu311`。两者可互换，能力核查结论一致。
-> 本轮同时记录两条**负面**结论（真机实测，不粉饰）：
+> 2026-10-06 一行的要点：除法从 `WeightedSum` 生成代码里移除后，
+> `FM32 × K=256` 由崩溃转为可用，K=64…4096 由 43%–93% 偏差转为
+> **0/30 逐位一致**；通信量（ABY3/SEMI2K/SECURENN/CHEETAH, K=256）
+> 分别降 56% / 68% / 93% / 72%。见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.2 / §4.3。
+>
+> 上一轮记录的两条**负面**结论（真机实测，不粉饰）：
 > `WeightedSum` 结尾的 `//` 在 SPU 上是近似且非确定的除法；
 > `WeightedSum × FM32` 因除法内部需要 64 位环而**不可用**（见
 > `docs/MPC_BENCHMARK_PROTOCOL.md` §4.2 / §4.3）。
@@ -80,6 +85,7 @@ cd GIS_SPU
 |---|---|---|---|---|---|---|---|
 | 2026-10-04 | `5daf60e`（工作区含未提交改动） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | PSI 真机全协议 + SPU/MPC + 全量测试 | **verified**（`653 passed`，0 failed，0 skipped） |
 | 2026-10-05 | `423946d` + 工作区未提交改动（P0 MPC 协议入 planner / P1 MPC 代价基线 / P1.5 重复实验） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + MPC 协议矩阵（5 协议 × 3 算子 × 3 环宽）+ MPC 代价基线 + 重复实验（×5 / ×30） | **verified**（`748 passed`，0 failed，0 skipped） |
+| 2026-10-06 | `bd151ae` + 工作区未提交改动（P2-1：`WeightedSum` 定点 scale 改编译期常量、生成代码去除法） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + MPC 基线重跑（单次 / ×5 / ×30）+ 三环宽精确性 + 通信量探针 | **verified**（`753 passed`，0 failed，0 skipped） |
 
 > 同日第二验证（无 SPU 环境，Python 3.10 / 3.14）：`555 passed / 87 skipped / 11 failed`。
 > 11 项失败全部为"SPU 不可用"的环境门断言（期望 `error`、实得 `unavailable`），

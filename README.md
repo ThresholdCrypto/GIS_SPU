@@ -694,38 +694,59 @@ export LD_LIBRARY_PATH="$HOME/.local/lib"                      # libgomp.so.1 �
 ~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py --quick # 快扫
 ```
 
-两条实测结论（不粉饰）：
+基线找出的两处缺口（**都已在 P2-1 修复**，见下）：
 
 - `WeightedSum` 的定点整除 `acc // scale` 在 SPU 上是**近似且非确定**的
-  （`scale == 1` 亦然；K=4096 偏差最大 4），故大 K 行登记为"非确定偏差"
-  而不是"稳定通过"；
-- `WeightedSum × FM32` **完全起不来**（定点除法路径内部需要 64 位环：
+  （`scale == 1` 亦然；K=1024 偏差率 43%、K=4096 为 93%）；
+- `WeightedSum × FM32` **完全起不来**（除法路径内部需要 64 位环：
   `ring=FM32 could not represent PT_I64`），而 planner 的位宽预测
-  b(K=256)=24 ≤ 32 会判"够用"——这是本阶段找到的**预测 ≠ 实测**实例。
-- `TemporalOverlap` 的电路是 N×M 两两比较（二次），规模上限只能是 K≈32。
+  b(K=256)=24 ≤ 32 会判"够用"——**预测 ≠ 实测**的实例。
+- （另有）`TemporalOverlap` 的电路是 N×M 两两比较（二次），规模上限只能是 K≈32。
 
-**重复实验（P1.5）**：单次运行不足以支撑排序结论，故补两个重复产物。
+**P2-1：把定点 scale 改成编译期常量（本版新增）**
+
+根因是**一步除法**——它在 HLO 里展开成 `divide + remainder + select + sign`。
+`scale` 在所有路径上恒为 1，所以这步除法纯粹是负担：删掉后
+
+| 指标（`WeightedSum` K=256） | 修前 | 修后 |
+|---|---:|---:|
+| 与明文一致（K=4096，×30） | 偏差率 93% | **0/30，逐位精确** |
+| `FM32` 环宽 | 崩溃 | **ok** |
+| PPHLO 字节数 | 2 400 | **938** |
+| 通信量（ABY3 / SEMI2K / CHEETAH） | 9 286 / 51 544 / 5 246 783 B | **4 112 / 16 384 / 1 474 286 B** |
+| CHEETAH 墙钟中位数 | 1 149.8 ms | **85.2 ms** |
+
+生成规则：`scale == 1` → 直接返回累加和；`scale == 2^s` → 右移（精确）；
+其它 → 保留整除并在 notes 里写明"SPU 上是近似除法、需要 ≥FM64"。
+
+**重复实验与精确性（P1.5 / P2-1 重跑）**
 
 ```bash
 ~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py --repeat 5 \
     --json docs/mpc_repeat_baseline.json --csv docs/mpc_repeat_baseline.csv
 ~/.spuenv/bin/python tests/benchmarks/benchmark_mpc.py --ops WeightedSum --repeat 30 \
-    --json docs/mpc_deviation_repeat.json --csv docs/mpc_deviation_repeat.csv
+    --json docs/mpc_exactness_repeat.json --csv docs/mpc_exactness_repeat.csv
 ```
 
-拿到的判断标尺：
+判断标尺：
 
 - 同一会话内 `p75/p25` 多数 ≤ 1.05 ⇒ **只认差异大于 5% 的协议排序**；
-- 4 个非 CHEETAH 协议在 `DistanceLE` / `TemporalOverlap` 上差异与抖动同量级，
-  **本基线不支持给它们排序**；`WeightedSum` 上 REF2K 低约 16%（本机观察值，
-  不能只按这一个数字选型）；
-- CHEETAH 慢一个数量级，但 SPU 模拟器**不含真实网络**，省通信量的优势
-  在带宽受限部署下**不可外推**；
-- `WeightedSum` 整除偏差的实测偏差率：K≤256 = 0/30，K=1024 = 13/30，
-  K=4096 = 28/30——偏差随 K 上升，但**偏差率不是稳定常数**（两个批次 60% vs 93%，
-  差异超出抽样噪声），对外不给精确概率。
+- 4 个非 CHEETAH 协议在三个算子上差异都与抖动同量级，**本基线不支持
+  给它们排序**；唯一超出噪声的是 `TemporalOverlap` 上 SECURENN / CHEETAH 明显更慢；
+- CHEETAH 仍慢一个数量级，但 SPU 模拟器**不含真实网络**，省通信量的优势
+  在带宽受限部署下**不可外推**——通信量口径见下。
 
-详见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8。
+**通信量可以测（P2-2 的探针结论）**
+
+`RuntimeConfig.enable_pphlo_profile = True` 后 SPU 自己的日志会给出逐算子
+`send bytes / recv bytes` 与 `Link details: total send bytes N, recv bytes M`
+（需在 fd 级重定向，Python 的 `redirect_stdout` 抓不到）。实测 `WeightedSum`
+K=256：REF2K **0 B**（完全不通信，不是可用的隐私协议）、ABY3 4.1 KB、
+SECURENN 8.2 KB、SEMI2K 16.4 KB、CHEETAH 1.47 MB。
+**这张表与墙钟排序完全对不上**——所以协议选型必须落到通信量，不能拿墙钟排。
+（两个坑：CHEETAH 必须 2 方，否则 `[yacl] Get data timeout`；通信量有 ~1–2% 批间抖动。）
+
+详见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.2 / §4.3 / §8。
 
 ---
 
@@ -796,12 +817,14 @@ PSI 的 `empty-input`（空集合）与 `unavailable`（环境缺失）**都不�
 | 算子 | 实测发射的 StableHLO 原语 |
 |---|---|
 | DistanceLE | `subtract, multiply, reduce, add, convert, compare, constant` |
-| WeightedSum | `multiply, reduce, add, divide, remainder, compare, select, sign, and, convert, subtract, constant` |
+| WeightedSum | `multiply, reduce, add, constant`（P2-1 前为 `multiply, reduce, add, divide, remainder, compare, select, sign, and, convert, subtract, constant`） |
 | TemporalOverlap | `shift_left, add, broadcast_in_dim, compare, and, or, reduce, constant` |
 
-**重要发现**：源码中一步写法的定点整除 `acc // scale`，在 HLO 里展开为
+**重要发现（已闭合）**：源码中一步写法的定点整除 `acc // scale`，在 HLO 里展开为
 `divide + remainder + select + sign`。即"看起来一步"的操作在密态下代价高得多。
-`divide` / `remainder` 因此被列入高代价原语并在能力核查时告警。
+`divide` / `remainder` 已列入高代价原语并在能力核查时告警。
+P2-1 把 `scale` 改成编译期常量后，该算子生成代码里**不再有除法**——
+这条发现的用处从"告警"变成"设计纪律"：**别把能编译期消解的运算放进密态电路**。
 
 该表由测试锁定：生成代码若引入新原语，`test_measured_primitives_match_registry` 会失败。
 
@@ -810,7 +833,7 @@ PSI 的 `empty-input`（空集合）与 `unavailable`（环境缺失）**都不�
 | 算子 | 容差 | 说明 |
 |---|---|---|
 | DistanceLE | 0.0 | 整数平方和与阈值平方比较，精确 |
-| WeightedSum | 0.0 | 定点整数乘加**精确；但结尾的 `// scale` 在 SPU 上是近似除法**——K<1024 实测逐位一致，K≥1024 可能偏 1–4（非确定，见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.2） |
+| WeightedSum | 0.0 | 定点整数乘加，精确（P2-1 后生成代码无除法；K=64…4096 × 30 次实测全部逐位一致） |
 | TemporalOverlap | 0.0 | 整数区间比较，精确 |
 
 三份实现（明文 / JAX / SPU）在**整数路径下要求完全一致**，容差 0 是刻意选择：
@@ -1326,8 +1349,11 @@ backends/
   `tests/benchmarks/benchmark_mpc.py` 已把 3 个 MPC 算子 × 5 个 SPU 协议 × 3 个环宽
   实测入库，并与 planner 的**预测位宽**对账（`docs/MPC_BENCHMARK_PROTOCOL.md`）。
   对账同时找出两处真实缺口：近似除法（非确定偏差）与 `WeightedSum × FM32`
-  的环宽下限；重复实验（×5 / ×30）与方差标尺已完成（见 5.8「重复实验（P1.5）」）。
-  **未闭合的余项**：通信量测量、偏差率跨批次不一致的定位、环宽下限进入 planner 约束。
+  的环宽下限；重复实验（×5 / ×30）已完成。
+  **两处缺口已在 P2-1 闭合**（`scale` 改编译期常量 → 生成代码无除法：
+  与明文逐位一致、FM32 可用、PPHLO 2400→938、通信量降 56–93%、CHEETAH 快 13×）。
+  **未闭合的余项**：把通信量接进基线（P2-2，探针已验证可行）、
+  `TemporalOverlap` 二次电路改造。
 
 ### 8.4 位平面与打包布局（D3）
 

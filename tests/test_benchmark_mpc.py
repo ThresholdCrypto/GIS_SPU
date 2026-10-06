@@ -154,31 +154,30 @@ class TestCaseSet:
         assert quick <= full
         assert quick, "quick 模式不能是空集"
 
-    def test_known_deviation_rows_are_declared(self):
-        """两处已知偏差都登记：FM32 环宽下限（硬失败）+ 大 K 的近似除法（非确定）。"""
+    def test_no_case_is_declared_as_a_known_failure(self):
+        """P2-1 之后标准用例集里**不该**再有"预期失败/预期偏差"登记。
+
+        修除法之前这里登记了两条（FM32 环宽下限、大 K 近似除法）；现在它们
+        都不复现。若有人把运行时除法加回生成代码，`unexpected_records` 会
+        直接把失败报出来——这正是我们要的回归信号，而不是提前登记好让它闭嘴。
+        """
+
+        declared = [c for c in standard_cases() if c.expect_status]
+        assert declared == [], [(c.label(), c.expect_status) for c in declared]
+
+    def test_deviation_machinery_is_still_available_and_testable(self):
+        """登记机制本身留着：允许 `error` / `deviation` 两种标记，语义有测试守。"""
 
         hard = [c for c in standard_cases() if c.expect_status == "error"]
         soft = [c for c in standard_cases() if c.expect_status == EXPECT_DEVIATION]
-        assert hard and soft, "两类偏差都要有登记行"
-        for case in hard + soft:
-            assert case.op == "WeightedSum", case.label()
-
-        assert [c.field for c in hard] == ["FM32"], "硬失败只该是 FM32 那条环宽下限"
-        assert all(c.field == "FM64" and c.k >= 1024 for c in soft), "非确定偏差是 FM64 大 K"
-
-    def test_expected_rows_only_cover_ops_we_have_evidence_for(self):
-        """不允许给没实测过的算子随手加预期失败——那是掩盖而非登记。"""
-
-        declared = [c for c in standard_cases() if c.expect_status]
-        assert {c.op for c in declared} == {"WeightedSum"}
-        for case in declared:
-            assert case.field in SPU_FIELDS, case.label()
+        assert hard == [] and soft == []
 
     def test_deviation_status_is_neither_ok_nor_error(self):
         """`deviation` 是个独立标记：它既不能写成 ok，也不能写成 error。
 
         硬钉 `error` 会把基线做成抽奖（同一份代码两次运行退出码不同），
-        写成 `ok` 又等于宣布一个没验证过的结论。
+        写成 `ok` 又等于宣布一个没验证过的结论。当前没有用例用到它，
+        但机制保留——下次遇到非确定路径时不必重新发明。
         """
 
         assert EXPECT_DEVIATION not in ("ok", "error", "")
@@ -426,36 +425,35 @@ class TestRealMpcBenchmark:
         assert record["status"] == "ok", record["error"]
         assert record["agreement"] is True
 
-    def test_fm32_rejects_division_based_weighted_sum(self):
-        """对账结论：planner 按位宽预测 b(K=256)=24 ≤ 32"够用"，
-        但生成代码里的 `//` 在 SPU 内部需要 64 位环——FM32 实测不可用。
+    def test_fm32_works_after_division_removal(self):
+        """P2-1 回归：`WeightedSum × FM32` 现在真的能跑，且与明文逐位一致。
 
-        这条锁住"预测 ≠ 实测"的具体形态，防止有人只看位宽就下结论。
+        修复前这条组合必然报
+        `ring=FM32 could not represent PT_I64`（除法路径要 64 位环），
+        而 planner 的位宽预测 b(K=256)=24 ≤ 32 却判"够用"——
+        "预测 ≠ 实测"的实例。现在预测与实测都指向"可用"。
         """
 
         record = run_benchmark_case(
             MpcBenchmarkCase(op="WeightedSum", protocol="ABY3", field="FM32", k=256)
         )
-        assert record["bit_width_covered"] is True, "预测层面本应判定为够用"
-        assert record["status"] == "error", record
-        assert "FM32" in record["error"] or "ring" in record["error"]
+        assert record["status"] == "ok", record["error"]
+        assert record["agreement"] is True
+        assert record["max_abs_error"] == 0.0
+        assert record["bit_width_covered"] is True
 
-    def test_division_deviation_is_reproducible_in_shape(self):
-        """K=4096：重复 5 次都真的跑出了数值，且偏差率被如实记下来。
+    def test_large_k_accumulation_is_exact_after_division_removal(self):
+        """P2-1 回归：K=4096 重复 5 次全部与明文逐位一致。
 
-        **不**断言 `status == "error"`：这条路径是非确定的（同一组合重跑可能
-        恰好逐位一致，已实测到），硬钉一种结果会把测试做成抽奖。
-        长期形态看 `docs/mpc_deviation_repeat.json` 的偏差率。
+        修复前这条是 43%–93% 的偏差率（近似除法），现在偏差率必须为 0。
         """
 
         record = run_benchmark_case(
             MpcBenchmarkCase(
-                op="WeightedSum", protocol="ABY3", field="FM64", k=4096,
-                expect_status=EXPECT_DEVIATION, repeats=5,
+                op="WeightedSum", protocol="ABY3", field="FM64", k=4096, repeats=5
             )
         )
         assert record["repeat"] == 5
-        assert sum(record["status_counts"].values()) == 5
-        assert record["value_runs"] == 5, "5 次都应当得出数值（没有崩）"
-        assert record["status"] in ("ok", "error", MIXED_STATUS)
-        assert 0.0 <= record["deviation_rate"] <= 1.0
+        assert record["status_counts"] == {"ok": 5}, record["status_counts"]
+        assert record["deviation_rate"] == 0.0
+        assert record["max_abs_error_max"] == 0.0

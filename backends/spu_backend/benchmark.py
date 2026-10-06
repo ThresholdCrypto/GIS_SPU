@@ -81,24 +81,14 @@ _SIZE_SWEEP: Mapping[str, tuple[int, ...]] = {
 #: 位宽对账用的额外 K（超出实测预算，只做预测不实测）
 _BIT_WIDTH_PROBE_K: tuple[int, ...] = (1, 8, 1 << 20)
 
-#: WeightedSum 生成代码里的 `acc // scale`（整数除法）在 SPU 上**不精确且非确定**：
-#: SPU 的除法是迭代近似实现（栈里是 `div_goldschmidt`），即便 scale==1 也不是
-#: 恒等映射，误差随累加量级上升（K=4096 实测在 826412–826416 间抖动，真值 826416；
-#: K=1024 偏 1）。已在 docs/MPC_BENCHMARK_PROTOCOL.md §4.2 记录；这些组合按
-#: "预期与明文不一致"登记，一旦上游修好除法，本基准会以"期望失败却成功"
-#: 报出来，提示更新文档。
-_DIVISION_DEVIATION_MIN_K = 1024
-
-
-def _division_deviation_expected(op: str, k: int) -> bool:
-    return op == "WeightedSum" and k >= _DIVISION_DEVIATION_MIN_K
-
-
-_DIVISION_DEVIATION_NOTE = (
-    "已知偏差（**非确定**）：生成代码的 `acc // scale` 在 SPU 上为近似除法"
-    "（scale==1 亦然）；同一组合重跑可能逐位一致、也可能偏 1–4，"
-    "本轮实测见 `max_abs_error`；不代表该组合可作稳定通过"
-)
+#: 【历史，P2-1 已闭合：除法已从生成代码里移除】曾观察到两条偏差，
+#: 现都不复现，故**不再登记**为预期失败——一旦复现，`unexpected_records`
+#: 会直接报出来。留档在 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.2 / §4.3：
+#:   1. `WeightedSum` 生成代码的 `acc // scale` 在 SPU 上不精确且非确定
+#:      （`div_goldschmidt`）：K=1024 偏差率 43%、K=4096 为 93%，K≤256 为 0；
+#:   2. `WeightedSum × FM32` 起不来（除法路径内部要 64 位环：
+#:      `ring=FM32 could not represent PT_I64`），而 planner 的位宽预测
+#:      b(K=256)=24 ≤ 32 判"够用"——"预测 ≠ 实测"的实例。
 
 #: 非确定偏差行的预期状态标记：`error`（超出容差）与 `ok`（本轮恰好对上）
 #: **都算符合预期**，只有第三种状态（如 `unavailable`）才算预期外。
@@ -109,35 +99,6 @@ EXPECT_DEVIATION = "deviation"
 #: 重复执行的汇总状态：多次运行里既有成功又有失败。它是**发现**而不是噪声——
 #: 一个登记为"应当稳定"的用例出现 mixed，说明这段路径本身不稳定。
 MIXED_STATUS = "mixed"
-
-#: WeightedSum × FM32 在**任何 K** 上都起不来：定点除法路径内部要用 64 位环表示
-#: 中间量（`[Enforce fail at libspu/core/encoding.cc:106] integer encoding failed,
-#: ring=FM32 could not represent PT_I64`）。planner 的预测位宽 b(K) 只算**数据**
-#: 位宽，不覆盖这个内部表示下限——所以会看到 `bit_width_covered=True` 却执行失败。
-#: 这是 P1 想找的"预测 ≠ 实测"实例，按**已知限制**登记（见
-#: docs/MPC_BENCHMARK_PROTOCOL.md §4.3），一旦上游修好即会报"期望失败却成功"。
-_FM32_RING_NOTE = (
-    "已知限制：WeightedSum 的定点除法需要 64 位环内部表示"
-    "（ring=FM32 could not represent PT_I64）；预测位宽 b(K) 只算数据位宽，"
-    "未覆盖该下限 ⇒ FM32 下本组合不可用，与预测位宽是否被环宽覆盖无关"
-)
-
-
-def _known_deviation(op: str, field: str, k: int) -> tuple[str, str] | None:
-    """已登记的已知偏差 → `(预期状态, 原因文案)`；`None` = 按正常用例对待。
-
-    - `WeightedSum` × 窄环（< FM64）：除法内部要 64 位环表示，**稳定**失败；
-    - `WeightedSum` × `K >= 1024`：近似除法，**非确定**，两种结果都登记在案。
-    """
-
-    if op != "WeightedSum":
-        return None
-    if FIELD_BITS[field] < FIELD_BITS["FM64"]:
-        return "error", _FM32_RING_NOTE
-    if _division_deviation_expected(op, k):
-        return EXPECT_DEVIATION, _DIVISION_DEVIATION_NOTE
-    return None
-
 
 @dataclass(frozen=True)
 class MpcBenchmarkCase:
@@ -169,14 +130,13 @@ def standard_cases(
     cases: list[MpcBenchmarkCase] = []
 
     def add(op: str, protocol: str, field: str, k: int) -> None:
-        deviation = _known_deviation(op, field, k)
         cases.append(
             MpcBenchmarkCase(
                 op=op,
                 protocol=protocol,
                 field=field,
                 k=k,
-                expect_status=deviation[0] if deviation else "",
+                expect_status="",
                 repeats=max(1, int(repeats)),
             )
         )
@@ -278,15 +238,18 @@ def _distance_le_inputs(k: int) -> tuple[list[np.ndarray], Callable[..., Any]]:
 
 
 def _weighted_sum_inputs(k: int) -> tuple[list[np.ndarray], Callable[..., Any]]:
-    """属性值 + 权重 + 定点标度。累加上界远小于 FM32。"""
+    """属性值 + 权重。累加上界远小于 FM32。
+
+    定点 scale 自 P2-1 起是**编译期常量**（生成代码里 `scale=1` → 无除法），
+    所以这里不再构造第三个输入。
+    """
 
     values = np.array([(i % 100) + 1 for i in range(k)], np.int32)
     weights = np.array([(i % 7) + 1 for i in range(k)], np.int32)
-    scale = np.array(1, np.int32)
-    reference = lambda v, w, s: run_plain(  # noqa: E731
-        "WeightedSum", list(v), list(w), int(s)
+    reference = lambda v, w: run_plain(  # noqa: E731
+        "WeightedSum", list(v), list(w)
     ).value
-    return [values, weights, scale], reference
+    return [values, weights], reference
 
 
 def _temporal_overlap_inputs(k: int) -> tuple[list[np.ndarray], Callable[..., Any]]:
@@ -543,25 +506,15 @@ def _run_once(case: MpcBenchmarkCase, *, report: Any = None) -> dict[str, Any]:
         record["output_bits"] = _int_bits(run.outputs)
         record["max_abs_error"] = run.max_abs_error
         record["tolerance"] = run.tolerance
-        deviation = _known_deviation(case.op, case.field, case.k)
         if run.within_tolerance is not True:
             record["note"] = (
                 f"实测与明文不一致：max_abs_error={run.max_abs_error}"
                 f"（tolerance={run.tolerance}）"
             )
-        if deviation is not None:
-            record["note"] = (
-                f"{record['note']}；{deviation[1]}" if record["note"] else deviation[1]
-            )
     else:
         record["status"] = run.status
         record["error"] = (run.error or "; ".join(run.blockers) or "").strip()
         record["note"] = (run.error or run.blockers and "环境不具备" or "").strip()
-        deviation = _known_deviation(case.op, case.field, case.k)
-        if deviation is not None and record["status"] == "error":
-            record["note"] = (
-                f"{record['note']}；{deviation[1]}" if record["note"] else deviation[1]
-            )
         # 失败行也留实测值：容差不过时，"偏了多少"本身就是结论
         record["max_abs_error"] = run.max_abs_error
         record["tolerance"] = run.tolerance
