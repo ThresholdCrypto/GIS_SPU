@@ -127,6 +127,15 @@ cd GIS_SPU
 > 已换掉并写进回归测试。见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.6、
 > `docs/BITPLANE_LAYOUT.md` §5 与 `README.md` §8.4。
 
+> 同日第三段（P7-P0）的要点：**取槽步单价实测**。P6 之后紧接着量打包电路必须付的
+> 那一步——把 8 位值从环元素取出来（右移 + 掩码）：四变体 A/B 实测
+> （`backends/spu_backend/slot_cost_probe.py`，产物 `docs/mpc_slot_cost_probe.json`）
+> 秘密 × 公开常数 **0 B**、`&` 624 B/元素、`>>` 1888 B/元素、全量取槽
+> **1424 B/元素 = 纯乘法 16 B/元素 的 89 倍**。口径：这是**前置判据**（打包划不划算），
+> 不是打包电路的收益；L2 的 1020.8× 是条数比，不能当通信量比。
+> 见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.7、`docs/BITPLANE_LAYOUT.md` §5.1、
+> `README.md` §8.4。
+
 > 同日第二验证（无 SPU 环境，Python 3.10 / 3.14）：`555 passed / 87 skipped / 11 failed`。
 > 11 项失败全部为"SPU 不可用"的环境门断言（期望 `error`、实得 `unavailable`），
 > 非功能缺陷；SPU/PSI 用例 skip 并说明缺失项。

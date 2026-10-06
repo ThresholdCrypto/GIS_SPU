@@ -92,6 +92,7 @@ GIS_SPU/
 │   │   ├── capability.py   能力探测与原语核查
 │   │   ├── cost_baseline.py 读实测通信量基线（docs/mpc_comm_baseline.json）
 │   │   ├── packing_probe.py 打包前提探针（按环元素计费？）与收益上界
+│   │   ├── slot_cost_probe.py 取槽步单价探针（掩码/右移 vs 纯乘法）
 │   │   └── runtime.py      run_spu_simulation
 │   └── psi_backend/        PSI（官方 spu.psi.psi_execute 两方求交）
 │       ├── capability.py   协议/曲线/IO 形态探测（运行期，不预设版本）
@@ -99,7 +100,7 @@ GIS_SPU/
 ├── validator/              编译前验证 + 六类失败模式报告
 ├── geosecure/              编译器主流程与 CLI（八阶段）
 ├── examples/               五个示例（含三维 vertical_conflict.py / altitude_band.py）
-├── tests/                  三十个测试文件
+├── tests/                  三十一个测试文件
 └── docs/
     ├── SPU_CAPABILITY.md   SPU 核对结论（含证据出处）
     ├── BITPLANE_LAYOUT.md  位平面布局（D3）的口径出处、模型与边界
@@ -974,6 +975,7 @@ tests/test_frontend.py            41 项   表达式级调用识别、输入可�
 tests/test_planner.py             56 项   注册表、五元组、敏感度策略、代价模型、无副作用、PSI/MPC 两套协议候选校验
 tests/test_bitplane_layout.py     23 项   位平面布局（D3）：课题产物逐项复算、归约轴决策、不给形状不给数字、与实测前提对账
 tests/test_packing_probe.py       30 项   打包前提探针（P6）：位宽扫描/规模扫描、按环元素计费、收益上界、缺数诚实留空、真机位宽等价
+tests/test_slot_cost_probe.py      25 项   取槽步单价（P7-P0）：掩码/右移/全量提取 vs 纯乘法的 A/B、位运算语义、比价基准不许拿 0 B 变体
 tests/test_protocol_registry.py   18 项   协议元数据单一来源、结果语义、Planner 与后端交叉一致
 tests/test_protocol_coverage.py   12 项   协议覆盖镜像：登记协议必须显式归类（已验证/不可执行/无密码学保护），不许静默滑过
 tests/test_protocol_selection.py  21 项   MPC 协议按实测代价选择、REF2K 不自动选中、拒绝信息可操作、排序第二协议真跑
@@ -1000,15 +1002,15 @@ tests/test_execution_chain.py     15 项   链式执行使用上一步 PSI 输�
 tests/test_rr22_geosot.py          8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
 tests/test_end_to_end.py          75 项   全流程、状态表、CLI（协议/曲线/子集/RR22/布局形状/MPC 协议）、六类失败报告、编译入口参数、诊断聚合、确定性
                                   ─────
-                                  868 通过 / 0 跳过
+                                  893 通过 / 0 跳过
 ```
 
 在 **WSL2 + Linux + Python 3.11.16 + jax 0.4.34 + spu 0.9.5** 上，
-**868 项全部通过，无跳过**。真实执行隐私协议的用例：
+**893 项全部通过，无跳过**。真实执行隐私协议的用例：
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
-| SPU(MPC) 真跑 | 8 项 | `test_spu_backend` 3 项 + 子集比较电路 2 项 + 打包探针 3 项；整数路径误差 0.0 |
+| SPU(MPC) 真跑 | 10 项 | `test_spu_backend` 3 项 + 子集比较电路 2 项 + 打包探针 3 项 + 取槽单价探针 2 项；整数路径误差 0.0 |
 | PSI 真机求交（`@needs_psi`） | 23 项函数 | 真调 `psi_execute`，非 mock；含链式执行 / 真实输入绑定 / 布局握手 / 配置闭环 / RR22 / benchmark 记录（grep 口径：`grep -rc needs_psi tests/*.py`） |
 | PSI 空输入路径 | 6 项 | 前置判定，不启动协议 |
 | PSI 原生日志卫生 | 4 项 | 真机执行 + 校验不落 CWD 日志 |
@@ -1440,6 +1442,13 @@ MPC 电路输出一个比特  k == n
 > **仍不是打包收益的实测**：探针不是打包电路，槽内归约未测，收益只作上界。
 > 见 8.4 与 `docs/BITPLANE_LAYOUT.md` §5。
 
+> 已闭合（本版）：**打包电路的取槽代价（P7-P0 探针）**。P6 之后紧接着量了打包电路
+> 必须付的那一步——把 8 位值从环元素里取出来（右移 + 掩码）：四个变体 A/B 实测
+> （产物 `docs/mpc_slot_cost_probe.json`）`mul_only`（秘密 × 公开常数）**0 B**、
+> `mask_only` 624 B/元素、`shift_only` 1888 B/元素、`shift_mask`（全量提取）
+> **1424 B/元素 = 纯乘法 16 B/元素 的 89 倍**。结论是**前置判据**：元素数下降的
+> 倍数必须先超过这个量级，打包才可能划算。见 8.4 与 `docs/BITPLANE_LAYOUT.md` §5.1。
+
 ### 8.1 接入新增隐私后端
 
 `planner.registry.OperatorRule` 的 `backend` 字段是自由字符串，
@@ -1561,6 +1570,22 @@ geo-secure build examples/distance_check.py \
 **仍然不是打包收益的实测**：探针跑的是逐元素乘法，**不是打包电路**；槽内归约
 （L1 的加权和、L2 的跨候选聚合）要额外通信，那部分必须另行实测。所以
 `planner/layout.py` 给出的收益一律标注为**上界**。详见 `docs/BITPLANE_LAYOUT.md` §5。
+
+**再进一步（P7-P0）**：打包电路还要把每个 8 位值**取出来**（右移 + 掩码），
+这一步在 MPC 里走协议，不免费。四变体 A/B 实测（产物 `docs/mpc_slot_cost_probe.json`，
+`tests/benchmarks` 之外由 `tests/test_slot_cost_probe.py` 守着）：
+
+| 变体 | 电路 | 通信量 | B/元素 |
+|---|---|---|---|
+| `mul_only` | `Σ x × c_s`（秘密 × 公开常数） | 0 B | 0.00 |
+| `mask_only` | `Σ (x & 0xFF) × c_s` | 159 744 B | 624.00 |
+| `shift_only` | `Σ (x >> 8s) × c_s` | 483 328 B | 1888.00 |
+| `shift_mask` | 全量取槽（打包电路的那一步） | 364 544 B | **1424.00** |
+
+取槽步是纯乘法的 **89 倍**单价。所以"元素数 ÷8"这个上界**只在取槽能摊薄时才兑现**：
+打包要划算，元素数下降的倍数必须先超过这个量级——L2 的 1020.8× 是**条数比**，
+与 89 倍同量级，不能当成通信量比。这条把下一步从"照着公式写电路"改成
+"先做免逐槽提取的设计筛选"（见 `docs/BITPLANE_LAYOUT.md` §7）。
 
 ### 8.5 关系稀疏表示与 ZKP
 
