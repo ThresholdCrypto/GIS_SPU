@@ -145,6 +145,8 @@ class Planner:
         psi_protocol: str | None = None,
         psi_protocol_params: Mapping[str, Any] | None = None,
         mpc_protocol: str | None = None,
+        mpc_field: str | int | None = None,
+        mpc_world_size: int | None = None,
         layout_shape: LayoutShape | None = None,
     ) -> None:
         self.registry = dict(registry or OPERATOR_REGISTRY)
@@ -155,6 +157,10 @@ class Planner:
         #: 编译器显式选择的 MPC（SPU）协议；None = 该算子按实测代价自动选择
         #: （`select_mpc_protocol`），没有实测依据时退回登记默认值。
         self.mpc_protocol = mpc_protocol
+        #: 统一能力校验（Phase 3）用：编译器给出的环宽 / 参与方数量。
+        #: None = 未显式给出，该项不校验（world_size 缺省由协议下限决定）。
+        self.mpc_field = mpc_field
+        self.mpc_world_size = mpc_world_size
         #: 位平面布局的规模形状（D3）。None = 只做轴向决策、不预测条数：
         #: 没有形状就没有条数，硬凑一个"默认规模"等于编数字。
         self.layout_shape = layout_shape
@@ -289,7 +295,12 @@ class Planner:
             )
 
         # 算子 × MPC 协议候选校验：同一道编译期闸门，走 SPU 命名空间。
-        mpc_check = validate_mpc_protocol_for_operation(operation.op, mpc_protocol)
+        mpc_check = validate_mpc_protocol_for_operation(
+            operation.op,
+            mpc_protocol,
+            field=self.mpc_field,
+            world_size=self.mpc_world_size,
+        )
         mpc_diagnostic: Diagnostic | None = None
         if mpc_check.ok:
             reasons.extend(mpc_check.notes)
@@ -366,6 +377,8 @@ def plan_program(
     psi_protocol: str | None = None,
     psi_protocol_params: Mapping[str, Any] | None = None,
     mpc_protocol: str | None = None,
+    mpc_field: str | int | None = None,
+    mpc_world_size: int | None = None,
     layout_shape: LayoutShape | None = None,
 ) -> PrivacyPlan:
     """便捷入口。
@@ -374,6 +387,8 @@ def plan_program(
     给了就覆盖算子规则的默认协议，并把参数并进每个 PSI 步骤的 protocol_params。
     `mpc_protocol` 是编译器对 MPC（SPU）族算子的协议选择；给了就覆盖这些算子
     的 default_mpc_protocol（命名空间是 REF2K/SEMI2K/...，与 PSI 不通用）。
+    `mpc_field` / `mpc_world_size` 是编译器显式给出的执行配置；给了就参与
+    算子×协议的统一能力校验（Phase 3：不匹配的组合在编译期拒绝）。
     `layout_shape` 是位平面布局（D3）的规模形状；不给就只做轴向决策、不预测条数。
     """
 
@@ -382,6 +397,8 @@ def plan_program(
         psi_protocol=psi_protocol,
         psi_protocol_params=psi_protocol_params,
         mpc_protocol=mpc_protocol,
+        mpc_field=mpc_field,
+        mpc_world_size=mpc_world_size,
         layout_shape=layout_shape,
     ).plan(program)
 

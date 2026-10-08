@@ -510,7 +510,13 @@ def validate_protocol_for_operation(op: str, protocol: str | None) -> ProtocolCh
     )
 
 
-def validate_mpc_protocol_for_operation(op: str, protocol: str | None) -> ProtocolCheck:
+def validate_mpc_protocol_for_operation(
+    op: str,
+    protocol: str | None,
+    *,
+    field: str | int | None = None,
+    world_size: int | None = None,
+) -> ProtocolCheck:
     """校验"算子在所选 **SPU/MPC** 协议下是否可以规划/执行"。
 
     与 `validate_protocol_for_operation` 的分工：
@@ -524,12 +530,16 @@ def validate_mpc_protocol_for_operation(op: str, protocol: str | None) -> Protoc
     规则：
     - 未显式选协议（None）→ 放行（各算子用登记默认值）；
     - 非 MPC 算子 + 协议 → 拒绝（设了却不生效，等于容忍静默失效）；
+    - 知道协议后由统一校验层复核 world_size / field / 语义 / 协议参数
+      （`backends.protocol_validation.validate_protocol_request`）：world_size=2
+      + ABY3 这类请求在编译期即被拒绝，并给出替代候选；
     - MPC 族 + 候选清单内协议 → 放行，并披露该协议的最少参与方数量；
     - MPC 族 + 候选清单外协议 → 拒绝。
 
     后端依赖用函数内导入：planner 不在导入期依赖 backends，保持分层无环。
     """
 
+    from backends.protocol_validation import validate_protocol_request
     from backends.spu_backend.capability import (
         SPU_PROTOCOLS_WITHOUT_CRYPTO,
         normalize_protocol,
@@ -567,6 +577,21 @@ def validate_mpc_protocol_for_operation(op: str, protocol: str | None) -> Protoc
                 f"后端 {rule.backend}）；协议 {name} 不会被该算子使用"
                 "（PSI 族协议请走 validate_protocol_for_operation）",
             ),
+        )
+
+    # 统一能力校验（Phase 3）：world_size / field / 语义 / 协议参数。
+    # 只对"显式给出的配置事实"做判断；即使命中了候选清单，配置与协议不匹配
+    # 也不放行——错误在这里给出替代候选，而不是拖到 SPU 运行期。
+    capability = validate_protocol_request(
+        family="MPC",
+        protocol=name,
+        operation=op,
+        field=field,
+        world_size=world_size,
+    )
+    if not capability.ok:
+        return ProtocolCheck(
+            ok=False, op=op, protocol=name, problems=capability.problems
         )
 
     if name in rule.mpc_protocol_candidates:

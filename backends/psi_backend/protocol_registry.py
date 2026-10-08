@@ -74,6 +74,10 @@ class PsiProtocolSpec:
     #: 显式语义档；缺省由 exact 推导（True→exact，False→noisy）。
     #: 将来出现"近似但非噪声"的协议时显式给 SEMANTICS_APPROXIMATE。
     semantics: str | None = None
+    #: 协议族名（§四.1）：本类固定 "PSI"；MPC 族见
+    #: backends/spu_backend/protocol_registry.MpcProtocolSpec。两族分开登记，
+    #: 统一校验入口在 backends/protocol_validation.py。
+    family: str = "PSI"
 
     def __post_init__(self) -> None:
         if self.semantics is not None and self.semantics not in RESULT_SEMANTICS:
@@ -83,6 +87,11 @@ class PsiProtocolSpec:
         if self.curve_relation not in _CURVE_RELATIONS:
             raise ValueError(
                 f"协议 {self.name} 的 curve_relation={self.curve_relation!r} 不在 {_CURVE_RELATIONS}"
+            )
+        if self.family != "PSI":
+            raise ValueError(
+                f"协议 {self.name} 的 family={self.family!r} 不是 'PSI'；"
+                "PSI 注册表只登记 PSI 族协议"
             )
 
     @property
@@ -100,6 +109,7 @@ class PsiProtocolSpec:
             "curve_relation": self.curve_relation,
             "params_schema": {key: dict(value) for key, value in self.params_schema.items()},
             "candidate_for": list(self.candidate_for),
+            "family": self.family,
         }
 
 

@@ -23,6 +23,7 @@ from .capability import (
     SpuProbe,
     check_capabilities,
     check_operation_capability,
+    mpc_protocol_spec,
     normalize_field,
     normalize_protocol,
     platform_can_run_spu,
@@ -32,6 +33,14 @@ from .capability import (
     protocol_min_world_size,
 )
 from .cost_baseline import MeasuredComm, measured_comm_table
+from .protocol_registry import (
+    MPC_CANDIDATE_OPS,
+    MPC_PROTOCOL_NAMES,
+    MPC_PROTOCOL_SPECS,
+    MPC_SECURITY_MODELS,
+    MpcProtocolSpec,
+    get_mpc_protocol_spec,
+)
 from .packing_probe import (
     PACKING_CSV_COLUMNS,
     PACKED_VALUES_PER_ELEMENT,
@@ -135,6 +144,11 @@ __all__ = [
     "SlotCostCase",
     "SlotCostVariant",
     "PackingProbeCase",
+    "MPC_CANDIDATE_OPS",
+    "MPC_PROTOCOL_NAMES",
+    "MPC_PROTOCOL_SPECS",
+    "MPC_SECURITY_MODELS",
+    "MpcProtocolSpec",
     "PROTOCOL_MIN_WORLD_SIZE",
     "SPU_ADAPTED_HLO_PRIMITIVES",
     "SPU_ADAPTED_PRIMITIVES",
@@ -149,6 +163,7 @@ __all__ = [
     "TripleResult",
     "check_capabilities",
     "check_operation_capability",
+    "mpc_protocol_spec",
     "normalize_field",
     "normalize_protocol",
     "platform_can_run_spu",
@@ -166,6 +181,7 @@ __all__ = [
     "format_packing_summary",
     "format_slot_cost_summary",
     "format_summary",
+    "get_mpc_protocol_spec",
     "MIXED_STATUS",
     "packing_probe_cases",
     "run_packing_probe_case",

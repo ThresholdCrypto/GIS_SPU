@@ -30,12 +30,16 @@ import sys
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
+from . import protocol_registry as _mpc_registry
+from .protocol_registry import MpcProtocolSpec, get_mpc_protocol_spec
+
 # --------------------------------------------------------------------------
 # 从官方源码核对的常量（不来自猜测）
 # --------------------------------------------------------------------------
 
-#: `spu.libspu.ProtocolKind` 的成员（0.9.5 实测）
-SPU_PROTOCOLS: tuple[str, ...] = ("REF2K", "SEMI2K", "ABY3", "CHEETAH", "SECURENN")
+#: `spu.libspu.ProtocolKind` 的成员（0.9.5 实测）。单一来源：
+#: `protocol_registry.MPC_PROTOCOL_SPECS`（顺序与枚举一致），这里只做派生。
+SPU_PROTOCOLS: tuple[str, ...] = _mpc_registry.MPC_PROTOCOL_NAMES
 
 #: `spu.libspu.FieldType` 的成员（0.9.5 实测）
 SPU_FIELDS: tuple[str, ...] = ("FM32", "FM64", "FM128")
@@ -47,16 +51,15 @@ SPU_FIELDS: tuple[str, ...] = ("FM32", "FM64", "FM128")
 #: 即它不产生任何网络通信——把它当成"等价但更快的隐私后端"是不成立的，
 #: "最快"在这里没有意义（`docs/MPC_BENCHMARK_PROTOCOL.md` §8.4 同结论）。
 #: tests/test_protocol_selection.py 会拿实测产物核对这条，防止它变成口号。
-SPU_PROTOCOLS_WITHOUT_CRYPTO: tuple[str, ...] = ("REF2K",)
+SPU_PROTOCOLS_WITHOUT_CRYPTO: tuple[str, ...] = (
+    _mpc_registry.MPC_PROTOCOLS_WITHOUT_CRYPTO
+)
 
-#: 各协议要求的参与方数量下限（来自协议定义）
-PROTOCOL_MIN_WORLD_SIZE: Mapping[str, int] = {
-    "REF2K": 2,
-    "SEMI2K": 2,
-    "ABY3": 3,
-    "CHEETAH": 2,
-    "SECURENN": 3,
-}
+#: 各协议要求的参与方数量下限（来自协议定义）。单一来源：
+#: `protocol_registry.MPC_PROTOCOL_SPECS` 的 world_size。
+PROTOCOL_MIN_WORLD_SIZE: Mapping[str, int] = dict(
+    _mpc_registry.MPC_PROTOCOL_WORLD_SIZE
+)
 
 #: 环宽与位宽的对应（决定整数溢出边界）
 FIELD_BITS: Mapping[str, int] = {
@@ -698,6 +701,12 @@ def normalize_protocol(protocol: str) -> str:
     raise ValueError(
         f"未知协议 {protocol!r}；SPU 0.9.5 支持 {SPU_PROTOCOLS}（注意：无 SPDZ2K）"
     )
+
+
+def mpc_protocol_spec(protocol: str) -> MpcProtocolSpec:
+    """取协议的完整元数据（名字归一化后从 protocol_registry 读取）。"""
+
+    return get_mpc_protocol_spec(normalize_protocol(protocol))
 
 
 def normalize_field(field: str | int) -> str:

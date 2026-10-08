@@ -45,11 +45,14 @@ from backends.psi_backend import (
     validate_psi_protocol_params,
 )
 from backends.psi_backend.subset_mpc import SUBSET_MODE_MPC
+from backends.protocol_validation import validate_protocol_request
 from backends.spu_backend import (
     CapabilityReport,
     SpuRunResult,
     check_capabilities,
     check_operation_capability,
+    normalize_field,
+    normalize_protocol,
     run_spu_simulation,
 )
 from frontend import ParseResult, parse_source
@@ -305,6 +308,34 @@ class Compiler:
         if not param_check.ok:
             raise ValueError("PSI 协议参数非法：" + "；".join(param_check.problems))
         self._psi_param_notes = tuple(param_check.notes)
+
+        # MPC（SPU）协议请求的前置校验（Phase 3 统一 capability validation）：
+        # 环宽必须合法；显式协议下 world_size 必须满足协议下限、环宽必须落在
+        # 该协议已实测支持的档内。协议名本身不存在时**不在构造期抛错**——
+        # 留给规划层输出带位置/建议/代价的诊断（CLI 契约：错误码 1 + 完整报告）。
+        normalize_field(self.field)
+        if self.world_size is not None and (
+            isinstance(self.world_size, bool)
+            or not isinstance(self.world_size, int)
+            or self.world_size < 2
+        ):
+            raise ValueError(f"world_size 必须是 ≥2 的整数，实得 {self.world_size!r}")
+        if self.protocol is not None:
+            try:
+                mpc_protocol_name = normalize_protocol(self.protocol)
+            except ValueError:
+                mpc_protocol_name = None
+            if mpc_protocol_name is not None:
+                mpc_check = validate_protocol_request(
+                    family="MPC",
+                    protocol=mpc_protocol_name,
+                    field=self.field,
+                    world_size=self.world_size,
+                )
+                if not mpc_check.ok:
+                    raise ValueError(
+                        "MPC 协议请求非法：" + "；".join(mpc_check.problems)
+                    )
         # 真实格网输入绑定（Phase 2）：名字 → CSV/JSON/CellSet/码序列。
         # 构造期即解析：文件缺失/损坏立即失败（错误带具体位置），
         # 不把坏数据拖到 PSI 执行阶段才炸。
@@ -442,6 +473,10 @@ class Compiler:
             # MPC（SPU）协议同样进规划层：让"算子 × 协议"在编译期就被校验，
             # 而不是等到 SPU 模拟阶段才以运行期错误的形式晚到。
             mpc_protocol=self.protocol,
+            # Phase 3：环宽 / 参与方数量也进规划层——自动选择出来的协议同样要过
+            # world_size 校验（选择发生在规划层内部，构造期无法替它判断）。
+            mpc_field=self.field,
+            mpc_world_size=self.world_size,
             layout_shape=self.layout_shape,
         )
         result.plan = plan
