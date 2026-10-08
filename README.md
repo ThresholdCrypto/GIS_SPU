@@ -23,6 +23,10 @@ Python 地理业务代码
   → 后续可扩展到 PSI / FHE / TEE
 ```
 
+> **项目进展说明**（完成度、里程碑时间线、已验证 / 未落地、关键实测结论、复现方式）
+> 见 [`docs/PROGRESS.md`](docs/PROGRESS.md)。截至提交 `d91da69`（2026-10-06）：
+> 11 个提交、**893 项测试全部通过、0 跳过**。
+
 ## 快速开始
 
 **第一步（任意环境，零依赖）**：
@@ -43,7 +47,7 @@ bash scripts/setup_wsl_spu.sh         # 一键：系统依赖 + Python 3.11 + �
 
 ```bash
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 480 项全部通过
+python -m pytest tests/ -q            # 893 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -1266,7 +1270,7 @@ DistanceLE  QuantizedVector  MPC/SPU  verified
 ```bash
 # WSL2 / Linux 上（Python 3.10 或 3.11）
 pip install -r requirements-spu.txt      # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q               # 456 项全部通过
+python -m pytest tests/ -q               # 893 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 

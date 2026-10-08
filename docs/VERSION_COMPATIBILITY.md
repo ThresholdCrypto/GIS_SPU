@@ -92,6 +92,8 @@ cd GIS_SPU
 | 2026-10-06 | `4716f4b` + 工作区未提交改动（P3：`TemporalOverlap` 第二套电路 `sweep` + 两套电路的成对 A/B） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + MPC 基线重跑（单次 / ×5 / ×30）+ 通信量基线（×5）+ `sweep` A/B（×5，含 `sort` / `reduce_window` 真机实测） | **verified**（`793 passed`，0 failed，0 skipped） |
 | 2026-10-06 | `b79da30` + 工作区未提交改动（P4：MPC 协议按实测代价选择，`REF2K` 不再自动选中） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + `DistanceLE` 自动协议真跑 + 排序第二协议（SEMI2K）真跑 | **verified**（`815 passed`，0 failed，0 skipped） |
 | 2026-10-06 | `498e12f` + 工作区未提交改动（P5：位平面布局 D3 预测层，`planner/layout.py` + CLI `--layout-shape`） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + `--layout-shape` 端到端（`distance_check` / `risk_score` 两个示例）+ 课题产物逐项复算 | **verified**（`838 passed`，0 failed，0 skipped） |
+| 2026-10-06 | `a811246`（P6：打包收益上界实测，SPU 按环元素计费） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + 打包前提探针（位宽扫描 / 规模扫描，`--packing-probe`） | **verified**（全量用例在 P7-P0 后为 `893 passed`，0 failed，0 skipped） |
+| 2026-10-06 | `d91da69`（P7-P0：打包电路取槽步单价实测） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试（2026-10-08 复跑）+ 取槽四变体 A/B（`test_slot_cost_probe.py` 25 项） | **verified**（`893 passed`，0 failed，0 skipped） |
 
 > 2026-10-06 第二行（P2-2）的要点：通信量接进 `run_spu_simulation(capture_comm=True)`
 > 与每条基线记录，新增产物 `docs/mpc_comm_baseline.json` / `.csv`。
