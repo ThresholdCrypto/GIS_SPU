@@ -343,11 +343,20 @@ class JaxGenerationResult:
         }
 
 
-def generate_for_plan(plan: PrivacyPlan, *, prefix: str = "geo") -> JaxGenerationResult:
+def generate_for_plan(
+    plan: PrivacyPlan,
+    *,
+    prefix: str = "geo",
+    size_hint: int | None = None,
+) -> JaxGenerationResult:
     """为隐私方案的每个步骤生成 JAX 代码。
 
     PSI 族算子不生成代码，而是登记为 skipped 并说明原因——
     这比"生成了一个跑不通的函数"诚实得多。
+
+    `size_hint` 是**编译期**拿到的规模（节点/候选数），只被需要它的生成器消费
+    （当前是 `TemporalOverlap` 的 `pairwise`/`sweep` 电路选择，切换阈值来自实测
+    交叉点）。给不出就保持既有成本口径，不替调用方猜（P1）。
     """
 
     result = JaxGenerationResult()
@@ -366,7 +375,10 @@ def generate_for_plan(plan: PrivacyPlan, *, prefix: str = "geo") -> JaxGeneratio
             )
             continue
         fn_name = f"{prefix}_{step.operation.lower()}_{index}"
-        result.functions.append(generator(fn_name))
+        if step.operation == "TemporalOverlap":
+            result.functions.append(generator(fn_name, size_hint=size_hint))
+        else:
+            result.functions.append(generator(fn_name))
 
     return result
 

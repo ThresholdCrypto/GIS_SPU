@@ -1,0 +1,1467 @@
+[
+  {
+    "case": "primitive_check mul N=64",
+    "name": "mul",
+    "op": "primitive_check",
+    "jax_primitive": "mul",
+    "hlo_primitive": "multiply",
+    "needed_by": "general",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "基线：秘密 × 秘密（P6 实测 16 B/元素）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 22.260950001509627,
+    "pphlo_bytes": 493.0,
+    "profiled": true,
+    "comm_send_bytes": 512.0,
+    "comm_recv_bytes": 512.0,
+    "comm_total_bytes": 1024.0,
+    "comm_per_element": 16.0,
+    "comm_by_primitive": {
+      "multiply": {
+        "send_bytes": 512,
+        "recv_bytes": 512,
+        "executions": 1,
+        "duration_s": 5.7128e-05
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 22.230074999242788,
+      "max": 43.29224300090573,
+      "median": 22.260950001509627
+    },
+    "pphlo_bytes_stats": {
+      "min": 493.0,
+      "max": 493.0,
+      "median": 493.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 1024.0,
+      "max": 1024.0,
+      "median": 1024.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 512.0,
+      "max": 512.0,
+      "median": 512.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 512.0,
+      "max": 512.0,
+      "median": 512.0
+    },
+    "comm_per_element_stats": {
+      "min": 16.0,
+      "max": 16.0,
+      "median": 16.0
+    }
+  },
+  {
+    "case": "primitive_check add N=64",
+    "name": "add",
+    "op": "primitive_check",
+    "jax_primitive": "add",
+    "hlo_primitive": "add",
+    "needed_by": "general",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "秘密 + 秘密；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 21.821220998390345,
+    "pphlo_bytes": 488.0,
+    "profiled": true,
+    "comm_send_bytes": 0.0,
+    "comm_recv_bytes": 0.0,
+    "comm_total_bytes": 0.0,
+    "comm_per_element": 0.0,
+    "comm_by_primitive": {
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.8227e-05
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 21.486354002263397,
+      "max": 24.480034997395705,
+      "median": 21.821220998390345
+    },
+    "pphlo_bytes_stats": {
+      "min": 488.0,
+      "max": 488.0,
+      "median": 488.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_per_element_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    }
+  },
+  {
+    "case": "primitive_check sub N=64",
+    "name": "sub",
+    "op": "primitive_check",
+    "jax_primitive": "sub",
+    "hlo_primitive": "subtract",
+    "needed_by": "general",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 23.30691899987869,
+    "pphlo_bytes": 595.0,
+    "profiled": true,
+    "comm_send_bytes": 0.0,
+    "comm_recv_bytes": 0.0,
+    "comm_total_bytes": 0.0,
+    "comm_per_element": 0.0,
+    "comm_by_primitive": {
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.1046e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.1067e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 6.24e-07
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 22.851669000374386,
+      "max": 26.808213999174768,
+      "median": 23.30691899987869
+    },
+    "pphlo_bytes_stats": {
+      "min": 595.0,
+      "max": 595.0,
+      "median": 595.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_per_element_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    }
+  },
+  {
+    "case": "primitive_check neg N=64",
+    "name": "neg",
+    "op": "primitive_check",
+    "jax_primitive": "neg",
+    "hlo_primitive": "negate",
+    "needed_by": "general",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "取负；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 21.529412999370834,
+    "pphlo_bytes": 484.0,
+    "profiled": true,
+    "comm_send_bytes": 0.0,
+    "comm_recv_bytes": 0.0,
+    "comm_total_bytes": 0.0,
+    "comm_per_element": 0.0,
+    "comm_by_primitive": {
+      "negate": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.9944e-05
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 21.068853999167914,
+      "max": 24.586602998169838,
+      "median": 21.529412999370834
+    },
+    "pphlo_bytes_stats": {
+      "min": 484.0,
+      "max": 484.0,
+      "median": 484.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_per_element_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    }
+  },
+  {
+    "case": "primitive_check max N=64",
+    "name": "max",
+    "op": "primitive_check",
+    "jax_primitive": "max",
+    "hlo_primitive": "max",
+    "needed_by": "layout",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "上界；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 23.2850150023296,
+    "pphlo_bytes": 770.0,
+    "profiled": true,
+    "comm_send_bytes": 3840.0,
+    "comm_recv_bytes": 2816.0,
+    "comm_total_bytes": 6656.0,
+    "comm_per_element": 104.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 2304,
+        "recv_bytes": 2304,
+        "executions": 1,
+        "duration_s": 0.000570252
+      },
+      "select": {
+        "send_bytes": 1536,
+        "recv_bytes": 512,
+        "executions": 1,
+        "duration_s": 0.000176886
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.025e-06
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 23.27206500194734,
+      "max": 37.2051679987635,
+      "median": 23.2850150023296
+    },
+    "pphlo_bytes_stats": {
+      "min": 770.0,
+      "max": 770.0,
+      "median": 770.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 6656.0,
+      "max": 6656.0,
+      "median": 6656.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 3840.0,
+      "max": 3840.0,
+      "median": 3840.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 2816.0,
+      "max": 2816.0,
+      "median": 2816.0
+    },
+    "comm_per_element_stats": {
+      "min": 104.0,
+      "max": 104.0,
+      "median": 104.0
+    }
+  },
+  {
+    "case": "primitive_check min N=64",
+    "name": "min",
+    "op": "primitive_check",
+    "jax_primitive": "min",
+    "hlo_primitive": "min",
+    "needed_by": "layout",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "下界；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 23.53945799768553,
+    "pphlo_bytes": 770.0,
+    "profiled": true,
+    "comm_send_bytes": 3840.0,
+    "comm_recv_bytes": 2816.0,
+    "comm_total_bytes": 6656.0,
+    "comm_per_element": 104.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 2304,
+        "recv_bytes": 2304,
+        "executions": 1,
+        "duration_s": 0.000543092
+      },
+      "select": {
+        "send_bytes": 1536,
+        "recv_bytes": 512,
+        "executions": 1,
+        "duration_s": 0.000180251
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 6.97e-07
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 22.944820000702748,
+      "max": 38.510717000463046,
+      "median": 23.53945799768553
+    },
+    "pphlo_bytes_stats": {
+      "min": 770.0,
+      "max": 770.0,
+      "median": 770.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 6656.0,
+      "max": 6656.0,
+      "median": 6656.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 3840.0,
+      "max": 3840.0,
+      "median": 3840.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 2816.0,
+      "max": 2816.0,
+      "median": 2816.0
+    },
+    "comm_per_element_stats": {
+      "min": 104.0,
+      "max": 104.0,
+      "median": 104.0
+    }
+  },
+  {
+    "case": "primitive_check and N=64",
+    "name": "and",
+    "op": "primitive_check",
+    "jax_primitive": "and",
+    "hlo_primitive": "and",
+    "needed_by": "packing",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "打包取槽要用（P7 只测过“秘密 & 公开常数”）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 22.988613000052283,
+    "pphlo_bytes": 488.0,
+    "profiled": true,
+    "comm_send_bytes": 14848.0,
+    "comm_recv_bytes": 14848.0,
+    "comm_total_bytes": 29696.0,
+    "comm_per_element": 464.0,
+    "comm_by_primitive": {
+      "and": {
+        "send_bytes": 14848,
+        "recv_bytes": 14848,
+        "executions": 1,
+        "duration_s": 0.000980628
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 22.527082997839898,
+      "max": 25.739695000083884,
+      "median": 22.988613000052283
+    },
+    "pphlo_bytes_stats": {
+      "min": 488.0,
+      "max": 488.0,
+      "median": 488.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 29696.0,
+      "max": 29696.0,
+      "median": 29696.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 14848.0,
+      "max": 14848.0,
+      "median": 14848.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 14848.0,
+      "max": 14848.0,
+      "median": 14848.0
+    },
+    "comm_per_element_stats": {
+      "min": 464.0,
+      "max": 464.0,
+      "median": 464.0
+    }
+  },
+  {
+    "case": "primitive_check or N=64",
+    "name": "or",
+    "op": "primitive_check",
+    "jax_primitive": "or",
+    "hlo_primitive": "or",
+    "needed_by": "packing",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "打包/位平面合并要用；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 23.368252997897798,
+    "pphlo_bytes": 486.0,
+    "profiled": true,
+    "comm_send_bytes": 29184.0,
+    "comm_recv_bytes": 29184.0,
+    "comm_total_bytes": 58368.0,
+    "comm_per_element": 912.0,
+    "comm_by_primitive": {
+      "or": {
+        "send_bytes": 29184,
+        "recv_bytes": 29184,
+        "executions": 1,
+        "duration_s": 0.001737846
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 23.069505998137174,
+      "max": 26.31575499981409,
+      "median": 23.368252997897798
+    },
+    "pphlo_bytes_stats": {
+      "min": 486.0,
+      "max": 486.0,
+      "median": 486.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 58368.0,
+      "max": 58368.0,
+      "median": 58368.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 29184.0,
+      "max": 29184.0,
+      "median": 29184.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 29184.0,
+      "max": 29184.0,
+      "median": 29184.0
+    },
+    "comm_per_element_stats": {
+      "min": 912.0,
+      "max": 912.0,
+      "median": 912.0
+    }
+  },
+  {
+    "case": "primitive_check xor N=64",
+    "name": "xor",
+    "op": "primitive_check",
+    "jax_primitive": null,
+    "hlo_primitive": null,
+    "needed_by": "packing",
+    "registered_jax": false,
+    "registered_hlo": false,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "位平面异或用（登记表里**没有** xor，见 notes）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 22.83593500033021,
+    "pphlo_bytes": 488.0,
+    "profiled": true,
+    "comm_send_bytes": 14336.0,
+    "comm_recv_bytes": 14336.0,
+    "comm_total_bytes": 28672.0,
+    "comm_per_element": 448.0,
+    "comm_by_primitive": {
+      "xor": {
+        "send_bytes": 14336,
+        "recv_bytes": 14336,
+        "executions": 1,
+        "duration_s": 0.000943252
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 22.162327000842197,
+      "max": 24.994891002279473,
+      "median": 22.83593500033021
+    },
+    "pphlo_bytes_stats": {
+      "min": 488.0,
+      "max": 488.0,
+      "median": 488.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 28672.0,
+      "max": 28672.0,
+      "median": 28672.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 14336.0,
+      "max": 14336.0,
+      "median": 14336.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 14336.0,
+      "max": 14336.0,
+      "median": 14336.0
+    },
+    "comm_per_element_stats": {
+      "min": 448.0,
+      "max": 448.0,
+      "median": 448.0
+    }
+  },
+  {
+    "case": "primitive_check not N=64",
+    "name": "not",
+    "op": "primitive_check",
+    "jax_primitive": "not",
+    "hlo_primitive": "not",
+    "needed_by": "packing",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "位取反；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 21.056139001302654,
+    "pphlo_bytes": 481.0,
+    "profiled": true,
+    "comm_send_bytes": 0.0,
+    "comm_recv_bytes": 0.0,
+    "comm_total_bytes": 0.0,
+    "comm_per_element": 0.0,
+    "comm_by_primitive": {
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.8261e-05
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 20.826046998990932,
+      "max": 24.247585999546573,
+      "median": 21.056139001302654
+    },
+    "pphlo_bytes_stats": {
+      "min": 481.0,
+      "max": 481.0,
+      "median": 481.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_per_element_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    }
+  },
+  {
+    "case": "primitive_check shift_left N=64",
+    "name": "shift_left",
+    "op": "primitive_check",
+    "jax_primitive": "shift_left",
+    "hlo_primitive": "shift_left",
+    "needed_by": "packing",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "打包装槽要用（D3 §7 点名，此前未真机测）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 24.40796299924841,
+    "pphlo_bytes": 635.0,
+    "profiled": true,
+    "comm_send_bytes": 0.0,
+    "comm_recv_bytes": 0.0,
+    "comm_total_bytes": 0.0,
+    "comm_per_element": 0.0,
+    "comm_by_primitive": {
+      "shift_left": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.2827e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.678e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 5.49e-07
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 23.673103998589795,
+      "max": 51.84273999839206,
+      "median": 24.40796299924841
+    },
+    "pphlo_bytes_stats": {
+      "min": 635.0,
+      "max": 635.0,
+      "median": 635.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    },
+    "comm_per_element_stats": {
+      "min": 0.0,
+      "max": 0.0,
+      "median": 0.0
+    }
+  },
+  {
+    "case": "primitive_check shift_right N=64",
+    "name": "shift_right",
+    "op": "primitive_check",
+    "jax_primitive": "shift_right",
+    "hlo_primitive": "shift_right_arithmetic",
+    "needed_by": "packing",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "算术右移（P7 测过“秘密 >> 常数”，这里测“秘密 >> 秘密输入的同型张量”）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 24.53342299850192,
+    "pphlo_bytes": 648.0,
+    "profiled": true,
+    "comm_send_bytes": 7168.0,
+    "comm_recv_bytes": 7168.0,
+    "comm_total_bytes": 14336.0,
+    "comm_per_element": 224.0,
+    "comm_by_primitive": {
+      "shift_right_arithmetic": {
+        "send_bytes": 7168,
+        "recv_bytes": 7168,
+        "executions": 1,
+        "duration_s": 0.000470489
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.8453e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.452e-06
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 24.482898003043374,
+      "max": 39.737783998134546,
+      "median": 24.53342299850192
+    },
+    "pphlo_bytes_stats": {
+      "min": 648.0,
+      "max": 648.0,
+      "median": 648.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 14336.0,
+      "max": 14336.0,
+      "median": 14336.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 7168.0,
+      "max": 7168.0,
+      "median": 7168.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 7168.0,
+      "max": 7168.0,
+      "median": 7168.0
+    },
+    "comm_per_element_stats": {
+      "min": 224.0,
+      "max": 224.0,
+      "median": 224.0
+    }
+  },
+  {
+    "case": "primitive_check dot N=64",
+    "name": "dot",
+    "op": "primitive_check",
+    "jax_primitive": "dot",
+    "hlo_primitive": "dot",
+    "needed_by": "packing",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "打包归约候选（D3 §7 点名，此前未真机测）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 22.260357000050135,
+    "pphlo_bytes": 989.0,
+    "profiled": true,
+    "comm_send_bytes": 8.0,
+    "comm_recv_bytes": 8.0,
+    "comm_total_bytes": 16.0,
+    "comm_per_element": 0.25,
+    "comm_by_primitive": {
+      "dot": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 0.000384272
+      },
+      "reshape": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.5681e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 1.863e-06
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 21.939308997389162,
+      "max": 41.12079399783397,
+      "median": 22.260357000050135
+    },
+    "pphlo_bytes_stats": {
+      "min": 989.0,
+      "max": 989.0,
+      "median": 989.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 16.0,
+      "max": 16.0,
+      "median": 16.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 8.0,
+      "max": 8.0,
+      "median": 8.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 8.0,
+      "max": 8.0,
+      "median": 8.0
+    },
+    "comm_per_element_stats": {
+      "min": 0.25,
+      "max": 0.25,
+      "median": 0.25
+    }
+  },
+  {
+    "case": "primitive_check sum N=64",
+    "name": "sum",
+    "op": "primitive_check",
+    "jax_primitive": "sum",
+    "hlo_primitive": "reduce",
+    "needed_by": "layout",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "跨元素求和（归约轴聚合的基元）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 28.18874700096785,
+    "pphlo_bytes": 788.0,
+    "profiled": true,
+    "comm_send_bytes": 8.0,
+    "comm_recv_bytes": 8.0,
+    "comm_total_bytes": 16.0,
+    "comm_per_element": 0.25,
+    "comm_by_primitive": {
+      "reduce": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 0.000182103
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 1,
+        "duration_s": 6.2924e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 1.5402e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 8.57e-07
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 28.131373001087923,
+      "max": 46.58389999895007,
+      "median": 28.18874700096785
+    },
+    "pphlo_bytes_stats": {
+      "min": 788.0,
+      "max": 788.0,
+      "median": 788.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 16.0,
+      "max": 16.0,
+      "median": 16.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 8.0,
+      "max": 8.0,
+      "median": 8.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 8.0,
+      "max": 8.0,
+      "median": 8.0
+    },
+    "comm_per_element_stats": {
+      "min": 0.25,
+      "max": 0.25,
+      "median": 0.25
+    }
+  },
+  {
+    "case": "primitive_check compare N=64",
+    "name": "compare",
+    "op": "primitive_check",
+    "jax_primitive": "comparisons",
+    "hlo_primitive": "compare",
+    "needed_by": "layout",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "逐候选判定（L2 归约轴的非线性核心）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 32.758295001258375,
+    "pphlo_bytes": 1110.0,
+    "profiled": true,
+    "comm_send_bytes": 3080.0,
+    "comm_recv_bytes": 2568.0,
+    "comm_total_bytes": 5648.0,
+    "comm_per_element": 88.25,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 2304,
+        "recv_bytes": 2304,
+        "executions": 1,
+        "duration_s": 0.000549147
+      },
+      "reduce": {
+        "send_bytes": 768,
+        "recv_bytes": 256,
+        "executions": 1,
+        "duration_s": 0.000202146
+      },
+      "convert": {
+        "send_bytes": 8,
+        "recv_bytes": 8,
+        "executions": 2,
+        "duration_s": 5.2416e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 9.912e-06
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 1.4e-06
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 32.53816500000539,
+      "max": 37.189865000982536,
+      "median": 32.758295001258375
+    },
+    "pphlo_bytes_stats": {
+      "min": 1110.0,
+      "max": 1110.0,
+      "median": 1110.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 5648.0,
+      "max": 5648.0,
+      "median": 5648.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 2824.0,
+      "max": 3080.0,
+      "median": 3080.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 2568.0,
+      "max": 2824.0,
+      "median": 2568.0
+    },
+    "comm_per_element_stats": {
+      "min": 88.25,
+      "max": 88.25,
+      "median": 88.25
+    }
+  },
+  {
+    "case": "primitive_check select N=64",
+    "name": "select",
+    "op": "primitive_check",
+    "jax_primitive": "select",
+    "hlo_primitive": "select",
+    "needed_by": "layout",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "jnp.where（逐候选判定）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 27.312279999023303,
+    "pphlo_bytes": 773.0,
+    "profiled": true,
+    "comm_send_bytes": 3840.0,
+    "comm_recv_bytes": 2816.0,
+    "comm_total_bytes": 6656.0,
+    "comm_per_element": 104.0,
+    "comm_by_primitive": {
+      "less": {
+        "send_bytes": 2304,
+        "recv_bytes": 2304,
+        "executions": 1,
+        "duration_s": 0.000499214
+      },
+      "select": {
+        "send_bytes": 1536,
+        "recv_bytes": 512,
+        "executions": 1,
+        "duration_s": 0.00021067
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 8.33e-07
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 25.833002000581473,
+      "max": 43.255433000013,
+      "median": 27.312279999023303
+    },
+    "pphlo_bytes_stats": {
+      "min": 773.0,
+      "max": 773.0,
+      "median": 773.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 6656.0,
+      "max": 6656.0,
+      "median": 6656.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 3840.0,
+      "max": 3840.0,
+      "median": 3840.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 2816.0,
+      "max": 2816.0,
+      "median": 2816.0
+    },
+    "comm_per_element_stats": {
+      "min": 104.0,
+      "max": 104.0,
+      "median": 104.0
+    }
+  },
+  {
+    "case": "primitive_check sort N=64",
+    "name": "sort",
+    "op": "primitive_check",
+    "jax_primitive": "sort",
+    "hlo_primitive": "sort",
+    "needed_by": "fragile",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "依赖 frontend 的 float→int 补丁，跨版本易碎；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 79.91389999733656,
+    "pphlo_bytes": 553.0,
+    "profiled": true,
+    "comm_send_bytes": 209920.0,
+    "comm_recv_bytes": 176128.0,
+    "comm_total_bytes": 386048.0,
+    "comm_per_element": 6032.0,
+    "comm_by_primitive": {
+      "simple_sort": {
+        "send_bytes": 242688,
+        "recv_bytes": 143360,
+        "executions": 1,
+        "duration_s": 0.053571485
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 79.04919200154836,
+      "max": 95.33318399917334,
+      "median": 79.91389999733656
+    },
+    "pphlo_bytes_stats": {
+      "min": 553.0,
+      "max": 553.0,
+      "median": 553.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 386048.0,
+      "max": 451584.0,
+      "median": 386048.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 209920.0,
+      "max": 242688.0,
+      "median": 209920.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 143360.0,
+      "max": 241664.0,
+      "median": 176128.0
+    },
+    "comm_per_element_stats": {
+      "min": 6032.0,
+      "max": 7056.0,
+      "median": 6032.0
+    }
+  },
+  {
+    "case": "primitive_check top_k N=64",
+    "name": "top_k",
+    "op": "primitive_check",
+    "jax_primitive": "top_k",
+    "hlo_primitive": null,
+    "needed_by": "fragile",
+    "registered_jax": true,
+    "registered_hlo": false,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "登记为已适配但历史未真机核验；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 26.21458000066923,
+    "pphlo_bytes": 604.0,
+    "profiled": true,
+    "comm_send_bytes": 8430.0,
+    "comm_recv_bytes": 7918.0,
+    "comm_total_bytes": 16348.0,
+    "comm_per_element": 255.4375,
+    "comm_by_primitive": {},
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 24.94604899766273,
+      "max": 42.9740919971664,
+      "median": 26.21458000066923
+    },
+    "pphlo_bytes_stats": {
+      "min": 604.0,
+      "max": 604.0,
+      "median": 604.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 5840.0,
+      "max": 17384.0,
+      "median": 16348.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 3176.0,
+      "max": 8948.0,
+      "median": 8430.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 2664.0,
+      "max": 8436.0,
+      "median": 7918.0
+    },
+    "comm_per_element_stats": {
+      "min": 91.25,
+      "max": 271.625,
+      "median": 255.4375
+    }
+  },
+  {
+    "case": "primitive_check div N=64",
+    "name": "div",
+    "op": "primitive_check",
+    "jax_primitive": "div",
+    "hlo_primitive": "divide",
+    "needed_by": "fragile",
+    "registered_jax": true,
+    "registered_hlo": true,
+    "protocol": "ABY3",
+    "field": "FM64",
+    "elements": 64,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "登记表标为高代价原语，核验其真机可用性；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 76.7823420028435,
+    "pphlo_bytes": 2264.0,
+    "profiled": true,
+    "comm_send_bytes": 163392.0,
+    "comm_recv_bytes": 168768.0,
+    "comm_total_bytes": 334208.0,
+    "comm_per_element": 5222.0,
+    "comm_by_primitive": {
+      "remainder": {
+        "send_bytes": 69632,
+        "recv_bytes": 73472,
+        "executions": 1,
+        "duration_s": 0.017139753
+      },
+      "divide": {
+        "send_bytes": 69120,
+        "recv_bytes": 70656,
+        "executions": 1,
+        "duration_s": 0.016056097
+      },
+      "sign": {
+        "send_bytes": 19200,
+        "recv_bytes": 20736,
+        "executions": 2,
+        "duration_s": 0.00431724
+      },
+      "equal": {
+        "send_bytes": 2816,
+        "recv_bytes": 2816,
+        "executions": 2,
+        "duration_s": 0.001022321
+      },
+      "select": {
+        "send_bytes": 4608,
+        "recv_bytes": 1024,
+        "executions": 1,
+        "duration_s": 0.000371797
+      },
+      "and": {
+        "send_bytes": 64,
+        "recv_bytes": 64,
+        "executions": 1,
+        "duration_s": 0.000158824
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 4.1415e-05
+      },
+      "not": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 3.4351e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.7274e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 14,
+        "duration_s": 1.3548e-05
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 70.35391700264881,
+      "max": 94.96234900143463,
+      "median": 76.7823420028435
+    },
+    "pphlo_bytes_stats": {
+      "min": 2264.0,
+      "max": 2264.0,
+      "median": 2264.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 327040.0,
+      "max": 347264.0,
+      "median": 334208.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 162368.0,
+      "max": 165440.0,
+      "median": 163392.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 163648.0,
+      "max": 184896.0,
+      "median": 168768.0
+    },
+    "comm_per_element_stats": {
+      "min": 5110.0,
+      "max": 5426.0,
+      "median": 5222.0
+    }
+  }
+]

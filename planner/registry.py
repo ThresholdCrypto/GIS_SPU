@@ -135,11 +135,17 @@ def _k_from_nct(n_ct: str) -> int | None:
     return None
 
 
-def resolve_cost(rule: "OperatorRule", k: int | None = None) -> dict[str, Any]:
+def resolve_cost(
+    rule: "OperatorRule", k: int | None = None, *, k_basis: str | None = None
+) -> dict[str, Any]:
     """把静态代价档案实例化为该算子在本方案里的实际代价。
 
     位宽按 b(K) 实算而不是写死——写死的 "16" 与它自己的公式
     （16 + ceil(log2 K)）在 K>1 时矛盾，报价会低估累加余量。
+
+    `k_basis` 是"这个 K 从哪来"的一句话（`--layout-shape` / `params.K` /
+    登记默认值）。它必须**跟着 K 一起出现**：否则同一份报告里会出现
+    "布局按 attributes=4 算、位宽按 K=3 算"这种自相矛盾（P1 修掉的就是这个）。
     """
 
     profile = dict(rule.cost_profile)
@@ -157,9 +163,14 @@ def resolve_cost(rule: "OperatorRule", k: int | None = None) -> dict[str, Any]:
     formula = rule.bit_width_formula
     if formula is not None:
         effective_k = k if k is not None else _k_from_nct(n_ct) or _DEFAULT_K
-        profile["b"] = f"{formula(effective_k)}（8+8+ceil(log2 K)，K={effective_k}）"
+        basis_note = f"，K 来自 {k_basis}" if k_basis else ""
+        profile["b"] = (
+            f"{formula(effective_k)}（8+8+ceil(log2 K)，K={effective_k}{basis_note}）"
+        )
         profile["bit_width_rule"] = "b(K) = 8 + 8 + ceil(log2 K)"
         profile["K"] = effective_k
+        if k_basis:
+            profile["K_basis"] = k_basis
 
     return profile
 

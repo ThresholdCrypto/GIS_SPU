@@ -95,6 +95,7 @@ cd GIS_SPU
 | 2026-10-06 | `a811246`（P6：打包收益上界实测，SPU 按环元素计费） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + 打包前提探针（位宽扫描 / 规模扫描，`--packing-probe`） | **verified**（全量用例在 P7-P0 后为 `893 passed`，0 failed，0 skipped） |
 | 2026-10-06 | `d91da69`（P7-P0：打包电路取槽步单价实测） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试（2026-10-08 复跑）+ 取槽四变体 A/B（`test_slot_cost_probe.py` 25 项） | **verified**（`893 passed`，0 failed，0 skipped） |
 | 2026-10-08 | `66c823a` + 工作区改动（CI 修复：`requirements-spu.txt` 补 `pytest`；PSI 纯输入校验提到能力门之前；无 SPU 环境下的 CLI 用例改按原因 skip） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试（有 SPU）+ 全量测试（无 SPU 环境） | **verified**（有 SPU `893 passed`；无 SPU `766 passed / 127 skipped / 0 failed`） |
+| 2026-10-08 | 工作区未提交改动（P0：免逐槽提取路线筛选 + 逐原语真机核验；P1：K/size_hint 编译期口径 + 探针 CLI） | WSL2 Ubuntu 26.04.1 / x86_64 | 3.11.16 | 0.9.5 | 0.4.34 | 全量测试 + 路线筛选探针（6 变体 ×3 次，与目标语义对拍）+ 逐原语探针（19 原语 ×3 次）+ 取槽探针重跑 + Geo-RR22 覆盖关系实证（21973 条真实码） | **verified**（`949 passed`，0 failed，0 skipped） |
 
 > 2026-10-06 第二行（P2-2）的要点：通信量接进 `run_spu_simulation(capture_comm=True)`
 > 与每条基线记录，新增产物 `docs/mpc_comm_baseline.json` / `.csv`。
@@ -134,7 +135,7 @@ cd GIS_SPU
 > 那一步——把 8 位值从环元素取出来（右移 + 掩码）：四变体 A/B 实测
 > （`backends/spu_backend/slot_cost_probe.py`，产物 `docs/mpc_slot_cost_probe.json`）
 > 秘密 × 公开常数 **0 B**、`&` 624 B/元素、`>>` 1888 B/元素、全量取槽
-> **1424 B/元素 = 纯乘法 16 B/元素 的 89 倍**。口径：这是**前置判据**（打包划不划算），
+> **1424 B/元素 = 纯乘法 16 B/元素 的 89 倍**（重跑后 1496 / 94 倍，批间差 5%–15%）。口径：这是**前置判据**（打包划不划算），
 > 不是打包电路的收益；L2 的 1020.8× 是条数比，不能当通信量比。
 > 见 `docs/MPC_BENCHMARK_PROTOCOL.md` §8.7、`docs/BITPLANE_LAYOUT.md` §5.1、
 > `README.md` §8.4。

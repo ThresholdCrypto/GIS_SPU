@@ -71,6 +71,30 @@ from backends.spu_backend.packing_probe import (  # noqa: E402
     write_packing_probe_csv,
     write_packing_probe_json,
 )
+from backends.spu_backend.slot_cost_probe import (  # noqa: E402
+    format_slot_cost_summary,
+    run_slot_cost_cases,
+    slot_cost_cases,
+    summarize_slot_cost,
+    write_slot_cost_csv,
+    write_slot_cost_json,
+)
+from backends.spu_backend.slot_reduction_probe import (  # noqa: E402
+    format_slot_reduction_summary,
+    run_slot_reduction_cases,
+    slot_reduction_cases,
+    summarize_slot_reduction,
+    write_slot_reduction_csv,
+    write_slot_reduction_json,
+)
+from backends.spu_backend.primitive_probe import (  # noqa: E402
+    format_primitive_summary,
+    primitive_probe_cases,
+    run_primitive_cases,
+    summarize_primitives,
+    write_primitive_csv,
+    write_primitive_json,
+)
 
 
 def _resolve(path: str) -> str:
@@ -107,6 +131,30 @@ def parse_args(argv=None):
         ),
     )
     parser.add_argument(
+        "--slot-cost-probe",
+        action="store_true",
+        help=(
+            "只跑打包「取槽步」单价探针（P7-P0：掩码/右移/全量提取 vs 纯乘法的 A/B）；"
+            "默认写 docs/mpc_slot_cost_probe.json"
+        ),
+    )
+    parser.add_argument(
+        "--slot-reduction-probe",
+        action="store_true",
+        help=(
+            "只跑「免逐槽提取」的路线筛选 + 槽内归并实测（P0：整元素乘法 / 公开权重 / "
+            "不掩码移位 / SWAR 树，均与目标语义对拍）；默认写 docs/mpc_slot_reduction_probe.json"
+        ),
+    )
+    parser.add_argument(
+        "--primitive-probe",
+        action="store_true",
+        help=(
+            "只跑逐原语真机核验（P0：capability 表登记的原语逐个真机执行，"
+            "登记 vs 实测对账）；默认写 docs/mpc_primitive_probe.json"
+        ),
+    )
+    parser.add_argument(
         "--comm",
         action="store_true",
         help="打开 SPU pphlo profiling 采集通信量（墙钟会含 profiling 开销，勿与未开时比）",
@@ -136,11 +184,31 @@ def _split(value: str) -> set[str]:
     return {part for part in value.replace(",", " ").split() if part}
 
 
+#: 探针开关 → 产物文件名主干。新增探针时只改这一处（`resolve_output_paths`
+#: 与 `probe_mode` 都从它派生），避免"开关加了、默认文件名忘了加"。
+_PROBE_STEMS: Mapping[str, str] = {
+    "packing_probe": "mpc_packing_probe",
+    "slot_cost_probe": "mpc_slot_cost_probe",
+    "slot_reduction_probe": "mpc_slot_reduction_probe",
+    "primitive_probe": "mpc_primitive_probe",
+}
+
+
+def probe_mode(args) -> str | None:
+    """返回当前开的探针开关名（最多允许一个；同时开多个直接报错）。"""
+
+    opened = [name for name in _PROBE_STEMS if getattr(args, name, False)]
+    if len(opened) > 1:
+        raise SystemExit(f"一次只能开一个探针，收到 {sorted(opened)}")
+    return opened[0] if opened else None
+
+
 def resolve_output_paths(args) -> tuple[str | None, str | None]:
     """把 `--json` / `--csv` 解析成绝对路径（未给则按模式取默认名）。"""
 
-    if args.packing_probe:
-        stem = "mpc_packing_probe"
+    mode = probe_mode(args)
+    if mode is not None:
+        stem = _PROBE_STEMS[mode]
     elif args.temporal_ab:
         stem = "mpc_temporal_ab"
     else:
@@ -150,8 +218,27 @@ def resolve_output_paths(args) -> tuple[str | None, str | None]:
     return json_path, csv_path
 
 
+def _own_cases(flag: str, args) -> None:
+    """探针模式自带用例集：与 `--ops/--protocols` 组合会得到半张表，故直接拒绝。"""
+
+    clash = sorted(_split(args.ops) | _split(args.protocols))
+    if clash:
+        raise SystemExit(
+            f"--{flag.replace('_', '-')} 自带用例集，不与 --ops/--protocols 组合（收到 {clash}）"
+        )
+
+
 def build_cases(args):
     repeats = max(1, int(args.repeat))
+    if args.slot_cost_probe:
+        _own_cases("slot_cost_probe", args)
+        return slot_cost_cases(repeats=repeats)
+    if args.slot_reduction_probe:
+        _own_cases("slot_reduction_probe", args)
+        return slot_reduction_cases(repeats=repeats)
+    if args.primitive_probe:
+        _own_cases("primitive_probe", args)
+        return primitive_probe_cases(repeats=repeats)
     if args.packing_probe:
         clash = sorted(_split(args.ops) | _split(args.protocols))
         if clash:
@@ -226,14 +313,95 @@ def _run_packing_probe(args, cases, out_json: str | None, out_csv: str | None) -
     return 1 if errors else 0
 
 
+#: 三个"目录式"探针（自带用例集、同一种记录 schema）→ 各自的跑法 / 产物
+#: 写入 / 汇总函数。加新探针时在 `_PROBE_STEMS` 与这里各加一行即可。
+_CATALOG_PROBES: dict[str, dict] = {
+    "slot_cost_probe": {
+        "title": "取槽单价探针（P7-P0）",
+        "flag": "--slot-cost-probe",
+        "run": run_slot_cost_cases,
+        "write_json": write_slot_cost_json,
+        "write_csv": write_slot_cost_csv,
+        "format": format_slot_cost_summary,
+        "summarize": summarize_slot_cost,
+    },
+    "slot_reduction_probe": {
+        "title": "免逐槽提取路线筛选 + 槽内归并（P0）",
+        "flag": "--slot-reduction-probe",
+        "run": run_slot_reduction_cases,
+        "write_json": write_slot_reduction_json,
+        "write_csv": write_slot_reduction_csv,
+        "format": format_slot_reduction_summary,
+        "summarize": summarize_slot_reduction,
+    },
+    "primitive_probe": {
+        "title": "逐原语真机核验（P0）",
+        "flag": "--primitive-probe",
+        "run": run_primitive_cases,
+        "write_json": write_primitive_json,
+        "write_csv": write_primitive_csv,
+        "format": format_primitive_summary,
+        "summarize": summarize_primitives,
+    },
+}
+
+
+def _run_catalog_probe(mode: str, args, cases, out_json: str | None,
+                       out_csv: str | None) -> int:
+    """目录式探针分支：跑 → 写 JSON/CSV → 打印结论。"""
+
+    spec = _CATALOG_PROBES[mode]
+    report = check_capabilities()
+    print(
+        f"{spec['title']}：{len(cases)} 条用例 × {max(1, int(args.repeat))} 次"
+        f"（capture_comm=on）；json={out_json}；csv={out_csv}",
+        flush=True,
+    )
+    if not report.runnable:
+        print(f"  环境不具备真实 SPU 执行能力：{'; '.join(report.blockers)}", flush=True)
+
+    def progress(record) -> None:
+        comm = record.get("comm_total_bytes")
+        per = record.get("comm_per_element")
+        match = record.get("within_tolerance")
+        print(
+            f"  {record['case']}: {record['status']}"
+            f"  对拍={'-' if match is None else ('是' if match else '否')}"
+            f"  comm={'-' if comm is None else round(comm)} B"
+            f"  B/元素={'-' if per is None else round(per, 2)}"
+            f"  wall={'-' if record['wall_ms'] is None else round(record['wall_ms'], 1)} ms"
+            + (f"  error={record['error'][:80]}" if record.get("error") else ""),
+            flush=True,
+        )
+
+    records = spec["run"](cases, report=report, progress=progress)
+    if out_json:
+        spec["write_json"](records, out_json)
+    if out_csv:
+        spec["write_csv"](records, out_csv)
+
+    print()
+    print(spec["format"](records))
+    errors = sum(1 for record in records if record["status"] == "error")
+    unavailable = sum(1 for record in records if record["status"] == "unavailable")
+    print(f"\n汇总：{len(records)} 条；error={errors}；unavailable={unavailable}")
+    summary = spec["summarize"](records)
+    for note in summary.get("notes") or ():
+        print(f"  说明：{note}")
+    return 1 if errors else 0
+
+
 def main(argv=None) -> int:
     args = parse_args(argv)
     cases = build_cases(args)
     if not cases:
         raise SystemExit("筛选后没有用例（检查 --ops / --protocols）")
     out_json, out_csv = resolve_output_paths(args)
-    if args.packing_probe:
+    mode = probe_mode(args)
+    if mode == "packing_probe":
         return _run_packing_probe(args, cases, out_json, out_csv)
+    if mode in _CATALOG_PROBES:
+        return _run_catalog_probe(mode, args, cases, out_json, out_csv)
 
     report = check_capabilities()
     repeats = max(1, int(args.repeat))

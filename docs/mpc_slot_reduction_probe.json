@@ -1,0 +1,662 @@
+[
+  {
+    "case": "slot_reduce extract_seq N=256",
+    "name": "extract_seq",
+    "op": "slot_reduce",
+    "route": "baseline",
+    "target": "weighted",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "slots": 4,
+    "elements": 256,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "基准：逐槽提取 + 加权（P7 的 shift_mask 电路）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 65.21252399761579,
+    "pphlo_bytes": 3307.0,
+    "profiled": true,
+    "comm_send_bytes": 198656.0,
+    "comm_recv_bytes": 163840.0,
+    "comm_total_bytes": 364544.0,
+    "comm_per_element": 1424.0,
+    "comm_by_primitive": {
+      "shift_right_arithmetic": {
+        "send_bytes": 114688,
+        "recv_bytes": 114688,
+        "executions": 4,
+        "duration_s": 0.002264491
+      },
+      "multiply": {
+        "send_bytes": 81920,
+        "recv_bytes": 2048,
+        "executions": 3,
+        "duration_s": 0.000301259
+      },
+      "add": {
+        "send_bytes": 2048,
+        "recv_bytes": 49152,
+        "executions": 3,
+        "duration_s": 0.000116421
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 5.3096e-05
+      },
+      "and": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 4.0366e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 21,
+        "duration_s": 1.0172e-05
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 65.10994099880918,
+      "max": 96.09209400150576,
+      "median": 65.21252399761579
+    },
+    "pphlo_bytes_stats": {
+      "min": 3307.0,
+      "max": 3307.0,
+      "median": 3307.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 317440.0,
+      "max": 378880.0,
+      "median": 364544.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 196608.0,
+      "max": 215040.0,
+      "median": 198656.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 120832.0,
+      "max": 165888.0,
+      "median": 163840.0
+    },
+    "comm_per_element_stats": {
+      "min": 1240.0,
+      "max": 1480.0,
+      "median": 1424.0
+    }
+  },
+  {
+    "case": "slot_reduce extract_unweighted N=256",
+    "name": "extract_unweighted",
+    "op": "slot_reduce",
+    "route": "control",
+    "target": "sum",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "slots": 4,
+    "elements": 256,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "对照：逐槽提取但不加权（分离「加权」这一步的钱）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 54.04472499867552,
+    "pphlo_bytes": 2531.0,
+    "profiled": true,
+    "comm_send_bytes": 165888.0,
+    "comm_recv_bytes": 215040.0,
+    "comm_total_bytes": 382976.0,
+    "comm_per_element": 1496.0,
+    "comm_by_primitive": {
+      "shift_right_arithmetic": {
+        "send_bytes": 114688,
+        "recv_bytes": 114688,
+        "executions": 4,
+        "duration_s": 0.002020704
+      },
+      "add": {
+        "send_bytes": 22528,
+        "recv_bytes": 149504,
+        "executions": 3,
+        "duration_s": 0.000660824
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 5,
+        "duration_s": 4.3239e-05
+      },
+      "and": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 4.2552e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 15,
+        "duration_s": 8.383e-06
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 52.96967699905508,
+      "max": 59.9384769993776,
+      "median": 54.04472499867552
+    },
+    "pphlo_bytes_stats": {
+      "min": 2531.0,
+      "max": 2531.0,
+      "median": 2531.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 335872.0,
+      "max": 401408.0,
+      "median": 382976.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 137216.0,
+      "max": 167936.0,
+      "median": 165888.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 169984.0,
+      "max": 264192.0,
+      "median": 215040.0
+    },
+    "comm_per_element_stats": {
+      "min": 1312.0,
+      "max": 1568.0,
+      "median": 1496.0
+    }
+  },
+  {
+    "case": "slot_reduce swar_tree N=256",
+    "name": "swar_tree",
+    "op": "slot_reduce",
+    "route": "swar",
+    "target": "sum",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "slots": 4,
+    "elements": 256,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "槽内归并：对数深度掩码+移位+加法树（D3 §7-3）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 48.08710099678137,
+    "pphlo_bytes": 1951.0,
+    "profiled": true,
+    "comm_send_bytes": 237568.0,
+    "comm_recv_bytes": 245760.0,
+    "comm_total_bytes": 483328.0,
+    "comm_per_element": 1888.0,
+    "comm_by_primitive": {
+      "add": {
+        "send_bytes": 122880,
+        "recv_bytes": 131072,
+        "executions": 2,
+        "duration_s": 0.002338722
+      },
+      "and": {
+        "send_bytes": 57344,
+        "recv_bytes": 57344,
+        "executions": 4,
+        "duration_s": 0.001004204
+      },
+      "shift_right_arithmetic": {
+        "send_bytes": 57344,
+        "recv_bytes": 57344,
+        "executions": 2,
+        "duration_s": 0.000947829
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 3.6018e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 11,
+        "duration_s": 7.175e-06
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 47.303955998359015,
+      "max": 52.11743999825558,
+      "median": 48.08710099678137
+    },
+    "pphlo_bytes_stats": {
+      "min": 1951.0,
+      "max": 1951.0,
+      "median": 1951.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 483328.0,
+      "max": 483328.0,
+      "median": 483328.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 237568.0,
+      "max": 237568.0,
+      "median": 237568.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 245760.0,
+      "max": 245760.0,
+      "median": 245760.0
+    },
+    "comm_per_element_stats": {
+      "min": 1888.0,
+      "max": 1888.0,
+      "median": 1888.0
+    }
+  },
+  {
+    "case": "slot_reduce fullmul N=256",
+    "name": "fullmul",
+    "op": "slot_reduce",
+    "route": "route_a",
+    "target": "sum",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "slots": 4,
+    "elements": 256,
+    "repeat": 3,
+    "status": "error",
+    "error": "结果超出容差：max_abs_error=22.0 > tolerance=0.0",
+    "note": "路线 a：整元素一次乘法算全部槽；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；执行未成功：error（结果超出容差：max_abs_error=22.0 > tolerance=0.0）",
+    "wall_ms": 28.780729000573047,
+    "pphlo_bytes": 859.0,
+    "profiled": true,
+    "comm_send_bytes": 28672.0,
+    "comm_recv_bytes": 28672.0,
+    "comm_total_bytes": 57344.0,
+    "comm_per_element": 224.0,
+    "comm_by_primitive": {
+      "and": {
+        "send_bytes": 28672,
+        "recv_bytes": 28672,
+        "executions": 1,
+        "duration_s": 0.000664077
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 2,
+        "duration_s": 2.8066e-05
+      },
+      "multiply": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 1,
+        "duration_s": 2.1158e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 2.56e-06
+      }
+    },
+    "within_tolerance": false,
+    "max_abs_error": 22.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "error": 3
+    },
+    "wall_ms_stats": {
+      "min": 27.869902998645557,
+      "max": 32.02336499816738,
+      "median": 28.780729000573047
+    },
+    "pphlo_bytes_stats": {
+      "min": 859.0,
+      "max": 859.0,
+      "median": 859.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 57344.0,
+      "max": 57344.0,
+      "median": 57344.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 28672.0,
+      "max": 28672.0,
+      "median": 28672.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 28672.0,
+      "max": 28672.0,
+      "median": 28672.0
+    },
+    "comm_per_element_stats": {
+      "min": 224.0,
+      "max": 224.0,
+      "median": 224.0
+    }
+  },
+  {
+    "case": "slot_reduce maskless_shift N=256",
+    "name": "maskless_shift",
+    "op": "slot_reduce",
+    "route": "route_c",
+    "target": "weighted",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "slots": 4,
+    "elements": 256,
+    "repeat": 3,
+    "status": "error",
+    "error": "结果超出容差：max_abs_error=169356800.0 > tolerance=0.0",
+    "note": "路线 c：一次对齐移位（不掩码）；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)；执行未成功：error（结果超出容差：max_abs_error=169356800.0 > tolerance=0.0）",
+    "wall_ms": 56.25873900135048,
+    "pphlo_bytes": 2554.0,
+    "profiled": true,
+    "comm_send_bytes": 237568.0,
+    "comm_recv_bytes": 245760.0,
+    "comm_total_bytes": 483328.0,
+    "comm_per_element": 1888.0,
+    "comm_by_primitive": {
+      "shift_right_arithmetic": {
+        "send_bytes": 114688,
+        "recv_bytes": 114688,
+        "executions": 4,
+        "duration_s": 0.001933501
+      },
+      "multiply": {
+        "send_bytes": 92160,
+        "recv_bytes": 98304,
+        "executions": 3,
+        "duration_s": 0.001509145
+      },
+      "add": {
+        "send_bytes": 30720,
+        "recv_bytes": 32768,
+        "executions": 3,
+        "duration_s": 0.000467312
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 7,
+        "duration_s": 5.3065e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 16,
+        "duration_s": 9.013e-06
+      }
+    },
+    "within_tolerance": false,
+    "max_abs_error": 169356800.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "error": 3
+    },
+    "wall_ms_stats": {
+      "min": 53.899374997854466,
+      "max": 60.44924299931154,
+      "median": 56.25873900135048
+    },
+    "pphlo_bytes_stats": {
+      "min": 2554.0,
+      "max": 2554.0,
+      "median": 2554.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 483328.0,
+      "max": 483328.0,
+      "median": 483328.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 237568.0,
+      "max": 237568.0,
+      "median": 237568.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 245760.0,
+      "max": 245760.0,
+      "median": 245760.0
+    },
+    "comm_per_element_stats": {
+      "min": 1888.0,
+      "max": 1888.0,
+      "median": 1888.0
+    }
+  },
+  {
+    "case": "slot_reduce extract_seq_secret_weight N=256",
+    "name": "extract_seq_secret_weight",
+    "op": "slot_reduce",
+    "route": "route_b",
+    "target": "weighted",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "slots": 4,
+    "elements": 256,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "路线 b 的反面：权重是秘密时，同样的提取要多付一次保密乘法；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 78.52453899977263,
+    "pphlo_bytes": 4843.0,
+    "profiled": true,
+    "comm_send_bytes": 190464.0,
+    "comm_recv_bytes": 176128.0,
+    "comm_total_bytes": 366592.0,
+    "comm_per_element": 1432.0,
+    "comm_by_primitive": {
+      "shift_right_arithmetic": {
+        "send_bytes": 114688,
+        "recv_bytes": 114688,
+        "executions": 4,
+        "duration_s": 0.002130698
+      },
+      "multiply": {
+        "send_bytes": 75776,
+        "recv_bytes": 61440,
+        "executions": 4,
+        "duration_s": 0.0006682
+      },
+      "and": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 4.4213e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 5,
+        "duration_s": 4.4112e-05
+      },
+      "add": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 3.2947e-05
+      },
+      "slice": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 1.6351e-05
+      },
+      "reshape": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 1.5833e-05
+      },
+      "broadcast": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 1.4958e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 31,
+        "duration_s": 1.1407e-05
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 77.55685400115908,
+      "max": 91.79047499856097,
+      "median": 78.52453899977263
+    },
+    "pphlo_bytes_stats": {
+      "min": 4843.0,
+      "max": 4843.0,
+      "median": 4843.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 366592.0,
+      "max": 380928.0,
+      "median": 366592.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 190464.0,
+      "max": 206848.0,
+      "median": 190464.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 174080.0,
+      "max": 176128.0,
+      "median": 176128.0
+    },
+    "comm_per_element_stats": {
+      "min": 1432.0,
+      "max": 1488.0,
+      "median": 1432.0
+    }
+  },
+  {
+    "case": "slot_reduce extract_seq_dup N=256",
+    "name": "extract_seq_dup",
+    "op": "slot_reduce",
+    "route": "noise",
+    "target": "weighted",
+    "protocol": "ABY3",
+    "field": "FM64",
+    "slots": 4,
+    "elements": 256,
+    "repeat": 3,
+    "status": "ok",
+    "error": "",
+    "note": "**同一电路复测**：与 extract_seq 逐位相同，只用来量本探针的批间差；执行路径：spu.utils.simulation.Simulator(3, RuntimeConfig(ABY3, FM64, enable_pphlo_profile=True)) → sim_jax → frontend.compile(Kind.JAX)",
+    "wall_ms": 64.8770500010869,
+    "pphlo_bytes": 3307.0,
+    "profiled": true,
+    "comm_send_bytes": 184320.0,
+    "comm_recv_bytes": 212992.0,
+    "comm_total_bytes": 397312.0,
+    "comm_per_element": 1552.0,
+    "comm_by_primitive": {
+      "shift_right_arithmetic": {
+        "send_bytes": 114688,
+        "recv_bytes": 114688,
+        "executions": 4,
+        "duration_s": 0.002880302
+      },
+      "multiply": {
+        "send_bytes": 36864,
+        "recv_bytes": 98304,
+        "executions": 3,
+        "duration_s": 0.00030421
+      },
+      "add": {
+        "send_bytes": 32768,
+        "recv_bytes": 0,
+        "executions": 3,
+        "duration_s": 6.5498e-05
+      },
+      "constant": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 8,
+        "duration_s": 6.4443e-05
+      },
+      "and": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 4,
+        "duration_s": 4.0509e-05
+      },
+      "free": {
+        "send_bytes": 0,
+        "recv_bytes": 0,
+        "executions": 21,
+        "duration_s": 1.0083e-05
+      }
+    },
+    "within_tolerance": true,
+    "max_abs_error": 0.0,
+    "tolerance": 0.0,
+    "status_counts": {
+      "ok": 3
+    },
+    "wall_ms_stats": {
+      "min": 64.64780399983283,
+      "max": 67.61758499851567,
+      "median": 64.8770500010869
+    },
+    "pphlo_bytes_stats": {
+      "min": 3307.0,
+      "max": 3307.0,
+      "median": 3307.0
+    },
+    "comm_total_bytes_stats": {
+      "min": 317440.0,
+      "max": 397312.0,
+      "median": 397312.0
+    },
+    "comm_send_bytes_stats": {
+      "min": 184320.0,
+      "max": 196608.0,
+      "median": 184320.0
+    },
+    "comm_recv_bytes_stats": {
+      "min": 120832.0,
+      "max": 212992.0,
+      "median": 212992.0
+    },
+    "comm_per_element_stats": {
+      "min": 1240.0,
+      "max": 1552.0,
+      "median": 1552.0
+    }
+  }
+]

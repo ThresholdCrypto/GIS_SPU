@@ -500,7 +500,14 @@ class Compiler:
             result.stages.append(StageResult("jax", "skipped", message="无隐私方案"))
             return
 
-        generation = generate_for_plan(result.plan)
+        # 编译期规模提示：调用方给了 --layout-shape 就顺带用它选电路，
+        # 避免"布局按候选数 N 算、电路因为拿不到规模退回 pairwise"（P1）。
+        generation = generate_for_plan(
+            result.plan,
+            size_hint=(
+                self.layout_shape.size_hint if self.layout_shape is not None else None
+            ),
+        )
         result.jax_generation = generation
         result.jax_module = render_module(generation, source_plan=result.plan)
 

@@ -25,7 +25,7 @@ Python 地理业务代码
 
 > **项目进展说明**（完成度、里程碑时间线、已验证 / 未落地、关键实测结论、复现方式）
 > 见 [`docs/PROGRESS.md`](docs/PROGRESS.md)。截至提交 `d91da69`（2026-10-06）：
-> 11 个提交、**893 项测试全部通过、0 跳过**。
+> 14 个提交、**949 项测试全部通过、0 跳过**。
 
 ## 快速开始
 
@@ -47,7 +47,7 @@ bash scripts/setup_wsl_spu.sh         # 一键：系统依赖 + Python 3.11 + �
 
 ```bash
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 893 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 949 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -980,13 +980,16 @@ tests/test_planner.py             56 项   注册表、五元组、敏感度策�
 tests/test_bitplane_layout.py     23 项   位平面布局（D3）：课题产物逐项复算、归约轴决策、不给形状不给数字、与实测前提对账
 tests/test_packing_probe.py       30 项   打包前提探针（P6）：位宽扫描/规模扫描、按环元素计费、收益上界、缺数诚实留空、真机位宽等价
 tests/test_slot_cost_probe.py      25 项   取槽步单价（P7-P0）：掩码/右移/全量提取 vs 纯乘法的 A/B、位运算语义、比价基准不许拿 0 B 变体
+tests/test_primitive_probe.py     20 项   逐原语真机核验（P0）：D3 点名原语全覆盖、登记名与 capability 白名单对账、低于秘密乘法下限的读数必须标可疑
+tests/test_slot_reduction_probe.py 19 项  免逐槽提取路线筛选（P0）：路线 a/c 必须继续对拍失败（纯 jax 复算）、批间差参与判定、SWAR 树同语义比价
+tests/test_geo_rr22_coverage.py   12 项  Geo-RR22 覆盖关系判定实证：国标前缀性质（构造 + 21973 条真实码）、本项目码解不出真实层级、剪枝入口不得出现
 tests/test_protocol_registry.py   18 项   协议元数据单一来源、结果语义、Planner 与后端交叉一致
 tests/test_protocol_coverage.py   12 项   协议覆盖镜像：登记协议必须显式归类（已验证/不可执行/无密码学保护），不许静默滑过
 tests/test_protocol_selection.py  21 项   MPC 协议按实测代价选择、REF2K 不自动选中、拒绝信息可操作、排序第二协议真跑
 tests/test_jax_backend.py         48 项   生成器、可追踪性、原语核对、与明文对拍、TemporalOverlap 两套电路等价
 tests/test_spu_backend.py         52 项   协议/环宽规范化、能力门控、私有接口与共享库回归、SPU 实跑、sweep 电路真机
 tests/test_spu_profile.py         13 项   SPU 通信量剖析：pphlo 日志解析与 fd 级捕获（P2-2）
-tests/test_benchmark_mpc.py       65 项   MPC 基线：用例构造、协议×算子×环宽矩阵、通信量采集、策略 A/B、诚实留空
+tests/test_benchmark_mpc.py       70 项   MPC 基线：用例构造、协议×算子×环宽矩阵、通信量采集、策略 A/B、诚实留空、四个探针开关的产物路径与互斥
 tests/test_benchmark.py           33 项   PSI 基线生成器确定性/合法性、记录 schema、unavailable 诚实规则、写入器、真实 RR22 记录
 tests/test_psi_backend.py         82 项   PSI 能力/协议归一化/真实求交/空输入/泄漏面/诚实留空/日志卫生/带噪与精确披露/RR22 参数链路
 tests/test_psi_runtime_config.py  11 项   PsiRuntimeConfig 拆分/注入/单一配置源/非法 rank/曲线/协议
@@ -1006,11 +1009,11 @@ tests/test_execution_chain.py     15 项   链式执行使用上一步 PSI 输�
 tests/test_rr22_geosot.py          8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
 tests/test_end_to_end.py          75 项   全流程、状态表、CLI（协议/曲线/子集/RR22/布局形状/MPC 协议）、六类失败报告、编译入口参数、诊断聚合、确定性
                                   ─────
-                                  893 通过 / 0 跳过
+                                  949 通过 / 0 跳过
 ```
 
 在 **WSL2 + Linux + Python 3.11.16 + jax 0.4.34 + spu 0.9.5** 上，
-**893 项全部通过，无跳过**。真实执行隐私协议的用例：
+**949 项全部通过，无跳过**。真实执行隐私协议的用例：
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
@@ -1270,7 +1273,7 @@ DistanceLE  QuantizedVector  MPC/SPU  verified
 ```bash
 # WSL2 / Linux 上（Python 3.10 或 3.11）
 pip install -r requirements-spu.txt      # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q               # 893 项全部通过（0 跳过）
+python -m pytest tests/ -q               # 949 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -1370,8 +1373,8 @@ MPC 电路输出一个比特  k == n
 
 | 优先级 | 待办 | 说明 |
 |--------|------|------|
-| 高 | **Geo-RR22 输入预处理** | 接入闭环、性能基线、输入预处理均已完成（见 5.6 / 5.8）；去重（正确性前提）/ 排序 / 无损前缀压缩 / bucket 分区已实现并**默认接入** PSI 输入路径（`geosot_optimizer`，`GEOSOT_OPTIMIZER_VERSION = "0.1.0"`）；**仅剩候选集剪枝**（§10，先出覆盖关系判定实证，再谈实现）——设计见 `docs/GEO_RR22_DESIGN.md` |
-| 中 | 编译期按方案实算元素数 K | `resolve_cost` 已支持按 K 实例化，但 K 目前需显式传入 |
+| 高 | **Geo-RR22 输入预处理** | 接入闭环、性能基线、输入预处理均已完成（见 5.6 / 5.8）；去重（正确性前提）/ 排序 / 无损前缀压缩 / bucket 分区已实现并**默认接入** PSI 输入路径（`geosot_optimizer`，`GEOSOT_OPTIMIZER_VERSION = "0.1.0"`）；**候选集剪枝仍不实现**：前置的「覆盖关系判定」实证报告已出（本版 P0，`docs/GEO_RR22_COVERAGE.md`），结论是**当前口径下不可实现**——国标码有前缀覆盖规则（21973 条真实码实测），但本项目 64 位码是字段切分布局、解不出真实层级，且 `(X, Y)` 与 `L` 的口径未声明，同一条 x 在 9 级与 15 级上被复用。剪枝在没有无损规则前等于把近似引进精确路径（任务文档 §10）。设计见 `docs/GEO_RR22_DESIGN.md` |
+| 中 | ~~编译期按方案实算元素数 K~~ | **已闭合（本版 P1）**：K 现在有两条来路——算子的 `params.K`（调用方显式声明）与 `--layout-shape` 的 `attributes`（与位平面布局同一口径），并在 `estimated_cost` 里写明 `K_basis`。修掉了"布局按 attributes=4 算、位宽按 K=3 算"这一处同报告内自相矛盾；`TemporalOverlap` 的电路选择也接上了 `size_hint`（`--layout-shape candidates=N` → `sweep`） |
 | 低 | 三维示例接入真实 3D 码集 | `examples/vertical_conflict.py` 已跑通编译与 PSI 真实执行，但 `DEFAULT_EXAMPLE_INPUTS` 仍是二维码；换码集即可 |
 
 > 已闭合（上一版遗留）：**高度层（Z）语义**。Z 已定义为 GB/T 40087 附录 B 的
@@ -1450,7 +1453,7 @@ MPC 电路输出一个比特  k == n
 > 必须付的那一步——把 8 位值从环元素里取出来（右移 + 掩码）：四个变体 A/B 实测
 > （产物 `docs/mpc_slot_cost_probe.json`）`mul_only`（秘密 × 公开常数）**0 B**、
 > `mask_only` 624 B/元素、`shift_only` 1888 B/元素、`shift_mask`（全量提取）
-> **1424 B/元素 = 纯乘法 16 B/元素 的 89 倍**。结论是**前置判据**：元素数下降的
+> **1424–1496 B/元素 = 纯乘法 16 B/元素 的 89–94 倍**（区间来自批间差）。结论是**前置判据**：元素数下降的
 > 倍数必须先超过这个量级，打包才可能划算。见 8.4 与 `docs/BITPLANE_LAYOUT.md` §5.1。
 
 ### 8.1 接入新增隐私后端
@@ -1513,8 +1516,9 @@ backends/
 
 ### 8.3 提升 SPU 侧覆盖
 
-- 在 WSL2 / Linux + Python 3.11 环境下接通真实 SPU 模拟，
-  把 `tests/test_spu_backend.py::TestRealSpuSimulation` 从 skip 变为通过。
+- ~~在 WSL2 / Linux + Python 3.11 环境下接通真实 SPU 模拟，
+  把 `tests/test_spu_backend.py::TestRealSpuSimulation` 从 skip 变为通过~~
+  ——**已闭合**：本机 `949 passed / 0 failed / 0 skipped`，无一条真实执行用例被跳过。
 - 补 `FM128` 路径测试（64 位键的溢出场景）。
 - ~~补不同协议的代价实测（`semi2k` / `aby3` / `cheetah`）~~ ——**已闭合（本版 P1）**：
   `tests/benchmarks/benchmark_mpc.py` 已把 3 个 MPC 算子 × 5 个 SPU 协议 × 3 个环宽
@@ -1527,7 +1531,12 @@ backends/
   采 SPU 的 pphlo profiling，落到每条记录，产物 `docs/mpc_comm_baseline.json`；
   实测确认墙钟排不出协议优劣、`TemporalOverlap` 上墙钟排序被通信量反转。
   ~~`TemporalOverlap` 二次电路改造~~ ——**已闭合（P3）**：新增 `sweep` 电路（排序归并 + 前缀扫描，O((N+M)·log(N+M))），K=1024 真机跑通，原来那条「K 上限被锁在 32 量级」的限制因此解除。但排序在 MPC 里贵（实测交叉点 K≈128–256），故默认 `auto` 以 K=256 为阈值、拿不到规模就退回 pairwise，两套电路都保留（见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.1）。
-  **未闭合的余项**：把电路选择接到实际输入规模上（`size_hint` 目前要调用方给）。
+  ~~未闭合的余项：把电路选择接到实际输入规模上（`size_hint` 目前要调用方给）~~
+  ——**已闭合（本版 P1）**：`--layout-shape candidates=N` 现在同时喂给
+  `TemporalOverlap` 的电路选择（`generate_for_plan(size_hint=...)`），
+  `N ≥ 256` 自动走 `sweep`、否则 `pairwise`；拿不到规模时仍退回既有口径并披露。
+  实测：同一示例在 `candidates=1000` 下生成 `sweep`（HLO 4257 → 9364 B，含 `sort`）。
+  `size_hint` 仍可被调用方显式覆盖（`generate_for_plan(..., size_hint=…)`）。
 
 ### 8.4 位平面与打包布局（D3）
 
@@ -1582,14 +1591,68 @@ geo-secure build examples/distance_check.py \
 | 变体 | 电路 | 通信量 | B/元素 |
 |---|---|---|---|
 | `mul_only` | `Σ x × c_s`（秘密 × 公开常数） | 0 B | 0.00 |
-| `mask_only` | `Σ (x & 0xFF) × c_s` | 159 744 B | 624.00 |
+| `mask_only` | `Σ (x & 0xFF) × c_s` | 210 944 B | 824.00 |
 | `shift_only` | `Σ (x >> 8s) × c_s` | 483 328 B | 1888.00 |
-| `shift_mask` | 全量取槽（打包电路的那一步） | 364 544 B | **1424.00** |
+| `shift_mask` | 全量取槽（打包电路的那一步） | 382 976 B | **1496.00** |
 
-取槽步是纯乘法的 **89 倍**单价。所以"元素数 ÷8"这个上界**只在取槽能摊薄时才兑现**：
+（2026-10-08 以 `--repeat 3` 取中位数重跑；P7-P0 首次为单次读数 624 / 1888 / 1424。
+同一条电路批间差实测 5%–15%，所以下表只做量级判断。**本版把重复次数变成了真的重复
+执行**：此前 `--repeat` 只记进记录、没真跑。）
+
+取槽步是纯乘法的 **89–94 倍**单价。所以"元素数 ÷8"这个上界**只在取槽能摊薄时才兑现**：
 打包要划算，元素数下降的倍数必须先超过这个量级——L2 的 1020.8× 是**条数比**，
-与 89 倍同量级，不能当成通信量比。这条把下一步从"照着公式写电路"改成
+与 89–94 倍同量级，不能当成通信量比。这条把下一步从"照着公式写电路"改成
 "先做免逐槽提取的设计筛选"（见 `docs/BITPLANE_LAYOUT.md` §7）。
+
+**本版 P0：把这三条路线筛掉，并逐原语真机核验。** 探针
+`tests/benchmarks/benchmark_mpc.py --slot-reduction-probe --repeat 3`（产物
+`docs/mpc_slot_reduction_probe.json`，`tests/test_slot_reduction_probe.py` 守着）把
+"能不能不逐槽取数"变成可执行的电路，并**拿目标语义对拍**（参考是"应该算出什么"，
+不是"它自己那套公式"）：
+
+| 路线 | 变体 | 电路 | 对拍 | 通信量 |
+|---|---|---|---|---|
+| —（基准） | `extract_seq` | 逐槽提取 + 加权 | **通过** | 1424 B/元素 |
+| —（批间差） | `extract_seq_dup` | 与基准**逐位相同** | 通过 | 1552 B/元素 |
+| (b) 公开权重 | `extract_seq_secret_weight` | 同提取、权重取秘密 | 通过 | 1432 B/元素 |
+| (a) 整元素一次乘法 | `fullmul` | `(X · ONES_packed) & 0xFF` | **失败** | 224 B/元素 |
+| (c) 不掩码移位 | `maskless_shift` | `Σ_s (X >> 8s) · w_s` | **失败** | 1888 B/元素 |
+| 槽内归并 | `swar_tree` | 对数深度掩码+移位+加法树 | 通过 | 1888 B/元素 |
+
+三条结论，都有实测支撑：
+
+1. **路线 (a) 不成立**：一次整元素乘法拿不到 `Σ_s v_s`（槽间交叉项/进位），
+   实测算错（`max_abs_error=22`）。要分离各槽，**必须先逐槽提取**；
+2. **路线 (c) 不成立**：省掉掩码后高位槽会串进来（`max_abs_error≈1.7e8`），
+   而且并不便宜（1888 > 1424）；
+3. **路线 (b) 免的是"加权"，不是"提取"**：权重放公开侧与放秘密侧差别
+   （1432 → 1424）**小于本探针自测的批间差（8.6%）**，不构成结论。SWAR 树
+   也没有换来更少的按位原语（1888 > 1496，同语义对照）。
+
+即：**"免逐槽提取"在三条路线下都不兑现**，打包只能照付取槽单价（1424–1552 B/元素，
+与 P7-P0 同量级）。这正是 `docs/BITPLANE_LAYOUT.md` §7 第 5 步的门槛：
+打包要划算，元素数下降的倍数必须先超过这个量级。
+
+**逐原语真机核验（P0）**：`--primitive-probe`（产物 `docs/mpc_primitive_probe.json`，
+`tests/test_primitive_probe.py` 守着）把 capability 表"登记为已适配"的原语逐个写成最小
+电路真机跑一遍。**19/19 全部跑通**（0 error），关键单价（ABY3 / FM64，N=64，3 次中位）：
+
+| 原语 | B/元素 | 原语 | B/元素 | 原语 | B/元素 |
+|---|---|---|---|---|---|
+| `add` / `sub` / `neg` | 0.00 | `shift_left` | 0.00 | `not` | 0.00 |
+| `mul`（秘密×秘密） | 16.00 | `shift_right` | 224.00 | `dot` | **0.25（可疑）** |
+| `compare` | 88.25 | `and` | 464.00 | `select` | 104.00 |
+| `xor` | 448.00 | `or` | 912.00 | `top_k` | 255.44 |
+| `div` | 5222.00 | `sort` | 6032.00 | | |
+
+两条**必须记住**的读数：
+
+- `shift_left` / `not` / `add` / `sub` / `neg` 实测 **0 B**——它们是本地线性/逐位运算，
+  "打包取槽要付钱"这件事只发生在 `>>`（224 B/元素）与 `&`/`|`/`^`（448–912 B/元素）上；
+- `dot` 实测 **0.25 B/元素（16 B 总量，且 N=64…4096 恒定不变）**，**低于秘密乘法下限**
+  （N 次秘密乘法至少要 16 B × N）。这与 `x * 2` 实测 0 B 是同一类坑：
+  读数物理上不可能，探针把它标进 `below_multiply_floor` 并**拒绝下结论**
+  （要么 SPU 对 `dot` 有更省的专用协议，要么这条路径没在真做保密乘法）。**不采信这个数**。
 
 ### 8.5 关系稀疏表示与 ZKP
 

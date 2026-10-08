@@ -171,6 +171,31 @@ class Planner:
 
         return plan
 
+    # ---------------- 规模口径 ----------------
+
+    def _effective_k(self, operation) -> tuple[int | None, str | None]:
+        """本方案的属性通道数 K 从哪来（P1：不再只有"显式传入"一条路）。
+
+        优先级：
+
+        1. `params.K`——调用方在算子参数里显式声明（最高优先，永远不被覆盖）；
+        2. `layout_shape.attributes`——调用方给了 `--layout-shape` 时，
+           **同一个 K 既进布局预测也进位宽**。此前两条路各算各的，
+           报告里会同时出现 "attributes=4" 与 "K=3"；
+        3. 都没有 → 返回 `None`，由 `resolve_cost` 用登记默认值兜底，
+           并在 `K_basis` 里写明"未给规模"——**不替调用方猜**。
+        """
+
+        declared = operation.params.get("K")
+        if declared is not None:
+            return declared, "算子的 params.K（调用方显式声明）"
+        if self.layout_shape is not None:
+            return (
+                int(self.layout_shape.attributes),
+                "--layout-shape 的 attributes（与位平面布局同一口径）",
+            )
+        return None, None
+
     # ---------------- 单算子规划 ----------------
 
     def _plan_operation(
@@ -184,7 +209,8 @@ class Planner:
         sensitivity = operation.sensitivity or program.input_sensitivity(operation)
         # 代价按本方案实际的元素数实例化：位宽 b(K) 必须算出来，
         # 不能沿用档案里那个与自身公式矛盾的静态值。
-        cost = resolve_cost(rule, k=operation.params.get("K"))
+        effective_k, k_basis = self._effective_k(operation)
+        cost = resolve_cost(rule, k=effective_k, k_basis=k_basis)
         # 位平面布局（D3）：按归约轴选 L1 / L2，并把条数下降写回 estimated_cost。
         # 只对"经 MPC 值布局"的算子加键（PSI 集合运算 / 明文物化不加，避免噪声）。
         layout = plan_layout(operation.op, self.layout_shape)

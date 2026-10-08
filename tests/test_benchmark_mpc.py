@@ -292,8 +292,70 @@ class TestTemporalAbMode:
 
 
 # --------------------------------------------------------------------------
-# 记录：诚实性
+# 探针开关：自带用例集、产物路径、互斥
 # --------------------------------------------------------------------------
+
+
+class TestProbeFlags:
+    """三个目录式探针 + 打包探针的开关纪律（P0/P1「收敛 CLI」）。"""
+
+    def test_each_probe_has_its_own_default_artifact_stem(self):
+        expected = {
+            "--packing-probe": "mpc_packing_probe",
+            "--slot-cost-probe": "mpc_slot_cost_probe",
+            "--slot-reduction-probe": "mpc_slot_reduction_probe",
+            "--primitive-probe": "mpc_primitive_probe",
+        }
+        for flag, stem in expected.items():
+            args = parse_args([flag])
+            probe_mode = _probe_mode_fn()
+            assert probe_mode(args) is not None
+            json_path, csv_path = resolve_output_paths(args)
+            assert json_path.endswith(f"docs/{stem}.json"), (flag, json_path)
+            assert csv_path.endswith(f"docs/{stem}.csv"), (flag, csv_path)
+
+    def test_every_probe_flag_is_actually_registered_in_the_stem_table(self):
+        """开关加了、产物表忘了加 → 默认文件名会静默回落到基线名。"""
+
+        args = parse_args([])
+        table = _probe_stems()
+        for name in table:
+            assert hasattr(args, name), f"{name} 在产物表里但不是一个 CLI 开关"
+
+    def test_two_probes_at_once_is_refused(self):
+        with pytest.raises(SystemExit) as excinfo:
+            _probe_mode_fn()(parse_args(["--primitive-probe", "--slot-cost-probe"]))
+        assert "一次只能开一个探针" in str(excinfo.value)
+
+    def test_new_probes_refuse_to_be_combined_with_filters(self):
+        for argv in (
+            ["--slot-reduction-probe", "--ops", "WeightedSum"],
+            ["--primitive-probe", "--protocols", "ABY3"],
+            ["--slot-cost-probe", "--ops", "DistanceLE"],
+        ):
+            with pytest.raises(SystemExit) as excinfo:
+                build_cases(parse_args(argv))
+            assert "自带用例集" in str(excinfo.value)
+
+    def test_probe_modes_carry_their_own_case_sets(self):
+        assert len(build_cases(parse_args(["--slot-reduction-probe"]))) > 0
+        assert len(build_cases(parse_args(["--slot-cost-probe"]))) > 0
+        assert len(build_cases(parse_args(["--primitive-probe"]))) > 0
+
+
+def _probe_mode_fn():
+    from tests.benchmarks import benchmark_mpc as module
+
+    return module.probe_mode
+
+
+def _probe_stems():
+    from tests.benchmarks import benchmark_mpc as module
+
+    return module._PROBE_STEMS
+
+
+
 
 
 class TestRecordHonesty:

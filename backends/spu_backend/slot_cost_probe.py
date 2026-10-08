@@ -226,7 +226,7 @@ def _blank_record(case: SlotCostCase) -> dict[str, Any]:
     }
 
 
-def run_slot_cost_case(case: SlotCostCase, *, report: Any = None) -> dict[str, Any]:
+def _run_slot_cost_once(case: SlotCostCase, *, report: Any = None) -> dict[str, Any]:
     """跑一条用例；失败也如实记录，不抛异常、不填推测值。"""
 
     import time
@@ -291,6 +291,48 @@ def run_slot_cost_case(case: SlotCostCase, *, report: Any = None) -> dict[str, A
         record["comm_per_element"] = comm / case.elements
     else:
         record["note"] = (record["note"] + "；通信量为空").strip("；")
+    return record
+
+
+def run_slot_cost_case(case: SlotCostCase, *, report: Any = None) -> dict[str, Any]:
+    """跑一条用例；`repeats > 1` 时返回多次运行的统计记录（报中位数）。
+
+    P7-P0 的教训：通信量有批间抖动（实测 0.03%–10.1%），单次读数不足以支撑
+    "哪条路线更贵"的判断，所以重复次数必须真的重复执行、报中位数与区间。
+    """
+
+    repeats = max(1, int(case.repeats))
+    if repeats == 1:
+        return _run_slot_cost_once(case, report=report)
+
+    import statistics
+
+    samples = [_run_slot_cost_once(case, report=report) for _ in range(repeats)]
+    record = dict(samples[-1])
+    record["repeat"] = repeats
+    record["status_counts"] = {}
+    for sample in samples:
+        key = str(sample["status"])
+        record["status_counts"][key] = record["status_counts"].get(key, 0) + 1
+    for key in (
+        "wall_ms",
+        "pphlo_bytes",
+        "comm_total_bytes",
+        "comm_send_bytes",
+        "comm_recv_bytes",
+        "comm_per_element",
+    ):
+        values = [
+            float(sample[key])
+            for sample in samples
+            if isinstance(sample.get(key), (int, float))
+        ]
+        record[key] = statistics.median(values) if values else None
+        record[key + "_stats"] = (
+            {"min": min(values), "max": max(values), "median": statistics.median(values)}
+            if values
+            else None
+        )
     return record
 
 

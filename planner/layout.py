@@ -115,6 +115,17 @@ class LayoutShape:
 
         return next_power_of_two(self.candidates) * self.bits
 
+    @property
+    def size_hint(self) -> int:
+        """给 JAX 电路选择用的编译期规模提示（P1）。
+
+        口径：**候选轴规模**。D3 里 `TemporalOverlap` 的归约轴就是候选/节点轴
+        （见 §2 的归约轴表），所以 `candidates` 同时是"候选数"与"节点数的代理"。
+        这只是**代理**，不是自造一个规模：调用方给的 `--layout-shape` 本来就要
+        声明候选数，电路选择顺带用它，避免"布局按 1000 算、电路按拿不到规模退回"。
+        """
+        return self.candidates
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "candidates": self.candidates,
