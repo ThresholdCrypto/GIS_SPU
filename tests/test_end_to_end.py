@@ -685,6 +685,11 @@ class TestCli:
         "经真实 PSI 求交验证"；但**也不该**是失败——它确实执行了。
         """
 
+        from tests._helpers import has_psi
+
+        if not has_psi():
+            pytest.skip("当前环境不具备真实 PSI 执行能力，DP 的带噪披露无从呈现")
+
         exit_code = cli_main(
             ["build", example("route_conflict.py"), "--psi-protocol", "DP"]
         )
@@ -700,6 +705,11 @@ class TestCli:
         回归：带噪协议与明文不一致曾被升级成 `error`，使编译**随机**失败。
         阶段状态必须与"是否恰好对上"无关，因此这里断言的是机制而不是运气。
         """
+
+        from tests._helpers import has_psi
+
+        if not has_psi():
+            pytest.skip("当前环境不具备真实 PSI 执行能力，DP 阶段状态无从呈现")
 
         from geosecure import Compiler
 
@@ -789,11 +799,14 @@ class TestCli:
         exit_code = cli_main(["build", example("vertical_conflict.py")])
         output = capsys.readouterr().out
         assert exit_code == 0, output
-        assert "subset    : " in output
-        assert "mode=mpc" in output
-        assert "ABY3/FM64" in output
 
         from tests._helpers import has_psi
+
+        if has_psi():
+            # 子集判定那几行只在 PSI 真跑得起来时才输出
+            assert "subset    : " in output
+            assert "mode=mpc" in output
+            assert "ABY3/FM64" in output
 
         result = Compiler().compile_file(example("vertical_conflict.py"))
         rows = {row["operation"]: row for row in result.operator_status}
@@ -813,11 +826,11 @@ class TestCli:
         )
         output = capsys.readouterr().out
         assert exit_code == 0, output
-        assert "mode=plaintext" in output
-        assert "subset-plaintext" in output
 
         if not has_psi():
             return
+        assert "mode=plaintext" in output
+        assert "subset-plaintext" in output
         result = Compiler(psi_subset="plaintext").compile_file(
             example("vertical_conflict.py")
         )

@@ -721,14 +721,6 @@ def run_psi_intersection(
             )
             return result
 
-    if not report.runnable:
-        result.blockers = report.blockers
-        result.notes = result.notes + (
-            "当前环境无法真实执行 PSI；明文结果仍然可用，"
-            "PSI 结果栏位保持空缺而不以推测值填充。",
-        )
-        return result
-
     if op not in PSI_OP_LEAKS:
         result.status = "error"
         result.error = (
@@ -775,6 +767,14 @@ def run_psi_intersection(
                     f"本后端的进程内链路固定 {PSI_RUNTIME_WORLD_SIZE} 方，无法执行该协议；"
                     f"请改用两方可执行协议：{runnable_protocols_hint()}"
                 )
+        return result
+
+    if not report.runnable:
+        result.blockers = report.blockers
+        result.notes = result.notes + (
+            "当前环境无法真实执行 PSI；明文结果仍然可用，"
+            "PSI 结果栏位保持空缺而不以推测值填充。",
+        )
         return result
 
     left_codes = [int(c) for c in left]

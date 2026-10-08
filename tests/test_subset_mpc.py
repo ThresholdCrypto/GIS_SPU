@@ -365,6 +365,7 @@ class TestContainsIntegration:
 
 
 class TestCapabilityRegistration:
+    @needs_spu
     def test_contains_declares_the_mpc_primitives(self):
         capability = check_operation_capability("Contains")
         assert capability.supported is True
