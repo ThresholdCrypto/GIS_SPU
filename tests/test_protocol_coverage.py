@@ -13,7 +13,10 @@ PSI 注册表（`backends/psi_backend/protocol_registry.PROTOCOL_SPECS`）、
 而不是让新协议默认按"看起来支持"滑过去。
 
 这三张表是**手工维护的契约**；它们的证据是
-`tests/test_spu_backend.py::TestProtocolFieldSweep` 的矩阵扫描。
+`tests/test_spu_backend.py::TestProtocolFieldSweep` 的矩阵扫描——
+"已验证"这一类的证据不是一句话，而是可机检的：
+`test_every_registered_protocol_has_a_real_execution_case` 会把扫描用例的
+parametrize 源读出来，断言它**恰好**等于 `SPU_PROTOCOLS`（登记即有测试）。
 """
 
 from __future__ import annotations
@@ -36,7 +39,15 @@ from backends.spu_backend import (
 
 #: 本仓库用真实执行验证过的协议（2026-10-04，WSL2 + SPU 0.9.5）。
 #: 证据：TestProtocolFieldSweep 的 protocol × op 扫描全部 within_tolerance。
-SPU_PROTOCOLS_VERIFIED: frozenset[str] = frozenset(SPU_PROTOCOLS)
+#:
+#: **必须写全字面量，不许写成 `frozenset(SPU_PROTOCOLS)`**：写全集的写法等于
+#: "新登记一个协议就自动算已验证"，整个分类表就失去了强制作用——正是本文件开头
+#: 要防的"静默滑过"。写全字面量后，`capability.SPU_PROTOCOLS` 新增协议会让
+#: `test_classification_covers_every_registered_protocol` 直接变红，逼一次**显式决定**
+#: （真机验证过 → 补进本表；不可执行 → 落进 `SPU_PROTOCOLS_UNAVAILABLE` 并给原因）。
+SPU_PROTOCOLS_VERIFIED: frozenset[str] = frozenset(
+    {"REF2K", "SEMI2K", "ABY3", "CHEETAH", "SECURENN"}
+)
 
 #: 登记但当前不可执行的协议 → 可读原因（必须非空字符串）。
 SPU_PROTOCOLS_UNAVAILABLE: dict[str, str] = {}
@@ -101,6 +112,32 @@ class TestSpuProtocolCoverage:
         这里防止手工表与扫描范围脱节（表里出现没被扫描过的协议）。"""
 
         assert SPU_PROTOCOLS_VERIFIED <= set(SPU_PROTOCOLS)
+
+    def test_every_registered_protocol_has_a_real_execution_case(self):
+        """「登记即有测试」：真机扫描用例的 parametrize 源必须**恰好**是 SPU_PROTOCOLS。
+
+        上面几条只保证"表里都归类了"；这一条把归类的**证据**也钉住：谁登记，
+        谁就必须落进 TestProtocolFieldSweep 的真实执行矩阵里。做法是从用例的
+        `pytestmark` 里把 parametrize 源**读出来**，而不是靠人去核对文档——
+        把参数化源换成手写字面量（于是新协议不再被扫描）时，这条会红。
+        """
+
+        import test_spu_backend  # tests/ 在 sys.path 上（pytest 默认 prepend 导入模式）
+
+        fn = test_spu_backend.TestProtocolFieldSweep.test_each_protocol_matches_plain
+        swept: set[str] | None = None
+        for mark in getattr(fn, "pytestmark", ()):
+            if mark.name == "parametrize" and len(mark.args) >= 2 and mark.args[0] == "protocol":
+                swept = {str(value) for value in mark.args[1]}
+        assert swept is not None, (
+            "TestProtocolFieldSweep.test_each_protocol_matches_plain 上没有 protocol 维度的 "
+            "parametrize——真机扫描入口没了，覆盖镜像也就没有证据"
+        )
+        assert swept == set(SPU_PROTOCOLS), (
+            f"真机扫描没覆盖：{set(SPU_PROTOCOLS) - swept}；"
+            f"扫描了未登记的：{swept - set(SPU_PROTOCOLS)}"
+        )
+        assert SPU_PROTOCOLS_VERIFIED <= swept
 
     def test_fields_are_the_three_documented_widths(self):
         assert set(SPU_FIELDS) == {"FM32", "FM64", "FM128"}

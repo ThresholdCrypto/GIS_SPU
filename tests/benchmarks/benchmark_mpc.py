@@ -362,13 +362,16 @@ def _run_catalog_probe(mode: str, args, cases, out_json: str | None,
 
     def progress(record) -> None:
         comm = record.get("comm_total_bytes")
-        per = record.get("comm_per_element")
+        per = record.get("cost_per_unit")
+        if per is None:
+            per = record.get("comm_per_element")
+        unit = "B/输出" if record.get("cost_driver") == "outputs" else "B/元素"
         match = record.get("within_tolerance")
         print(
             f"  {record['case']}: {record['status']}"
             f"  对拍={'-' if match is None else ('是' if match else '否')}"
             f"  comm={'-' if comm is None else round(comm)} B"
-            f"  B/元素={'-' if per is None else round(per, 2)}"
+            f"  {unit}={'-' if per is None else round(per, 2)}"
             f"  wall={'-' if record['wall_ms'] is None else round(record['wall_ms'], 1)} ms"
             + (f"  error={record['error'][:80]}" if record.get("error") else ""),
             flush=True,

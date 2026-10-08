@@ -24,8 +24,8 @@ Python 地理业务代码
 ```
 
 > **项目进展说明**（完成度、里程碑时间线、已验证 / 未落地、关键实测结论、复现方式）
-> 见 [`docs/PROGRESS.md`](docs/PROGRESS.md)。截至提交 `d91da69`（2026-10-06）：
-> 14 个提交、**949 项测试全部通过、0 跳过**。
+> 见 [`docs/PROGRESS.md`](docs/PROGRESS.md)。当前 `main` 共 **15 个提交**、
+> **957 项测试全部通过、0 跳过**（2026-10-08 于 WSL2 + spu 0.9.5 复跑）。
 
 ## 快速开始
 
@@ -47,7 +47,7 @@ bash scripts/setup_wsl_spu.sh         # 一键：系统依赖 + Python 3.11 + �
 
 ```bash
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 949 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 957 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -980,11 +980,11 @@ tests/test_planner.py             56 项   注册表、五元组、敏感度策�
 tests/test_bitplane_layout.py     23 项   位平面布局（D3）：课题产物逐项复算、归约轴决策、不给形状不给数字、与实测前提对账
 tests/test_packing_probe.py       30 项   打包前提探针（P6）：位宽扫描/规模扫描、按环元素计费、收益上界、缺数诚实留空、真机位宽等价
 tests/test_slot_cost_probe.py      25 项   取槽步单价（P7-P0）：掩码/右移/全量提取 vs 纯乘法的 A/B、位运算语义、比价基准不许拿 0 B 变体
-tests/test_primitive_probe.py     20 项   逐原语真机核验（P0）：D3 点名原语全覆盖、登记名与 capability 白名单对账、低于秘密乘法下限的读数必须标可疑
+tests/test_primitive_probe.py     27 项   逐原语真机核验（P0）：D3 点名原语全覆盖、登记名与 capability 白名单对账、计费维度对账（收缩类按输出计费、收缩长度免费）、只有同维度的不可能读数才标可疑
 tests/test_slot_reduction_probe.py 19 项  免逐槽提取路线筛选（P0）：路线 a/c 必须继续对拍失败（纯 jax 复算）、批间差参与判定、SWAR 树同语义比价
 tests/test_geo_rr22_coverage.py   12 项  Geo-RR22 覆盖关系判定实证：国标前缀性质（构造 + 21973 条真实码）、本项目码解不出真实层级、剪枝入口不得出现
 tests/test_protocol_registry.py   18 项   协议元数据单一来源、结果语义、Planner 与后端交叉一致
-tests/test_protocol_coverage.py   12 项   协议覆盖镜像：登记协议必须显式归类（已验证/不可执行/无密码学保护），不许静默滑过
+tests/test_protocol_coverage.py   13 项   协议覆盖镜像：登记协议必须显式归类（已验证/不可执行/无密码学保护）、登记即有真机用例（扫描用例的 parametrize 源须恰为 SPU_PROTOCOLS），不许静默滑过
 tests/test_protocol_selection.py  21 项   MPC 协议按实测代价选择、REF2K 不自动选中、拒绝信息可操作、排序第二协议真跑
 tests/test_jax_backend.py         48 项   生成器、可追踪性、原语核对、与明文对拍、TemporalOverlap 两套电路等价
 tests/test_spu_backend.py         52 项   协议/环宽规范化、能力门控、私有接口与共享库回归、SPU 实跑、sweep 电路真机
@@ -1009,11 +1009,11 @@ tests/test_execution_chain.py     15 项   链式执行使用上一步 PSI 输�
 tests/test_rr22_geosot.py          8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
 tests/test_end_to_end.py          75 项   全流程、状态表、CLI（协议/曲线/子集/RR22/布局形状/MPC 协议）、六类失败报告、编译入口参数、诊断聚合、确定性
                                   ─────
-                                  949 通过 / 0 跳过
+                                  957 通过 / 0 跳过
 ```
 
 在 **WSL2 + Linux + Python 3.11.16 + jax 0.4.34 + spu 0.9.5** 上，
-**949 项全部通过，无跳过**。真实执行隐私协议的用例：
+**957 项全部通过，无跳过**。真实执行隐私协议的用例：
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
@@ -1273,7 +1273,7 @@ DistanceLE  QuantizedVector  MPC/SPU  verified
 ```bash
 # WSL2 / Linux 上（Python 3.10 或 3.11）
 pip install -r requirements-spu.txt      # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q               # 949 项全部通过（0 跳过）
+python -m pytest tests/ -q               # 957 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -1518,7 +1518,7 @@ backends/
 
 - ~~在 WSL2 / Linux + Python 3.11 环境下接通真实 SPU 模拟，
   把 `tests/test_spu_backend.py::TestRealSpuSimulation` 从 skip 变为通过~~
-  ——**已闭合**：本机 `949 passed / 0 failed / 0 skipped`，无一条真实执行用例被跳过。
+  ——**已闭合**：本机 `957 passed / 0 failed / 0 skipped`，无一条真实执行用例被跳过。
 - 补 `FM128` 路径测试（64 位键的溢出场景）。
 - ~~补不同协议的代价实测（`semi2k` / `aby3` / `cheetah`）~~ ——**已闭合（本版 P1）**：
   `tests/benchmarks/benchmark_mpc.py` 已把 3 个 MPC 算子 × 5 个 SPU 协议 × 3 个环宽
@@ -1635,24 +1635,44 @@ geo-secure build examples/distance_check.py \
 
 **逐原语真机核验（P0）**：`--primitive-probe`（产物 `docs/mpc_primitive_probe.json`，
 `tests/test_primitive_probe.py` 守着）把 capability 表"登记为已适配"的原语逐个写成最小
-电路真机跑一遍。**19/19 全部跑通**（0 error），关键单价（ABY3 / FM64，N=64，3 次中位）：
+电路真机跑一遍。**22/22 全部跑通**（0 error）。单价**按计费维度分两栏读**——
+逐元素电路按输入元素计费，收缩类按**输出个数**计费：
+
+逐元素电路（ABY3 / FM64，N=64，3 次中位）：
 
 | 原语 | B/元素 | 原语 | B/元素 | 原语 | B/元素 |
 |---|---|---|---|---|---|
-| `add` / `sub` / `neg` | 0.00 | `shift_left` | 0.00 | `not` | 0.00 |
-| `mul`（秘密×秘密） | 16.00 | `shift_right` | 224.00 | `dot` | **0.25（可疑）** |
-| `compare` | 88.25 | `and` | 464.00 | `select` | 104.00 |
-| `xor` | 448.00 | `or` | 912.00 | `top_k` | 255.44 |
-| `div` | 5222.00 | `sort` | 6032.00 | | |
+| `add` / `sub` / `neg` / `not` / `shift_left` | 0.00 | `mul`（秘密×秘密） | 16.00 | `compare` | 88.25 |
+| `max` / `min` / `select` | 104.00 | `shift_right` | 224.00 | `xor` | 448.00 |
+| `and` | 464.00 | `or` | 912.00 | `top_k` | 121.31 |
+| `div` | 5214.00 | `sort` | 6032.00 | | |
 
-两条**必须记住**的读数：
+收缩类电路（另一个计费维度，2026-10-08 复测）：
+
+| 用例 | 收缩长度 | 输出个数 | 通信量 | B/输出 |
+|---|---|---|---|---|
+| `dot` / `dot_long` | 64 / 512 | 1 | 16 B | 16.00 |
+| `sum` / `sum_long` | 64 / 512 | 1 | 16 B | 16.00 |
+| `matmul`（16×64 · 64×16） | 64 | 256 | 4096 B | 16.00 |
+
+三条**必须记住**的读数：
 
 - `shift_left` / `not` / `add` / `sub` / `neg` 实测 **0 B**——它们是本地线性/逐位运算，
   "打包取槽要付钱"这件事只发生在 `>>`（224 B/元素）与 `&`/`|`/`^`（448–912 B/元素）上；
-- `dot` 实测 **0.25 B/元素（16 B 总量，且 N=64…4096 恒定不变）**，**低于秘密乘法下限**
-  （N 次秘密乘法至少要 16 B × N）。这与 `x * 2` 实测 0 B 是同一类坑：
-  读数物理上不可能，探针把它标进 `below_multiply_floor` 并**拒绝下结论**
-  （要么 SPU 对 `dot` 有更省的专用协议，要么这条路径没在真做保密乘法）。**不采信这个数**。
+- **收缩类按输出个数计费、收缩长度免费**：`dot` / `sum` 输出 1 个、实测恒为 **16 B**，
+  收缩长度 64 → 512 读数**逐字节不变**；`matmul` 账也对得上（256 × 16 B = 4096 B）。
+  单价 16 B 与 P6 的环元素单价一致；
+- **一条自我更正**：第一版把 `dot` 的 16 B 除以**输入元素数**得到 **0.25 B/元素**，
+  看着"比乘法便宜 64 倍"，于是标成可疑的下限违例。打开 `pphlo` 追踪后确认是
+  **归一化选错了维度**——读数没错，**尺子错了**（与 `x * 2` 实测 0 B 同族教训）。
+  现在对账按计费维度走（`cost_driver` / `cost_per_unit`），
+  `below_multiply_floor` 只在**同一维度**上拦真·不可能读数，
+  `contraction_is_free` 固定"收缩长度免费"这条实测结论。
+  **但它不是"dot 免费"**：逐槽提取仍按元素计费，§8.4 的打包门槛不变。
+
+> **批间差**：`top_k` / `sort` 的读数在两次探针之间会明显漂移
+> （`top_k` 本轮 3 次区间 5840–10650 B，上一轮中位 16348 B）。
+> 这两条只做量级判断，不用于排序。
 
 ### 8.5 关系稀疏表示与 ZKP
 

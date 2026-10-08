@@ -1,8 +1,8 @@
 # 项目进展说明：geo-secure 低门槛隐私计算编译器（MVP）
 
 > **口径对齐**：2026 年 9 月工作月报（任务 3）。
-> **截至提交** `d91da69`（2026-10-06），本地与远程 `main` 一致：**11 个提交**、
-> **949 项自动化测试全部通过（0 失败 / 0 跳过）**。
+> **截至 2026-10-08**，本地与远程 `main` 一致：**15 个提交**、
+> **957 项自动化测试全部通过（0 失败 / 0 跳过）**。
 > **验证环境**：WSL2 Ubuntu 26.04.1 / x86_64，Python 3.11.16，spu 0.9.5，jax 0.4.34。
 
 ---
@@ -112,14 +112,22 @@ def check_conflict(route, no_fly_zone):
 ## 6. 下一步（对齐月报下月计划）
 
 1. ~~打包方案前置设计筛选~~ / ~~逐项底层运算真机核查 + 槽内归并实测~~ ——
-   **已闭合（本版 P0）**：三条路线真机对拍全部不兑现；19 个原语逐项真机核验 19/19 跑通
-   （并揪出一条不可信的 `dot` 读数，标为可疑、不下结论）。据实测**决定打包方案暂不落地**；
+   **已闭合（本版 P0）**：三条路线真机对拍全部不兑现；22 个原语逐项真机核验 22/22 跑通。
+   其中 `dot` 那一读数**本轮已定位根因并更正**：它是**按输出个数计费**（1 个输出 = 16 B，
+   收缩长度免费），不是"低于秘密乘法下限"——第一版拿输入元素数当尺子，读数没错、**尺子错了**。
+   对账口径已按计费维度修正（`cost_driver` / `cost_per_unit` / `contraction_is_free`）。
+   据实测**决定打包方案暂不落地**（收缩免费省不掉按元素计费的逐槽提取）；
    D3 升级为「通信量比」的条件（同规模成对实测）已写明，但前置结论不利，
    需先回课题侧核条数比。
 2. **继续扩展协议接入面**（新 PSI / MPC 协议按同一口径接入），补齐协议覆盖镜像测试，
-   做到「登记即有测试」。本版已把「登记即有测试」扩到**原语**层：
+   做到「登记即有测试」。本版已把「登记即有测试」扩到**原语**层与**协议**层：
    `tests/test_primitive_probe.py` 断言探针表里声明的 jax/HLO 登记名必须真在
-   capability 白名单里（`xor` / `top_k` 显式登记为「不在表里」）。
+   capability 白名单里（`xor` / `top_k` 显式登记为「不在表里」）；
+   `tests/test_protocol_coverage.py` 修掉一处**静默滑过**——`SPU_PROTOCOLS_VERIFIED`
+   原先写成 `frozenset(SPU_PROTOCOLS)`（等于"新协议一登记就自动算已验证"），
+   现改为显式字面量，并新增 `test_every_registered_protocol_has_a_real_execution_case`：
+   从 `TestProtocolFieldSweep` 的 parametrize 源里**读出**被真机扫描的协议集合，
+   断言它**恰好**等于 `SPU_PROTOCOLS`。
 3. ~~收敛 CLI 与文档~~ ——**已闭合（本版 P1）**：四个探针各有一个 CLI 开关
    （`--packing-probe` / `--slot-cost-probe` / `--slot-reduction-probe` /
    `--primitive-probe`），产物文件名从单一张表派生、同时开两个探针直接报错、
@@ -133,7 +141,7 @@ def check_conflict(route, no_fly_zone):
 ```bash
 git clone git@github.com:ThresholdCrypto/GIS_SPU.git && cd GIS_SPU
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 949 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 957 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 

@@ -16,6 +16,49 @@
 并记录三件事：`status`（跑不跑得动）、`comm_total_bytes`（要不要通信、通信多少）、
 以及 `comm_by_primitive`（真机日志里到底执行了哪些原语）。
 
+为什么 `B/元素` 这一个数不够用（本轮踩过的坑）
+------------------------------------------
+第一版把每条电路的通信量都除以**输入元素数**，于是 `dot`（长度 N 的收缩，输出 1 个标量）
+得到 `16 / N` —— N=64 时是 **0.25 B/元素**，看着像"dot 比乘法便宜 64 倍"，
+甚至像"这条路径没在真做保密乘法"。
+
+后续把 `pphlo` 追踪打开后，真相是**归一化选错了维度**：
+
+```
+%2 = pphlo.dot %0, %1 : (tensor<1x64x!pphlo.secret<i32>>, tensor<64x1x!pphlo.secret<i32>>)
+                        -> tensor<1x1x!pphlo.secret<i32>>           # 操作数/结果都是 secret
+pphlo.dot, executed 1 times, send bytes 8 recv bytes 8        # 1 轮、1 个环元素
+```
+
+真机实测（ABY3 / FM64，`outputs` 是输出元素数、`K` 是收缩长度）：
+
+| 形式 | K | outputs | 通信量 | B/输出 |
+|---|---|---|---|---|
+| 1-D `dot` | 64 / 256 / 1024 / 4096 | 1 | 16 B（恒定） | 16.0 |
+| matmul | 64 | 16 | 256 B | 16.0 |
+| matmul | 64 | 256 | 4096 B | 16.0 |
+| matmul | 64 | 1024 | 16384 B | 16.0 |
+| matmul | 256 / 1024 | 256 | 4096 B（恒定） | 16.0 |
+| 归约 `sum` | 64 / 512 | 1 | 16 B（恒定） | 16.0 |
+| 逐元素 `mul`（对照） | — | 64 | 1024 B | 16.0 |
+
+所以：**收缩类算子与逐元素乘法的单价相同（16 B/计费元素），差别只在"哪个维度计费"**——
+`dot` / `sum` 按**输出个数**计费，**收缩长度不计费**。单价 16 B 与 P6 的环元素单价一致。
+
+本探针把这些形态固化成五条用例（`dot` / `dot_long` / `matmul` / `sum` / `sum_long`，
+2026-10-08 `--repeat 3` 中位数）：收缩长度 64 与 512 的两组读数**逐字节相同**（各 16 B），
+`matmul` 4096 B = 256 输出 × 16 B。`summarize_primitives` 用 `CONTRACTION_PAIRS` +
+`contraction_is_free` 把这条结论固定住：**两条读数不一致就报"存疑"**，不许默认成立。
+
+因此本探针给每条用例标一个 `cost_driver`：
+
+- `inputs`：通信量随**输入元素数**走（逐元素运算），单位价 = `comm / 输入元素数`；
+- `outputs`：通信量随**输出个数**走（收缩/矩阵乘），单位价 = `comm / 输出个数`。
+
+一律再除以输入元素数会把"收缩长度免费"误读成"这个原语便宜"——
+这正是第一版把 `dot` 标成可疑的原因，也是**本探针留下来的教训**
+（与 P6 那条 `x * 2` 实测 0 B 的教训同族：读数本身没错，**口径错了**）。
+
 严格说清楚本探针**不是**什么
 ----------------------------
 - 它**不给算子可用性结论**：一个原语在该测试形态下跑通，不等于它在任意电路形态下
@@ -163,6 +206,12 @@ def _fn_top_k(x, y):
     return lax.top_k(x, 3)[0]
 
 
+def _fn_matmul(x, y):
+    import jax.numpy as jnp
+
+    return jnp.matmul(x, y)
+
+
 def _fn_div(x, y):
     return x // (y + 1)
 
@@ -206,6 +255,14 @@ class PrimitiveCase:
     field: str = "FM64"
     repeats: int = 1
     capture_comm: bool = True
+    #: 输出元素数（恒等/逐元素电路 = elements；收缩电路 = 输出个数）
+    outputs: int | None = None
+    #: 通信量按哪个维度计费："inputs"（逐元素）或 "outputs"（收缩/矩阵乘）
+    cost_driver: str = "inputs"
+    #: 规模扫描类用例自带规模，不跟随全局 `elements` 覆盖
+    fixed_elements: bool = False
+    #: 自定义输入构造（矩阵用例需要二维输入）
+    inputs_fn: Callable[[int], tuple[np.ndarray, np.ndarray]] | None = None
 
     @property
     def jax_name(self) -> str | None:
@@ -227,8 +284,27 @@ def _ref(fn: Callable[[Any, Any], Any]) -> Callable[..., Any]:
     return reference
 
 
-def _case(name: str, fn, needed_by: str, note: str = "") -> PrimitiveCase:
-    return PrimitiveCase(name=name, fn=fn, reference_fn=_ref(fn), needed_by=needed_by, note=note)
+def _case(name: str, fn, needed_by: str, note: str = "", **kwargs) -> PrimitiveCase:
+    return PrimitiveCase(
+        name=name, fn=fn, reference_fn=_ref(fn), needed_by=needed_by, note=note, **kwargs
+    )
+
+
+#: 矩阵用例的输入构造（M×K 与 K×P）
+_MATMUL_M = 16
+_MATMUL_P = 16
+_MATMUL_K = 64
+#: 矩阵乘的秘密**输入**元素数（A: M×K + B: K×P），与输出个数区分开
+_MATMUL_ELEMENTS = _MATMUL_M * _MATMUL_K + _MATMUL_K * _MATMUL_P
+_DOT_LONG_ELEMENTS = 512
+
+
+def _matmul_inputs(_elements: int) -> tuple[np.ndarray, np.ndarray]:
+    shape_a = (_MATMUL_M, _MATMUL_K)
+    shape_b = (_MATMUL_K, _MATMUL_P)
+    a = (((np.arange(1, _MATMUL_M * _MATMUL_K + 1, dtype=np.int64) % 9) + 1).reshape(shape_a))
+    b = ((((np.arange(1, _MATMUL_K * _MATMUL_P + 1, dtype=np.int64) * 3) % 9) + 1).reshape(shape_b))
+    return a, b
 
 
 #: 探针覆盖的原语（顺序固定，产物表格按它排）
@@ -248,8 +324,20 @@ PROBE_PRIMITIVES: tuple[PrimitiveCase, ...] = (
         "shift_right", _fn_shift_right, "packing",
         "算术右移（P7 测过“秘密 >> 常数”，这里测“秘密 >> 秘密输入的同型张量”）",
     ),
-    _case("dot", _fn_dot, "packing", "打包归约候选（D3 §7 点名，此前未真机测）"),
-    _case("sum", _fn_sum, "layout", "跨元素求和（归约轴聚合的基元）"),
+    _case("dot", _fn_dot, "packing", "打包归约候选（D3 §7 点名）；**收缩长度不计费**，按输出计",
+          outputs=1, cost_driver="outputs"),
+    _case("dot_long", _fn_dot, "packing",
+          f"同 dot，收缩长度 {_DOT_LONG_ELEMENTS}（与 dot 同输出=1）：通信量应**不变**",
+          elements=_DOT_LONG_ELEMENTS, fixed_elements=True, outputs=1, cost_driver="outputs"),
+    _case("matmul", _fn_matmul, "packing",
+          f"矩阵乘 {_MATMUL_M}x{_MATMUL_K} · {_MATMUL_K}x{_MATMUL_P}：通信量应随**输出个数**走",
+          elements=_MATMUL_ELEMENTS, fixed_elements=True,
+          outputs=_MATMUL_M * _MATMUL_P, cost_driver="outputs", inputs_fn=_matmul_inputs),
+    _case("sum", _fn_sum, "layout", "跨元素求和（归约轴聚合的基元）；与 dot 同族：按**输出个数**计",
+          outputs=1, cost_driver="outputs"),
+    _case("sum_long", _fn_sum, "layout",
+          f"同 sum，收缩长度 {_DOT_LONG_ELEMENTS}（与 sum 同输出=1）：通信量应**不变**",
+          elements=_DOT_LONG_ELEMENTS, fixed_elements=True, outputs=1, cost_driver="outputs"),
     _case("compare", _fn_compare, "layout", "逐候选判定（L2 归约轴的非线性核心）"),
     _case("select", _fn_select, "layout", "jnp.where（逐候选判定）"),
     _case("sort", _fn_sort, "fragile", "依赖 frontend 的 float→int 补丁，跨版本易碎"),
@@ -273,11 +361,15 @@ def primitive_probe_cases(*, elements: int = PRIMITIVE_ELEMENTS, repeats: int = 
                 reference_fn=case.reference_fn,
                 needed_by=case.needed_by,
                 note=case.note,
-                elements=int(elements),
+                elements=case.elements if case.fixed_elements else int(elements),
                 protocol=case.protocol,
                 field=case.field,
                 repeats=max(1, int(repeats)),
                 capture_comm=capture_comm,
+                outputs=case.outputs,
+                cost_driver=case.cost_driver,
+                fixed_elements=case.fixed_elements,
+                inputs_fn=case.inputs_fn,
             )
         )
     return out
@@ -296,6 +388,8 @@ def _blank_record(case: PrimitiveCase) -> dict[str, Any]:
         "protocol": case.protocol,
         "field": case.field,
         "elements": case.elements,
+        "outputs": case.outputs,
+        "cost_driver": case.cost_driver,
         "repeat": max(1, int(case.repeats)),
         "status": "unavailable",
         "error": "",
@@ -307,6 +401,8 @@ def _blank_record(case: PrimitiveCase) -> dict[str, Any]:
         "comm_recv_bytes": None,
         "comm_total_bytes": None,
         "comm_per_element": None,
+        "comm_per_output": None,
+        "cost_per_unit": None,
         "comm_by_primitive": {},
         "within_tolerance": None,
         "max_abs_error": None,
@@ -330,7 +426,8 @@ def _run_primitive_once(case: PrimitiveCase, *, report: Any = None) -> dict[str,
         )
         return record
 
-    x, y = _probe_inputs(case.elements)
+    inputs_fn = case.inputs_fn or _probe_inputs
+    x, y = inputs_fn(case.elements)
     start = time.perf_counter()
     run = run_spu_simulation(
         case.fn,
@@ -363,8 +460,20 @@ def _run_primitive_once(case: PrimitiveCase, *, report: Any = None) -> dict[str,
     record["note"] = "；".join([case.note, *notes]).strip("；")
 
     comm = record["comm_total_bytes"]
-    if isinstance(comm, (int, float)) and case.elements > 0:
-        record["comm_per_element"] = comm / case.elements
+    record["comm_per_element"] = None
+    record["comm_per_output"] = None
+    record["cost_per_unit"] = None
+    if isinstance(comm, (int, float)):
+        if case.elements > 0:
+            record["comm_per_element"] = comm / case.elements
+        if case.outputs:
+            record["comm_per_output"] = comm / case.outputs
+        # 计费维度必须与电路形态对齐：收缩/矩阵乘按**输出个数**计，
+        # 逐元素按**输入元素数**计。一律除以输入元素数会把"收缩长度免费"
+        # 误读成"这个原语便宜"——`dot` 的 0.25 B/元素 就是这么来的。
+        divisor = case.outputs if case.cost_driver == "outputs" else case.elements
+        if divisor:
+            record["cost_per_unit"] = comm / divisor
     return record
 
 
@@ -395,6 +504,8 @@ def run_primitive_case(case: PrimitiveCase, *, report: Any = None) -> dict[str, 
         "comm_send_bytes",
         "comm_recv_bytes",
         "comm_per_element",
+        "comm_per_output",
+        "cost_per_unit",
     ):
         values = [
             float(sample[key])
@@ -427,13 +538,28 @@ def run_primitive_cases(
 # --------------------------------------------------------------------------
 
 
-#: 每条电路从语义上**必须**含多少个"秘密 × 秘密"乘法（按输入元素数计）。
-#: 用它跟实测通信量对账：低于下限的读数物理上不可能，必须标可疑，
-#: 不能当成"这个原语免费"——`x * 2` 实测 0 B 就是这个坑（P6 的教训）。
+#: 每条电路在每个**计费单位**上至少要付的秘密乘法次数，用于跟实测通信量对账
+#: （P6 实测 16 B/环元素/次乘法）。低于下限的读数物理上不可能，必须标可疑，
+#: 不能当成"这个原语免费"——P6 的 `x * 2` 实测 0 B 就是这个坑。
+#:
+#: **计费单位随电路形态走**：逐元素电路 = 输入元素数；收缩/矩阵乘 = 输出个数
+#: （`dot` 的收缩长度免费，见模块 docstring）。记录里的 `cost_driver` 决定用哪个，
+#: 一律除以输入元素数会把 `dot` 误判成"低于下限"——读数没错，尺子错了。
 MULTIPLY_DEMAND: Mapping[str, float] = {
-    "mul": 1.0,  # 逐元素秘密乘法
-    "dot": 1.0,  # 长度为 N 的秘密收缩 = N 次秘密乘法
+    "mul": 1.0,  # 逐元素：1 次秘密乘法 / 输入元素
+    "dot": 1.0,  # 收缩：至少 1 次秘密乘法 / 输出
+    "dot_long": 1.0,
+    "matmul": 1.0,
 }
+
+
+#: "收缩长度应免费"的成对用例：同一原语、同一输出个数、**仅收缩长度不同**。
+#: 两条读数一致才能说明通信量按输出个数走（见模块 docstring 的实测表）；
+#: 不一致就说明"收缩长度免费"这条结论在该原语上不成立，必须如实报出来。
+CONTRACTION_PAIRS: tuple[tuple[str, str], ...] = (
+    ("dot", "dot_long"),
+    ("sum", "sum_long"),
+)
 
 
 def summarize_primitives(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
@@ -467,6 +593,10 @@ def summarize_primitives(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]
         "not_executed": tuple(failed + silent),
         "failed": tuple(failed),
         "registered_but_not_executed": tuple(unverified_claims),
+        "below_multiply_floor": (),
+        "contraction_is_free": (),
+        "priced_by_outputs": (),
+        "priced_by_inputs": (),
         "notes": notes,
     }
 
@@ -479,27 +609,71 @@ def summarize_primitives(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]
             "以下原语在 capability 表里登记为已适配，但本探针真机没跑通："
             f"{sorted(unverified_claims)}——登记表与实测不一致，必须复核"
         )
-    # 与"秘密乘法下限"对账（P6 实测 16 B/元素/次乘法）
-    floor_by_name = {str(r.get("name")): r for r in records}
+    # 与"秘密乘法下限"对账（P6 实测 16 B/元素/次乘法）。
+    # 纪律：下限必须**与被测电路的计费维度对齐**——逐元素电路按输入元素数对账，
+    # 收缩/矩阵乘按**输出个数**对账（收缩长度免费，见模块 docstring）。
+    # 第一版不分维度、一律除以输入元素数，把 `dot` 实测的 16 B 误判成
+    # "低于下限"（N=64 时 16 B < 64×16 B=1024 B）——读数没错，**尺子错了**，
+    # 与 P6 `x * 2` 实测 0 B 是同族教训。
+    by_name = {str(r.get("name")): r for r in records}
     below: list[str] = []
     for name, demand in MULTIPLY_DEMAND.items():
-        record = floor_by_name.get(name)
+        record = by_name.get(name)
         if not record:
             continue
         comm = record.get("comm_total_bytes")
-        elements = record.get("elements")
-        if not isinstance(comm, (int, float)) or not isinstance(elements, (int, float)):
+        if not isinstance(comm, (int, float)):
             continue
-        floor = MUL_BYTES_PER_ELEMENT * float(elements) * float(demand)
+        by_output = record.get("cost_driver") == "outputs"
+        billed = record.get("outputs") if by_output else record.get("elements")
+        if not isinstance(billed, (int, float)) or billed <= 0:
+            continue
+        floor = MUL_BYTES_PER_ELEMENT * float(billed) * float(demand)
         if comm < floor:
             below.append(name)
             notes.append(
-                f"{name} 实测通信量 {comm:.0f} B 低于秘密乘法下限 {floor:.0f} B "
-                f"（{MUL_BYTES_PER_ELEMENT:.0f} B/元素 × {int(elements)}）："
+                f"{name} 实测通信量 {comm:.0f} B 低于同一计费维度上的秘密乘法下限 "
+                f"{floor:.0f} B（{MUL_BYTES_PER_ELEMENT:.0f} B/"
+                f"{'输出' if by_output else '元素'} × {int(billed)}）："
                 "要么该原语有更省的专用协议，要么这条路径没在真做保密乘法——"
                 "本探针不给结论，标为可疑，需另行复核"
             )
     summary["below_multiply_floor"] = tuple(below)
+
+    # 计费维度登记：收缩类用例必须显式标 outputs，否则又会退回"除以输入元素数"的旧口径。
+    summary["priced_by_outputs"] = tuple(
+        str(r.get("name")) for r in records if r.get("cost_driver") == "outputs"
+    )
+    summary["priced_by_inputs"] = tuple(
+        str(r.get("name")) for r in records if r.get("cost_driver") != "outputs"
+    )
+
+    # 收缩长度免费：同一原语、同一输出个数、仅收缩长度不同 → 通信量应一致。
+    contraction_free: list[str] = []
+    for short_name, long_name in CONTRACTION_PAIRS:
+        short_case, long_case = by_name.get(short_name), by_name.get(long_name)
+        if not short_case or not long_case:
+            continue
+        short_comm = short_case.get("comm_total_bytes")
+        long_comm = long_case.get("comm_total_bytes")
+        if not (isinstance(short_comm, (int, float)) and isinstance(long_comm, (int, float))):
+            continue
+        if float(short_comm) <= 0:
+            continue
+        if float(short_comm) == float(long_comm):
+            contraction_free.append(short_name)
+            notes.append(
+                f"收缩长度不计费：{short_name}（收缩长度 {short_case.get('elements')}）与 "
+                f"{long_name}（收缩长度 {long_case.get('elements')}）输出个数同为 "
+                f"{short_case.get('outputs')}，通信量同为 {float(short_comm):.0f} B——"
+                "通信量随**输出个数**走，收缩长度是免费维度"
+            )
+        else:
+            notes.append(
+                f"{short_name} 与 {long_name} 通信量不一致"
+                f"（{short_comm} vs {long_comm}）：收缩长度是否免费存疑，需复核"
+            )
+    summary["contraction_is_free"] = tuple(contraction_free)
 
     packing = [r.get("name") for r in records if r.get("needed_by") == "packing"]
     summary["packing_primitives"] = tuple(str(name) for name in packing)
@@ -522,6 +696,8 @@ PRIMITIVE_CSV_COLUMNS: tuple[str, ...] = (
     "protocol",
     "field",
     "elements",
+    "outputs",
+    "cost_driver",
     "repeat",
     "status",
     "wall_ms",
@@ -531,6 +707,8 @@ PRIMITIVE_CSV_COLUMNS: tuple[str, ...] = (
     "comm_recv_bytes",
     "comm_total_bytes",
     "comm_per_element",
+    "comm_per_output",
+    "cost_per_unit",
     "comm_by_primitive",
     "within_tolerance",
     "max_abs_error",
@@ -573,21 +751,28 @@ def write_primitive_csv(records: Sequence[Mapping[str, Any]], path: str) -> str:
 
 
 def format_primitive_summary(records: Sequence[Mapping[str, Any]]) -> str:
-    header = f"{'primitive':12s} {'needed_by':10s} {'status':12s} {'对拍':>5s} {'comm_B':>10s} {'B/元素':>9s}  真机原语"
+    header = (
+        f"{'primitive':12s} {'needed_by':10s} {'billing':8s} {'status':12s} "
+        f"{'对拍':>5s} {'comm_B':>10s} {'B/单位':>9s}  真机原语"
+    )
     lines = [header]
     for record in records:
         comm = record.get("comm_total_bytes")
-        per = record.get("comm_per_element")
+        unit = record.get("cost_per_unit")
+        if unit is None:
+            unit = record.get("comm_per_element")
+        billing = "outputs" if record.get("cost_driver") == "outputs" else "inputs"
         match = record.get("within_tolerance")
         mark = "-" if match is None else ("是" if match else "否")
         primitives = ",".join(sorted((record.get("comm_by_primitive") or {}).keys()))
         lines.append(
             f"{str(record.get('name', ''))[:12]:12s} "
             f"{str(record.get('needed_by', ''))[:10]:10s} "
+            f"{billing:8s} "
             f"{str(record.get('status', '')):12s} "
             f"{mark:>5s} "
             f"{(f'{comm:.0f}' if isinstance(comm, (int, float)) else '-'):>10s} "
-            f"{(f'{per:.2f}' if isinstance(per, (int, float)) else '-'):>9s}  "
+            f"{(f'{unit:.2f}' if isinstance(unit, (int, float)) else '-'):>9s}  "
             f"{primitives}"
         )
     summary = summarize_primitives(records)
