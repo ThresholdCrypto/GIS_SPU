@@ -1,8 +1,8 @@
 # 项目进展说明：geo-secure 低门槛隐私计算编译器（MVP）
 
 > **口径对齐**：2026 年 9 月工作月报（任务 3）。
-> **截至 2026-10-08**，本地与远程 `main` 一致：**15 个提交**、
-> **957 项自动化测试全部通过（0 失败 / 0 跳过）**。
+> **截至 2026-10-08**，本地与远程 `main` 一致：**16 个提交**、
+> **1004 项自动化测试全部通过（0 失败 / 0 跳过）**。
 > **验证环境**：WSL2 Ubuntu 26.04.1 / x86_64，Python 3.11.16，spu 0.9.5，jax 0.4.34。
 
 ---
@@ -52,6 +52,8 @@ def check_conflict(route, no_fly_zone):
 | 2026-10-06 | `498e12f` + 工作区改动 | P5：位平面布局（D3）预测层（`planner/layout.py` + CLI `--layout-shape`） | `838 passed` |
 | 2026-10-06 | `a811246` | P6：打包收益上界实测（SPU 按环元素而非输入位计费） | — |
 | 2026-10-06 | `d91da69` | P7-P0：打包电路取槽步的单价实测（按位操作不免费） | **`893 passed`**（2026-10-08 复跑确认） |
+| 2026-10-08 | `1dbc8c8` | P0 收尾：`dot` 读数根因定位（计费维度改按输出个数）+ 协议覆盖镜像修正 | `957 passed` |
+| 2026-10-08 | `ec0b4ee` | P2/P3：`MpcProtocolSpec` 协议元数据 + 统一 capability validation（field / world_size / 语义 / 参数编译期前置拒绝） | **`1004 passed`** |
 
 > 「+ 工作区改动」表示该轮结果记录于提交前后的工作区状态，逐轮明细见
 > `docs/VERSION_COMPATIBILITY.md`。
@@ -133,6 +135,17 @@ def check_conflict(route, no_fly_zone):
    `--primitive-probe`），产物文件名从单一张表派生、同时开两个探针直接报错、
    与 `--ops`/`--protocols` 组合直接拒绝；`--repeat` 从「只记录」变成**真的重复执行并报中位数**
    （此前 P7-P0 的读数其实是单次）。README 扩展点、能力矩阵、版本兼容表同步更新。
+4. **协议扩展架构：Phase 2 / Phase 3 已闭合（本版 P2/P3）**——
+   两族协议元数据（`PsiProtocolSpec.family` + `MpcProtocolSpec`：world_size /
+   security_model（含出处）/ 语义 / `supported_fields` 实测矩阵）齐备；
+   统一校验入口 `backends.protocol_validation.validate_protocol_request()`，
+   `field` / `world_size` / 协议参数在编译期前置拒绝（自动选中协议同样复核，
+   拒绝信息给出可操作的替代候选与放宽路径）。
+   下一步（Phase 4 / 5）：**Planner → Runtime 协议参数一致性对拍测试**；
+   选一个 SPU 已真实支持的新 PSI 协议走完整接入流程（Registry → Capability →
+   Planner → Runtime → Tests → Benchmark → GeoSOT E2E）；自动协议选择按
+   `world_size` **过滤候选**（当前策略是拒绝并给出替代，过滤属下一阶段）；
+   `runtime_adapter` / `benchmark_profile` 元数据位尚未登记（两族执行接口保持独立）。
 
 ---
 
