@@ -574,6 +574,38 @@ class TestCli:
         for run in result.psi_runs.values():
             assert run.protocol == "PROTOCOL_RR22"
 
+    # ---- NPC 族：显式放行（方案 A 收尾） ----
+
+    def test_npc_protocol_reaches_the_real_run(self, capsys):
+        """NPC 族显式选择必须穿过编译期闸门，并体现在真实执行那一行。"""
+
+        exit_code = cli_main(
+            ["build", example("route_conflict.py"), "--psi-protocol", "ECDH_NPC"]
+        )
+        output = capsys.readouterr().out
+        assert exit_code == 0, output
+        assert "选用      : PROTOCOL_ECDH_NPC" in output
+        assert "[PROTOCOL_ECDH_NPC / CURVE_SM2]" in output
+
+        from tests._helpers import has_psi
+
+        if has_psi():
+            assert "verified" in output
+
+    def test_npc_protocol_reaches_the_result_object(self):
+        from geosecure import Compiler
+
+        compiler = Compiler(psi_protocol="ECDH_NPC", psi_curve="CURVE_SM2")
+        result = compiler.compile_file(example("route_conflict.py"))
+        assert result.psi_protocol == "PROTOCOL_ECDH_NPC"
+        assert result.psi_curve == "CURVE_SM2"
+        for run in result.psi_runs.values():
+            assert run.protocol == "PROTOCOL_ECDH_NPC"
+        # 显式放行的披露必须落在方案理由里（不进候选/建议清单）
+        assert any(
+            "显式放行" in reason for reason in result.plan.steps[0].reasons
+        )
+
     def test_rr22_low_comm_mode_reaches_the_real_run(self, capsys):
         """`--psi-rr22-low-comm-mode` 必须体现在真实执行的参数档里。"""
 

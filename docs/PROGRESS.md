@@ -31,7 +31,7 @@ def check_conflict(route, no_fly_zone):
 | `planner` | Operator Registry + Privacy Planner，输出 `{operation, representation, backend, estimated_cost, security_level}`；MPC 协议按实测代价自动选择；位平面布局（D3）预测层 | 完成 |
 | `backends/jax_backend` | `DistanceLE` / `WeightedSum` / `TemporalOverlap` 的 JAX 生成（可 `jax.jit` 追踪、无 Python 运行时依赖） | 完成 |
 | `backends/spu_backend` | SPU 能力核查、模拟执行、通信量采集、打包前提与取槽单价探针 | 完成 |
-| `backends/psi_backend` | PSI 协议 ECDH(SM2) / KKRT / RR22(+`low_comm`) / DP 接入与真机执行 | 完成 |
+| `backends/psi_backend` | PSI 协议 ECDH(SM2) / KKRT / RR22(+`low_comm`) / DP / NPC 族接入与真机执行；NPC 与 DP 属"显式放行"档 | 完成 |
 | `semantic` / `validator` | 关系三元组产出；六类失败模式的错误报告（错误位置 + 原因 + 建议替代算子 + 预计隐私计算代价） | 完成 |
 | CLI | `geo-secure build`，八阶段输出 + 「算子-表征-后端-状态」表 | 完成 |
 
@@ -54,6 +54,7 @@ def check_conflict(route, no_fly_zone):
 | 2026-10-06 | `d91da69` | P7-P0：打包电路取槽步的单价实测（按位操作不免费） | **`893 passed`**（2026-10-08 复跑确认） |
 | 2026-10-08 | `1dbc8c8` | P0 收尾：`dot` 读数根因定位（计费维度改按输出个数）+ 协议覆盖镜像修正 | `957 passed` |
 | 2026-10-08 | `ec0b4ee` | P2/P3：`MpcProtocolSpec` 协议元数据 + 统一 capability validation（field / world_size / 语义 / 参数编译期前置拒绝） | **`1004 passed`** |
+| 2026-10-09 | （工作区） | Phase 5 定界 + NPC 族**编译期显式放行**（`explicit_only`）+ E2E / benchmark 开关 | 待 WSL 复跑 |
 
 > 「+ 工作区改动」表示该轮结果记录于提交前后的工作区状态，逐轮明细见
 > `docs/VERSION_COMPATIBILITY.md`。
@@ -90,7 +91,7 @@ def check_conflict(route, no_fly_zone):
 
 - 6 个地理算子：`Intersects` / `Contains` / `DistanceLE` / `CellSetIntersect` / `WeightedSum` / `TemporalOverlap`
 - MPC 协议：ABY3 / SEMI2K / SECURENN / CHEETAH（`REF2K` 可显式指定，不参与自动选择）
-- PSI 协议：ECDH(SM2) / KKRT / RR22（+ `low_comm`）/ DP-PSI（带噪语义单独披露）
+- PSI 协议：ECDH(SM2) / KKRT / RR22（+ `low_comm`）/ DP-PSI（带噪语义单独披露）/ NPC 族（ECDH_NPC、KKRT_NPC，显式放行）
 - 真机用例：SPU(MPC) 真跑 10 项、PSI 真机求交 23 项函数等（统计口径见 `README.md` §6.4）
 
 **未落地（如实标注）**
@@ -141,11 +142,18 @@ def check_conflict(route, no_fly_zone):
    统一校验入口 `backends.protocol_validation.validate_protocol_request()`，
    `field` / `world_size` / 协议参数在编译期前置拒绝（自动选中协议同样复核，
    拒绝信息给出可操作的替代候选与放宽路径）。
-   下一步（Phase 4 / 5）：**Planner → Runtime 协议参数一致性对拍测试**；
-   选一个 SPU 已真实支持的新 PSI 协议走完整接入流程（Registry → Capability →
-   Planner → Runtime → Tests → Benchmark → GeoSOT E2E）；自动协议选择按
-   `world_size` **过滤候选**（当前策略是拒绝并给出替代，过滤属下一阶段）；
-   `runtime_adapter` / `benchmark_profile` 元数据位尚未登记（两族执行接口保持独立）。
+   **Phase 5 的"新协议"对象已定界（本版）**：核查 `spu 0.9.5` 的 `PsiProtocol`
+   枚举共 7 个真实协议，本项目**全部已登记**、6 个已真机执行；唯一"SPU 已支持、
+   但编译器全链路未走完"的是 **NPC 族**（`ECDH_NPC` / `KKRT_NPC`）。本版把它收尾为
+   **显式放行**档（`PsiProtocolSpec.explicit_only`；不进候选/建议清单，显式选择
+   可通过编译期并带披露），并补齐编译器路径测试与 benchmark 显式开关。
+   因此原先"选一个 SPU 已支持的**新**协议走完整接入流程"字面对象已不存在——
+   扩展机制改由 NPC 族演练的后半段（编译期放行 + 基准 + E2E）验收。
+   下一步（Phase 4 / 5 余项）：**Planner → Runtime 协议参数一致性对拍测试**；
+   自动协议选择按 `world_size` **过滤候选**（当前策略是拒绝并给出替代，过滤属
+   下一阶段）；`runtime_adapter` / `benchmark_profile` 元数据位尚未登记（两族
+   执行接口保持独立）；**另起"SPU 未实现过的新协议"工程**（层面 3：选一个开源
+   PSI/MPC 协议内核，按 `backends/` 新族接入，不改 SPU 源码）。
 
 ---
 

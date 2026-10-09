@@ -78,6 +78,12 @@ class PsiProtocolSpec:
     #: backends/spu_backend/protocol_registry.MpcProtocolSpec。两族分开登记，
     #: 统一校验入口在 backends/protocol_validation.py。
     family: str = "PSI"
+    #: 显式放行：不进算子候选、不出现在替代建议清单里，但**显式选择**可通过
+    #: 编译期（见 planner.registry.validate_protocol_for_operation）。DP（带噪）
+    #: 与 NPC 族（本链路两方已真机执行）属此类。默认 False —— 新登记协议不会
+    #: 自动获得放行，编译期仍会拒绝并提示"先登记候选或显式放行并补测试"，
+    #: 避免出现"登记即放行"的静默滑过。
+    explicit_only: bool = False
 
     def __post_init__(self) -> None:
         if self.semantics is not None and self.semantics not in RESULT_SEMANTICS:
@@ -92,6 +98,10 @@ class PsiProtocolSpec:
             raise ValueError(
                 f"协议 {self.name} 的 family={self.family!r} 不是 'PSI'；"
                 "PSI 注册表只登记 PSI 族协议"
+            )
+        if self.explicit_only and self.candidate_for:
+            raise ValueError(
+                f"协议 {self.name} 不能同时是候选与显式放行：candidate_for 非空"
             )
 
     @property
@@ -110,6 +120,7 @@ class PsiProtocolSpec:
             "params_schema": {key: dict(value) for key, value in self.params_schema.items()},
             "candidate_for": list(self.candidate_for),
             "family": self.family,
+            "explicit_only": self.explicit_only,
         }
 
 
@@ -154,6 +165,7 @@ PROTOCOL_SPECS: Mapping[str, PsiProtocolSpec] = {
         curve_relation="required",
         params_schema=_COMMON_PARAMS,
         candidate_for=(),
+        explicit_only=True,
     ),
     "PROTOCOL_KKRT_NPC": PsiProtocolSpec(
         name="PROTOCOL_KKRT_NPC",
@@ -162,6 +174,7 @@ PROTOCOL_SPECS: Mapping[str, PsiProtocolSpec] = {
         curve_relation="ignored",
         params_schema=_COMMON_PARAMS,
         candidate_for=(),
+        explicit_only=True,
     ),
     "PROTOCOL_DP": PsiProtocolSpec(
         name="PROTOCOL_DP",
@@ -170,6 +183,7 @@ PROTOCOL_SPECS: Mapping[str, PsiProtocolSpec] = {
         curve_relation="implicit",
         params_schema=_COMMON_PARAMS,
         candidate_for=(),
+        explicit_only=True,
     ),
 }
 
@@ -187,6 +201,12 @@ PSI_PROTOCOLS_WITH_NOISE: tuple[str, ...] = tuple(
     name
     for name, spec in PROTOCOL_SPECS.items()
     if spec.result_semantics == RESULT_SEMANTICS_NOISY
+)
+
+#: 显式放行协议（不进候选、不出现在建议清单；显式选择可通过编译期）。
+#: 与候选清单互斥（PsiProtocolSpec.__post_init__ 强制）。
+PSI_PROTOCOLS_EXPLICIT_ONLY: tuple[str, ...] = tuple(
+    name for name, spec in PROTOCOL_SPECS.items() if spec.explicit_only
 )
 
 

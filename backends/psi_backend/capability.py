@@ -130,6 +130,10 @@ PSI_RUNTIME_WORLD_SIZE = 2
 #: 正是更容易被漏报的一类**。必须在选用时就说明，而不是等结果对不上再解释。
 PSI_PROTOCOLS_WITH_NOISE: tuple[str, ...] = _registry.PSI_PROTOCOLS_WITH_NOISE
 
+#: 显式放行协议（不进候选/建议清单；显式选择可通过编译期）。
+#: 单一来源 `protocol_registry.PSI_PROTOCOLS_EXPLICIT_ONLY`，与候选清单互斥。
+PSI_PROTOCOLS_EXPLICIT_ONLY: tuple[str, ...] = _registry.PSI_PROTOCOLS_EXPLICIT_ONLY
+
 #: `spu.psi.EllipticCurveType` 的成员（0.9.5 libpsi.pyi 实测）
 PSI_CURVES: tuple[str, ...] = (
     "CURVE_25519",
@@ -517,6 +521,16 @@ def protocol_is_exact(protocol: str) -> bool:
     """
 
     return protocol_result_semantics(protocol) == RESULT_SEMANTICS_EXACT
+
+
+def psi_protocol_is_explicit_only(protocol: str) -> bool:
+    """该协议是否属"显式放行"类：不进候选/建议清单，但显式选择可通过编译期。
+
+    单一来源是 `protocol_registry.PSI_PROTOCOLS_EXPLICIT_ONLY`；放行判定与
+    披露文案由 `planner.registry.validate_protocol_for_operation` 使用。
+    """
+
+    return normalize_psi_protocol(protocol) in PSI_PROTOCOLS_EXPLICIT_ONLY
 
 
 def protocol_world_size(protocol: str) -> int:

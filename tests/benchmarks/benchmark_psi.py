@@ -13,7 +13,8 @@ stdout/stderr，不影响本脚本产出的 JSON/CSV。建议重定向日志：
 - 默认：标准扫描（四个协议变体 2^10…2^18；KKRT/RR22 到 2^24；ECDH 到 2^20，
   2^22/2^24 记 unavailable）+ 变量矩阵（N=2^12）+ 重复键矩阵；
 - `--quick`：2^10 / 2^12 快扫（CI / 冒烟）；
-- `--sizes` / `--protocols`：显式指定扫描（只测指定组合，不做 unavailable 占位）。
+- `--sizes` / `--protocols`：显式指定扫描（只测指定组合，不做 unavailable 占位）；
+  NPC 族（`ecdh-npc` / `kkrt-npc`）只能经此路径跑，不进默认标准扫描。
 
 退出码：`0` = 没有"预期外"记录；`1` = 存在预期外记录（含"预期失败的重复键
 用例没有失败"这种上游行为变化）。标准扫描里重复键用例**预期**含 error 行
@@ -46,6 +47,9 @@ _PROTOCOL_CHOICES = {
     "kkrt": (("PROTOCOL_KKRT", False),),
     "rr22": (("PROTOCOL_RR22", False),),
     "rr22-low": (("PROTOCOL_RR22", True),),
+    # NPC 族（显式放行）：不进默认标准扫描，用 `--protocols` 显式跑
+    "ecdh-npc": (("PROTOCOL_ECDH_NPC", False),),
+    "kkrt-npc": (("PROTOCOL_KKRT_NPC", False),),
 }
 
 
@@ -62,7 +66,9 @@ def parse_args(argv=None):
         "--sizes", default="", help="显式规模列表（2 的幂指数，如 10,12,20）"
     )
     parser.add_argument(
-        "--protocols", default="", help="显式协议列表（ecdh,kkrt,rr22,rr22-low）"
+        "--protocols",
+        default="",
+        help="显式协议列表（ecdh,kkrt,rr22,rr22-low,ecdh-npc,kkrt-npc）",
     )
     parser.add_argument(
         "--json",

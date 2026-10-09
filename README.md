@@ -494,6 +494,7 @@ report = psi.psi_execute(cfg, lctx)
 | 哨位值 | `PROTOCOL_UNSPECIFIED` / `CURVE_INVALID_TYPE` 存在但不可用，已剔除 |
 | 参与方约束 | `ECDH_3PC` 要求 3 方；本后端链路固定 2 方，故必然失败 |
 | 结果精度 | 除 `DP` 外都是**精确**交集；`DP` 是差分隐私协议，结果**带噪**（见下） |
+| 编译期放行 | 候选（自动/建议）：`ECDH` `KKRT` `RR22`；**显式放行**（只允许显式选择、不进建议清单）：`ECDH_NPC` `KKRT_NPC` `DP`；其余一律编译期拒绝 |
 
 **"枚举里有"不等于"这里能跑"**。`PROTOCOL_ECDH_3PC` 是三方协议，而本项目的
 进程内链路是两方（`Intersects` / `Contains` / `CellSetIntersect` 都是两方求交），
@@ -547,6 +548,7 @@ LEGACY PSI config: {"psi_type":"DP_PSI_2PC", ..., "dppsi_params":{"bob_sub_sampl
 # 换用已有的另一个两方协议（层面 1：不改 SPU，也不改本项目代码）
 geo-secure build examples/route_conflict.py --psi-protocol KKRT
 geo-secure build examples/route_conflict.py --psi-protocol RR22
+geo-secure build examples/route_conflict.py --psi-protocol ECDH_NPC   # NPC 族：显式放行档
 geo-secure build examples/route_conflict.py --psi-curve CURVE_25519
 # Contains 的子集判定：默认走 MPC，可显式退回明文（退回会被状态词标出来）
 geo-secure build examples/vertical_conflict.py --psi-subset plaintext
@@ -554,7 +556,7 @@ geo-secure build examples/vertical_conflict.py --psi-subset plaintext
 
 | 参数 | 缺省 | 说明 |
 |------|------|------|
-| `--psi-protocol` | `PROTOCOL_ECDH` | 取值见上表"本链路可执行协议"；`KKRT` / `RR22` / `KKRT_NPC` 不基于椭圆曲线（给了也不读）；`DP` 能跑但结果带噪 |
+| `--psi-protocol` | `PROTOCOL_ECDH` | 取值见上表"本链路可执行协议"。候选 `ECDH`/`KKRT`/`RR22` 之外的 `ECDH_NPC`/`KKRT_NPC`/`DP` 属**显式放行**：可显式选择、不进自动候选/替代建议；`KKRT`/`RR22`/`KKRT_NPC` 不基于椭圆曲线（给了也不读）；`DP` 能跑但结果带噪 |
 | `--psi-curve` | `CURVE_SM2` | 只有 ECDH 族由本项目注入。**即使当前协议用不上也会校验拼写**，拼错即报错而非静默忽略。`DP` 自带内置默认曲线（上游源码默认 25519），本项目**不覆盖**它——所以提示语写"未传入"而**不写**"不生效" |
 | `--psi-subset` | `mpc` | `Contains` 的**子集判定**走哪条路：`mpc`（MPC 基数等值）/ `plaintext`（显式明文）。只接受这两个值；MPC 不可用时自动退回明文并把模式标为 `plaintext-fallback`，状态词记 `subset-plaintext`（见 7.6） |
 | `--psi-rr22-low-comm-mode` | 关 | **RR22 专用参数**：开 → `Rr22Rarams.low_comm_mode=True`（低通信模式）。只对 `--psi-protocol RR22` 生效（配其它协议会打印提示且不注入），不是通用 curve 参数 |
@@ -566,6 +568,10 @@ geo-secure build examples/vertical_conflict.py --psi-subset plaintext
    状态表记 `backend-direct` 而**不是** `verified`，模拟阶段跳过。
 3. 选了结果带噪的协议（`DP`）→ 能跑，但两个 PSI 阶段都记 warning，
    状态表记 `executed-noisy`，且**不得**出现"经真实 PSI 求交验证"这类字样。
+4. 选了**显式放行**协议（`ECDH_NPC` / `KKRT_NPC`）→ 编译期放行，方案理由带
+   "显式放行（不进候选/替代建议清单）"；这两族已真机执行并与明文对拍。
+   既未登记候选、也未显式放行的协议（含未来上游新增）仍被编译期拒绝，
+   提示"先登记候选或显式放行并补测试"。
 
 
 **MPC（SPU）协议开关（P0，本版新增）**

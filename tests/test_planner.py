@@ -394,7 +394,11 @@ class TestProtocolPlanning:
 
 
 class TestProtocolCandidateValidation:
-    """候选清单从"登记与提示"升级为"编译期强制"（DP 除外，放行但标记带噪）。"""
+    """候选清单从"登记与提示"升级为"编译期强制"。
+
+    两档放行：候选（ECDH/KKRT/RR22）与**显式放行**（DP 带噪、NPC 族）；
+    两档之外一律编译期拒绝——包括未来新登记但未放行的协议。
+    """
 
     SOURCE = (
         "from geo_privacy import geo\n"
@@ -413,10 +417,30 @@ class TestProtocolCandidateValidation:
         assert check.ok
         assert any("带噪" in note for note in check.notes)
 
-    def test_non_candidate_protocol_is_rejected(self):
-        check = validate_protocol_for_operation("Intersects", "PROTOCOL_ECDH_NPC")
+    def test_explicit_only_protocols_are_allowed_with_disclosure(self):
+        for proto in ("PROTOCOL_ECDH_NPC", "PROTOCOL_KKRT_NPC"):
+            check = validate_protocol_for_operation("Intersects", proto)
+            assert check.ok, (proto, check.problems)
+            assert any("显式放行" in note for note in check.notes), proto
+
+    def test_unregistered_protocol_is_rejected_even_if_registry_grows(
+        self, monkeypatch
+    ):
+        """未来上游加协议：登记名进了清单，但没登记候选/显式放行 → 仍拒绝。
+
+        往 `PSI_PROTOCOLS` 里塞一个"已注册但不放行"的协议，锁定拒绝分支：
+        去掉拒绝分支，本用例立刻失败——这是"未登记不放行"的守门用例。
+        """
+
+        import backends.psi_backend.capability as capability
+
+        monkeypatch.setattr(
+            capability, "PSI_PROTOCOLS", (*capability.PSI_PROTOCOLS, "PROTOCOL_FUTURE")
+        )
+        check = validate_protocol_for_operation("Intersects", "PROTOCOL_FUTURE")
         assert not check.ok
         assert "候选协议清单" in check.problems[0]
+        assert "显式放行" in check.problems[0]
 
     def test_three_party_rejection_keeps_readable_reason(self):
         check = validate_protocol_for_operation("Intersects", "PROTOCOL_ECDH_3PC")
@@ -444,7 +468,7 @@ class TestProtocolCandidateValidation:
 
     def test_planner_emits_compile_time_diagnostic_for_rejected_combo(self):
         plan = plan_program(
-            parse_source(self.SOURCE).program, psi_protocol="PROTOCOL_ECDH_NPC"
+            parse_source(self.SOURCE).program, psi_protocol="PROTOCOL_ECDH_3PC"
         )
         assert plan.has_errors
         codes = [d.code for d in plan.diagnostics]
@@ -464,6 +488,17 @@ class TestProtocolCandidateValidation:
         step = plan.steps[0]
         assert step.protocol == "PROTOCOL_DP"
         assert any("带噪" in reason for reason in step.reasons)
+
+    def test_npc_planning_is_allowed_with_disclosure(self):
+        """NPC 族：显式选择可通过规划层，并带上"显式放行"披露。"""
+
+        plan = plan_program(
+            parse_source(self.SOURCE).program, psi_protocol="PROTOCOL_ECDH_NPC"
+        )
+        assert not plan.has_errors, [d.message for d in plan.diagnostics]
+        step = plan.steps[0]
+        assert step.protocol == "PROTOCOL_ECDH_NPC"
+        assert any("显式放行" in reason for reason in step.reasons)
 
 
 # --------------------------------------------------------------------------

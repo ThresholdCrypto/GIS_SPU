@@ -13,7 +13,9 @@ from backends.psi_backend import (
     PSI_PROTOCOL_NAMES,
     PSI_PROTOCOL_WORLD_SIZE,
     PSI_PROTOCOLS,
+    PSI_PROTOCOLS_EXPLICIT_ONLY,
     PSI_PROTOCOLS_WITH_NOISE,
+    PSI_RUNTIME_WORLD_SIZE,
     RESULT_SEMANTICS,
     RESULT_SEMANTICS_APPROXIMATE,
     RESULT_SEMANTICS_EXACT,
@@ -146,6 +148,48 @@ class TestPlannerCrossCheck:
             "PROTOCOL_RR22",
         )
         assert candidate_protocols_for("HeightBand") == ()
+
+
+class TestExplicitOnlyClassification:
+    """每个已登记协议必须恰好落入三类之一，且三类互斥（防"登记即放行"）。
+
+    三类：候选（自动/建议）、显式放行（进不了建议清单但显式可选）、
+    参与方数量不满足本链路。新协议若都不属于，测试立刻变红。
+    """
+
+    def test_explicit_only_set_is_expected(self):
+        assert PSI_PROTOCOLS_EXPLICIT_ONLY == (
+            "PROTOCOL_ECDH_NPC",
+            "PROTOCOL_KKRT_NPC",
+            "PROTOCOL_DP",
+        )
+        assert set(PSI_PROTOCOLS_EXPLICIT_ONLY) <= set(PSI_PROTOCOLS)
+
+    def test_every_registered_protocol_is_classified_exactly_once(self):
+        for name, spec in PROTOCOL_SPECS.items():
+            auto = bool(spec.candidate_for)
+            explicit = spec.explicit_only
+            too_big = spec.world_size > PSI_RUNTIME_WORLD_SIZE
+            assert auto + explicit + too_big == 1, name
+
+    def test_three_party_protocol_is_not_explicitly_released(self):
+        # 3PC 属"参与方数量不满足"一档，不能被显式放行档掩盖
+        assert PROTOCOL_SPECS["PROTOCOL_ECDH_3PC"].explicit_only is False
+
+    def test_explicit_only_never_overlaps_candidates(self):
+        assert set(PSI_PROTOCOLS_EXPLICIT_ONLY) & set(PSI_PROTOCOL_CANDIDATES) == set()
+
+    def test_spec_rejects_being_candidate_and_explicit_at_once(self):
+        with pytest.raises(ValueError, match="不能同时是候选与显式放行"):
+            PsiProtocolSpec(
+                name="X",
+                world_size=2,
+                exact=True,
+                curve_relation="required",
+                params_schema={},
+                candidate_for=("Intersects",),
+                explicit_only=True,
+            )
 
 
 class TestMpcProtocolCrossCheck:

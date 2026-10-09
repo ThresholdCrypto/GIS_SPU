@@ -427,15 +427,19 @@ def validate_protocol_for_operation(op: str, protocol: str | None) -> ProtocolCh
     - 未显式选协议（None）→ 放行（各算子用登记默认值）；
     - 非 PSI 算子 + 协议 → 拒绝：该协议不会被这个算子使用，静默接受
       等于容忍"设了但没生效"；
+    - PSI 族 + 参与方数量不满足本链路 → 拒绝（如 ECDH_3PC 需 3 方）；
     - PSI 族 + 候选清单内协议 → 放行；
-    - PSI 族 + DP → 放行但标记带噪；
-    - PSI 族 + 候选清单外协议 → 拒绝，并区分两种原因：
-      本链路参与方数量不满足（如 ECDH_3PC），或未登记为候选。
+    - PSI 族 + 显式放行协议（`PSI_PROTOCOLS_EXPLICIT_ONLY`：DP 与 NPC 族）
+      → 放行并带上披露（DP 带噪；NPC 族不进候选/建议清单）；
+    - PSI 族 + 其余已登记协议 → 拒绝，提示"先登记候选或显式放行并补测试"。
+      新协议**默认落在这里**，不会因为"登记了就放行"而静默通过。
 
     后端依赖用函数内导入：planner 不在导入期依赖 backends，保持分层无环。
     """
 
     from backends.psi_backend.capability import (
+        PSI_PROTOCOLS_EXPLICIT_ONLY,
+        PSI_PROTOCOLS_WITH_NOISE,
         PSI_RUNTIME_WORLD_SIZE,
         normalize_psi_protocol,
         protocol_world_size,
@@ -472,20 +476,6 @@ def validate_protocol_for_operation(op: str, protocol: str | None) -> ProtocolCh
             ),
         )
 
-    if name == "PROTOCOL_DP":
-        return ProtocolCheck(
-            ok=True,
-            op=op,
-            protocol=name,
-            notes=(
-                "PROTOCOL_DP 为差分隐私协议：允许显式选择，但结果带噪，"
-                "不能作为与明文一致的一致性验证依据",
-            ),
-        )
-
-    if name in rule.protocol_candidates:
-        return ProtocolCheck(ok=True, op=op, protocol=name)
-
     required = protocol_world_size(name)
     if required > PSI_RUNTIME_WORLD_SIZE:
         return ProtocolCheck(
@@ -498,6 +488,20 @@ def validate_protocol_for_operation(op: str, protocol: str | None) -> ProtocolCh
                 f"请改用：{runnable_protocols_hint()}",
             ),
         )
+
+    if name in rule.protocol_candidates:
+        return ProtocolCheck(ok=True, op=op, protocol=name)
+
+    if name in PSI_PROTOCOLS_EXPLICIT_ONLY:
+        if name in PSI_PROTOCOLS_WITH_NOISE:
+            note = (
+                f"{name} 为差分隐私协议：允许显式选择，但结果带噪，"
+                "不能作为与明文一致的一致性验证依据"
+            )
+        else:
+            note = f"{name} 属显式放行协议（不进候选/替代建议清单）：允许显式选择"
+        return ProtocolCheck(ok=True, op=op, protocol=name, notes=(note,))
+
     return ProtocolCheck(
         ok=False,
         op=op,
@@ -505,7 +509,7 @@ def validate_protocol_for_operation(op: str, protocol: str | None) -> ProtocolCh
         problems=(
             f"协议 {name} 不在算子 {op} 的候选协议清单 "
             f"{list(rule.protocol_candidates)}；未登记的协议组合不予放行"
-            "（若确需支持，请先登记候选并补测试）",
+            "（若确需支持，请先登记候选或显式放行并补测试）",
         ),
     )
 

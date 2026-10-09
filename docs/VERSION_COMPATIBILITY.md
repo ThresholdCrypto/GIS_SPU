@@ -160,3 +160,14 @@ cd GIS_SPU
 > 1 条失败：`tests/test_spu_backend.py::TestCapabilityProbe::test_private_dep_check_handles_attribute_form`。
 > 经 `git stash` 对照确认在本版改动**之前**即失败，非本版引入；本项目未做修复，
 > 也未把它算进"已验证"口径。权威口径以 SPU 环境（`957 passed / 0 failed / 0 skipped`）为准。
+
+> 2026-10-09 的要点：**Phase 5 定界 + NPC 族编译期显式放行**。核查确认
+> `spu 0.9.5` 的 `PsiProtocol` 7 个真实协议本项目**全部已登记**、6 个已真机执行，
+> 唯一"SPU 已支持但编译器全链路未走完"的对象是 **NPC 族**（`ECDH_NPC`/`KKRT_NPC`）。
+> 本版把放行规则从"候选 / DP 特例 / 其余拒绝"改成三档显式登记
+> （`PsiProtocolSpec.explicit_only` + `PSI_PROTOCOLS_EXPLICIT_ONLY`）：候选
+> `ECDH`/`KKRT`/`RR22`；显式放行 `ECDH_NPC`/`KKRT_NPC`/`DP`；其余（含未来新登记）
+> 一律编译期拒绝。配套测试：`test_protocol_registry.py::TestExplicitOnlyClassification`
+> 锁定"每个已登记协议恰好落入一类"，`test_planner.py` 锁定 NPC 放行与"未来协议仍被拒"，
+> `test_end_to_end.py` 锁定 `--psi-protocol ECDH_NPC` 的真实执行。
+> benchmark 侧新增 `--protocols ecdh-npc,kkrt-npc`（显式扫描，不进默认标准扫描）。

@@ -175,6 +175,31 @@ ECDH 系协议，曲线是它的形参，只是**带了默认值**。
 对 `implicit` 一类，本项目**不覆盖**它的默认值（覆盖是否在协议内部生效没核对过），
 因此提示语写"未传入"而**不写**"不生效"——只陈述自己做过的事。
 
+### 编译期放行分档：候选 / 显式放行 / 拒绝
+
+"枚举里有"≠"能跑"，"能跑"也≠"编译器放行"。规划期把协议分成三档，单一来源是
+`backends/psi_backend/protocol_registry.PSI_PROTOCOLS_EXPLICIT_ONLY`，判定在
+`planner.registry.validate_protocol_for_operation`：
+
+| 分档 | 协议 | 行为 |
+|------|------|------|
+| 候选 | `ECDH` `KKRT` `RR22` | 可显式选择，也进自动候选与替代建议清单 |
+| 显式放行 | `ECDH_NPC` `KKRT_NPC`（NPC 族，精确） | 可显式选择并带"显式放行"披露；**不进**候选/建议清单 |
+| 显式放行 | `DP`（带噪） | 同上，但披露写成"结果带噪" |
+| 拒绝 | `ECDH_3PC` | 参与方数量不满足本链路（3 方） |
+| 拒绝 | 其余已登记协议 | 提示"先登记候选或显式放行并补测试" |
+
+**新协议默认落在"拒绝"档**：登记进枚举清单不会自动获得放行，避免"登记即放行"的
+静默滑过。NPC 族已真机执行并与明文对拍（`tests/test_psi_backend.py::`
+`TestRealPsiIntersection::test_npc_protocols_are_really_executed`）。
+
+NPC 族的性能基线经 benchmark 的显式开关单独产出（不与三候选主基线混跑，
+避免默认扫描变慢）：
+
+```bash
+python tests/benchmarks/benchmark_psi.py --protocols ecdh-npc,kkrt-npc --sizes 10,12,14
+```
+
 ## 3. 落地后实测踩到的坑（全部已修）
 
 ### 3.1 `PROTOCOL_ECDH` 必须显式指定曲线
@@ -373,6 +398,7 @@ python -m pytest tests/test_psi_backend.py -v -k "ProtocolWorldSize or ProtocolN
 # CLI 侧：切换协议 / 看带噪降级
 python -m geosecure.cli build examples/route_conflict.py --psi-protocol KKRT
 python -m geosecure.cli build examples/route_conflict.py --psi-protocol DP    # 状态记为 executed-noisy
+python -m geosecure.cli build examples/route_conflict.py --psi-protocol ECDH_NPC   # 显式放行档
 python -m geosecure.cli psi-check | grep 带噪
 
 # CLI 侧：含有 Contains 的例子，看子集判定的两种路径
