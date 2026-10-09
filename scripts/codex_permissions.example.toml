@@ -1,0 +1,56 @@
+# GIS_SPU —— Codex 细粒度权限档（草案）
+#
+# 用途：给 Codex 代跑的命令加「最小权限」边界——文件系统只碰工作区，
+#       出网只放行本课题真正需要的那几个域名（防误拉恶意依赖、防外泄）。
+# 规范依据、实测记录与验证清单：docs/SANDBOX_AND_SUPPLY_CHAIN.md
+#
+# 状态（2026-10-09 实测）：CLI 能解析并应用本档（`-P gis-spu` 生效），
+#   但本机 Windows 后端兑现不了其中的保证——deny-glob 要求 elevated 且起不来、
+#   schannel TLS 在档内不可用、域名白名单未见生效、工作区内写入被误拦。
+#   **结论：本机暂不建议启用**（详见文档 §2.5 / §2.6）。留着备用。
+#
+# 用法（等后端问题解决后再做）：
+#   1) 备份 %USERPROFILE%\.codex\config.toml（或 ~/.codex/config.toml）；
+#   2) 删掉其中的 sandbox_mode 与 [sandbox_workspace_write] ——
+#      官方明确：只要 sandbox_mode 还出现在任何已加载的配置文件里，
+#      Codex 就走旧沙箱设置，本档**不生效**；
+#   3) 把下面内容并入该文件；
+#   4) 重启 Codex。
+
+default_permissions = "gis-spu"
+
+[features]
+network_proxy = true      # 不开它，下面的域名白名单不生效（命令变成直连、不受限）
+
+[permissions.gis-spu]
+extends = ":workspace"    # 工作区可读写 + :minimal 工具路径；其余位置不可读
+
+# 可选收紧：把凭证类文件从工作区里挖掉（deny 优先于 write / read）
+# 注意：本机实测这条 deny-glob 会让沙箱起不来（要求 elevated 后端），见文档 §2.5。
+[permissions.gis-spu.filesystem]
+glob_scan_max_depth = 3   # 配合下面的 ** glob：沙箱启动前的扫描深度上限
+
+[permissions.gis-spu.filesystem.":workspace_roots"]
+"**/*.env" = "deny"
+
+[permissions.gis-spu.network]
+enabled = true
+
+# 域名白名单：allowlist-first —— 没列出来的对外目的地一律被代理挡掉。
+[permissions.gis-spu.network.domains]
+"github.com" = "allow"                    # 上游仓库页 / PJC clone
+"api.github.com" = "allow"                # 版本与元数据查询
+"codeload.github.com" = "allow"           # clone 实际下载
+"*.githubusercontent.com" = "allow"       # raw / objects 等
+"*.bazel.build" = "allow"                 # Bazel 官方分发与镜像
+"pypi.org" = "allow"
+"files.pythonhosted.org" = "allow"
+"mirrors.aliyun.com" = "allow"
+"mirrors.tuna.tsinghua.edu.cn" = "allow"
+"repo.anaconda.com" = "allow"
+"conda.anaconda.org" = "allow"
+
+# 本机代理 / 本机服务：仅当命令必须经 http://127.0.0.1:7892 出网时才保留这两行。
+# 代理默认挡本机与内网目标（防 DNS rebinding）；不想要就直接删掉。
+"127.0.0.1" = "allow"
+"localhost" = "allow"

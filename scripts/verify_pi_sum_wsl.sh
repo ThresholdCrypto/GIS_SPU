@@ -13,11 +13,18 @@
 #   SPU 官方发 manylinux wheel，本脚本只顺带核查它在不在位（不装、不编译），
 #   缺 SPU 时给出 scripts/setup_wsl_spu.sh 的提示。
 #
+# 供应链固定（管控）：
+#   - 上游 PJC 钉死到 commit PJC_GIT_PIN，不再拉默认分支最新；
+#   - bazelisk 钉死到 BAZELISK_VERSION 并校验 BAZELISK_SHA256（不用 releases/latest）。
+#   两者都可用同名环境变量覆盖，但默认值是「已核对过的确定版本」。
+#
 # 可调环境变量：
 #   PY           指定解释器（默认优先 /opt/miniconda3/envs/spu311/bin/python）
 #   PJC_SRC      上游源码目录（默认 /tmp/pjc）
 #   WORK         临时工作目录（默认 /tmp/pjc_setup，存日志）
 #   PJC_GIT_URL  上游 clone 地址（HTTPS，失败自动回退 SSH）
+#   PJC_GIT_PIN  上游固定 commit（默认钉死；改动需同步 docs/PSI_SUM_CAPABILITY.md）
+#   BAZELISK_VERSION / BAZELISK_SHA256  bazelisk 固定版本与校验值
 #   SKIP_BUILD=1 复用已有构建产物，跳过 bazel build
 set -euo pipefail
 
@@ -26,6 +33,10 @@ PJC_SRC="${PJC_SRC:-/tmp/pjc}"
 WORK="${WORK:-/tmp/pjc_setup}"
 PJC_GIT_URL="${PJC_GIT_URL:-https://github.com/google/private-join-and-compute.git}"
 PJC_GIT_URL_SSH="${PJC_GIT_URL_SSH:-git@github.com:google/private-join-and-compute.git}"
+# 供应链固定：上游 commit 与 bazelisk 二进制都钉死，禁掉 latest。
+PJC_GIT_PIN="${PJC_GIT_PIN:-950c5e4c88d7effe85147beb7856152f7c53394b}"
+BAZELISK_VERSION="${BAZELISK_VERSION:-v1.29.0}"
+BAZELISK_SHA256="${BAZELISK_SHA256:-5a408715e932c0250d28bd84555f12edbf70117de42f9181691c736eacc4a992}"
 PJC_BIN_DIR="${PJC_BIN_DIR:-$PJC_SRC/bazel-bin/private_join_and_compute}"
 CHECK_LOG="$WORK/psi_sum_check.txt"
 BUILD_LOG="$WORK/build_intersection_sum.txt"
@@ -75,22 +86,33 @@ BAZEL="$(command -v bazel || command -v bazelisk || true)"
 if [ -z "$BAZEL" ]; then
   mkdir -p "$WORK/bin"
   if [ ! -x "$WORK/bin/bazelisk" ]; then
+    # 固定版本 + sha256 校验（不用 releases/latest，避免上游换包）
     curl -fsSL --retry 5 -o "$WORK/bin/bazelisk" \
-      https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+      "https://github.com/bazelbuild/bazelisk/releases/download/$BAZELISK_VERSION/bazelisk-linux-amd64"
     chmod +x "$WORK/bin/bazelisk"
   fi
+  echo "$BAZELISK_SHA256  $WORK/bin/bazelisk" | sha256sum -c - \
+    || die "bazelisk sha256 校验失败（$BAZELISK_VERSION）：期望 $BAZELISK_SHA256；删掉 $WORK/bin/bazelisk 后重跑。"
   export PATH="$WORK/bin:$PATH"
   BAZEL="$WORK/bin/bazelisk"
 fi
 echo "bazel: $BAZEL"
 
 log "3/7 获取上游源码（google/private-join-and-compute，Apache-2.0）"
+# 只取钉死的那个 commit（GitHub 支持按 sha fetch），不拉默认分支最新。
+fetch_pin() { git -C "$PJC_SRC" fetch -q --depth 1 origin "$PJC_GIT_PIN"; }
 if [ -d "$PJC_SRC/.git" ]; then
   echo "复用已有仓库 $PJC_SRC"
 else
-  git clone --depth 1 "$PJC_GIT_URL" "$PJC_SRC" \
-    || { warn "HTTPS clone 失败，回退 SSH"; git clone --depth 1 "$PJC_GIT_URL_SSH" "$PJC_SRC"; }
+  mkdir -p "$PJC_SRC"
+  git -C "$PJC_SRC" init -q
+  git -C "$PJC_SRC" remote add origin "$PJC_GIT_URL"
 fi
+fetch_pin || { warn "HTTPS fetch 失败，回退 SSH"; git -C "$PJC_SRC" remote set-url origin "$PJC_GIT_URL_SSH"; fetch_pin; }
+git -C "$PJC_SRC" checkout -q FETCH_HEAD
+head_sha="$(git -C "$PJC_SRC" rev-parse HEAD)"
+[ "$head_sha" = "$PJC_GIT_PIN" ] \
+  || die "上游 commit 与钉死值不一致：HEAD=$head_sha 期望=$PJC_GIT_PIN（复用旧目录时删掉 $PJC_SRC 重跑）"
 git -C "$PJC_SRC" log -1 --format='上游 commit %h（%ad）' --date=short
 echo "上游 .bazelversion = $(cat "$PJC_SRC/.bazelversion" 2>/dev/null || echo '（无）')"
 

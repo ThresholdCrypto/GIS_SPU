@@ -57,6 +57,7 @@ def check_conflict(route, no_fly_zone):
 | 2026-10-08 | `ec0b4ee` | P2/P3：`MpcProtocolSpec` 协议元数据 + 统一 capability validation（field / world_size / 语义 / 参数编译期前置拒绝） | **`1004 passed`** |
 | 2026-10-09 | （工作区） | Phase 5 定界 + NPC 族**编译期显式放行**（`explicit_only`）+ E2E / benchmark 开关 | 待 WSL 复跑 |
 | 2026-10-09 | （工作区） | 层面 3 起步：PSI-Cardinality 计数档接入（`--psi-count psi-ca` / `psi-ca-check` / 只接 `CellSetIntersect` + `REVEAL_COUNT` 的拒绝契约 / 测试桩 29 项） | 桩下全绿；全量 `912 passed`（Windows 离线环境） |
+| 2026-10-09 | （工作区） | 管控层：复跑脚本**供应链固定**（上游钉 commit + bazelisk `v1.29.0` sha256 校验）+ 细粒度沙箱档草案（`docs/SANDBOX_AND_SUPPLY_CHAIN.md` / `scripts/codex_permissions.example.toml`） | 脚本已实测：sha256 正/反例、按 sha fetch 得 `950c5e4`；沙箱档已实测：本机 Windows 后端兑现不了（deny-glob 需 elevated、schannel TLS 不可用、白名单未见生效）——**暂不启用** |
 
 > 「+ 工作区改动」表示该轮结果记录于提交前后的工作区状态，逐轮明细见
 > `docs/VERSION_COMPATIBILITY.md`。

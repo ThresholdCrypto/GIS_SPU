@@ -134,9 +134,15 @@ server = 右侧输入（只持标识符）
 > 做断言；日志落在 `/tmp/pjc_setup/`）。
 > 若本机需经代理出网（直连 443 不通），先 `export https_proxy=http://127.0.0.1:<端口>`——
 > clone 与 Bazel 拉依赖都读 `http_proxy`/`https_proxy`。
+> 供应链管控（2026-10-09 起）：脚本把上游钉到 commit `950c5e4c…`、把 bazelisk
+> 钉到 `v1.29.0` 并校验 sha256（不再用 `releases/latest`）；
+> 依据与实测见 `docs/SANDBOX_AND_SUPPLY_CHAIN.md` §1。
 
 ```bash
-git clone https://github.com/google/private-join-and-compute.git /tmp/pjc
+git init /tmp/pjc && git -C /tmp/pjc remote add origin \
+    https://github.com/google/private-join-and-compute.git
+git -C /tmp/pjc fetch --depth 1 origin 950c5e4c88d7effe85147beb7856152f7c53394b
+git -C /tmp/pjc checkout FETCH_HEAD   # 钉死的 commit（见 §1 供应链固定）
 cd /tmp/pjc && bazel build //private_join_and_compute:all
 export GIS_SPU_PJC_BIN_DIR=/tmp/pjc/bazel-bin/private_join_and_compute
 
