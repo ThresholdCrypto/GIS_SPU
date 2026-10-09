@@ -62,6 +62,15 @@ fi
 g++ --version | head -n1
 
 log "2/7 Bazel（bazelisk 会按上游 .bazelversion 自动取版本）"
+# 本脚本的三件事（clone 上游 / 下载 bazelisk / Bazel 拉依赖）全走 HTTPS，
+# 很多内网或经代理出网的机器会直接卡在这里，所以先判一次，失败就给出可操作的提示。
+if ! curl -sSf -m 12 -o /dev/null https://github.com 2>/dev/null; then
+  warn "HTTPS 出网失败：github.com 不可达。"
+  warn "若本机需经代理出网，先设置代理再重跑，例如："
+  warn "    export http_proxy=http://127.0.0.1:7892 https_proxy=http://127.0.0.1:7892"
+  warn "  先跑 env | grep -i proxy 看现有值；WSL 镜像网络模式下 127.0.0.1 即 Windows 回环。"
+  die "HTTPS 不可达：先解决出网再重跑（Bazel 同样读 http_proxy/https_proxy）。"
+fi
 BAZEL="$(command -v bazel || command -v bazelisk || true)"
 if [ -z "$BAZEL" ]; then
   mkdir -p "$WORK/bin"

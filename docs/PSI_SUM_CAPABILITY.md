@@ -125,6 +125,8 @@ server = 右侧输入（只持标识符）
 > 这串步骤已整理成脚本：`bash scripts/verify_pi_sum_wsl.sh`
 > （自动按上游 `.bazelversion` 取 Bazel 版本、clone 失败回退 SSH、对 `(2, 13)`
 > 做断言；日志落在 `/tmp/pjc_setup/`）。
+> 若本机需经代理出网（直连 443 不通），先 `export https_proxy=http://127.0.0.1:<端口>`——
+> clone 与 Bazel 拉依赖都读 `http_proxy`/`https_proxy`。
 
 ```bash
 git clone https://github.com/google/private-join-and-compute.git /tmp/pjc
