@@ -101,18 +101,23 @@ GIS_SPU/
 │   ├── psi_backend/        PSI（官方 spu.psi.psi_execute 两方求交）
 │   │   ├── capability.py   协议/曲线/IO 形态探测（运行期，不预设版本）
 │   │   └── runtime.py      run_psi_intersection / run_psi_operation
-│   └── psi_ca_backend/     PSI-Cardinality 计数档（OpenMined PSI，只出交集基数；
-│       │                   与 psi_backend 并列的第二条 PSI 路径，泄漏承诺不同）
-│       ├── capability.py   环境与 API 形态核对（运行期，不预设版本）
-│       └── runtime.py      run_psi_cardinality（只承接 CellSetIntersect 计数）
+│   ├── psi_ca_backend/     PSI-Cardinality 计数档（OpenMined PSI，只出交集基数；
+│   │   │                   与 psi_backend 并列的第二条 PSI 路径，泄漏承诺不同）
+│   │   ├── capability.py   环境与 API 形态核对（运行期，不预设版本）
+│   │   └── runtime.py      run_psi_cardinality（只承接 CellSetIntersect 计数）
+│   └── psi_sum_backend/    PI-Sum 交集内求和（private-join-and-compute，只出
+│       │                   「基数 + 交集内关联值之和」；第三条 PSI 路径）
+│       ├── capability.py   构建产物 + flag 形态核对（运行期跑 --help，不预设）
+│       └── runtime.py      run_psi_intersection_sum（只承接 CellSetIntersect）
 ├── validator/              编译前验证 + 六类失败模式报告
 ├── geosecure/              编译器主流程与 CLI（八阶段）
-├── examples/               八个示例（含三维 vertical_conflict.py / altitude_band.py）
-├── tests/                  三十七个测试文件
+├── examples/               九个示例（含三维 vertical_conflict.py / altitude_band.py）
+├── tests/                  三十九个测试文件
 └── docs/
     ├── SPU_CAPABILITY.md   SPU 核对结论（含证据出处）
     ├── BITPLANE_LAYOUT.md  位平面布局（D3）的口径出处、模型与边界
-    └── PSI_CAPABILITY.md   PSI 核对结论 + 实测坑与泄漏面
+    ├── PSI_CAPABILITY.md   PSI 核对结论 + 实测坑与泄漏面
+    └── PSI_SUM_CAPABILITY.md  PI-Sum 核对结论、拒绝清单与复跑命令
 ```
 
 ### 1.2 数据流
@@ -908,6 +913,36 @@ geo-secure psi-ca-check                                          # 环境核查
 - **诚实登记**：本档在测试桩下已验证接入层；`openmined-psi` 真机执行未做
   （该发行版无 Windows 轮子），WSL2 复跑命令见 `docs/PSI_CA_CAPABILITY.md`。
 
+### 5.10 PI-Sum 交集内求和档（`--psi-sum pjc`，第五个后端族）
+
+缺省的 PSI 走 libpsi 求交、`--psi-count psi-ca` 只出基数；`--psi-sum pjc` 是
+**第三条 PSI 路径**：接入 Google **private-join-and-compute**（Apache-2.0，
+Private Intersection-Sum）。协议一次算出**两个数**——交集基数 +
+**交集内关联值之和**——交集本体同样不交给任一方。
+
+```bash
+geo-secure psi-sum-check                                         # 环境核查
+geo-secure build examples/intersection_sum.py --psi-sum pjc \
+    --psi-sum-weights route=examples/route_risk_weights.csv       # 基数 + 权重和
+```
+
+- 只承接 `CellSetIntersect` 的 `REVEAL_INTERSECTION_SUM`：其余算子、以及
+  "两个数喂给下游当集合"的链式用法，在编译期**显式拒绝**（逐条给出错误位置、
+  原因、建议替代与预计代价）；
+- **左侧（client）输入必须带关联值**：`psi_sum_weights`（CLI
+  `--psi-sum-weights 输入名=PATH`，CSV `grid_code,value` 或 JSON）。缺值
+  **不按 0 补齐**——补齐会把"数据没接上"伪装成"和为 0"；
+- 关联值须为非负 int64（上游口径），和值须落在 int64 内，否则上游报错；
+- 状态词是 `count-and-sum`（既不是 `verified`——两个数没有交集本体可比对；
+  也不是 `count-only`——本档多交了一个和）；
+- **接入对象是 Bazel 构建的两个可执行文件**（上游无官方 PyPI 包）：能力核查
+  跑 `<binary> --help` 逐项核对 flag 形态，缺项即 `runnable=false`。
+  PyPI 上的同名包与本项目无关，不得顶替；
+- 传输面：上游两侧都走 gRPC `LocalCredentials(LOCAL_TCP)`，**只能同机**、无 TLS、
+  无身份认证；本项目把监听地址从 `0.0.0.0` 收紧到 `127.0.0.1`；
+- **诚实登记**：本档在测试桩下已验证接入层；上游需 Bazel 构建，真机执行未做，
+  Linux/WSL 复跑命令见 `docs/PSI_SUM_CAPABILITY.md` §8。
+
 ---
 
 ## 6. 已验证算子
@@ -961,6 +996,7 @@ geo-secure psi-ca-check                                          # 环境核查
 | `executed-noisy` | 真跑了，但所用协议**结果带噪**，不一致是设计行为 | PSI `status=ok` 且协议在 `PSI_PROTOCOLS_WITH_NOISE` 中（当前仅 `DP`） |
 | `subset-plaintext` | PSI 段真跑了，但 `Contains` 的子集判定落在**明文**上 | `--psi-subset plaintext`；或 MPC 不可用时自动退回（mode=`plaintext-fallback`） |
 | `count-only` | PSI-CA 计数档真实执行过且与明文计数一致；产出只有基数，不与 `verified` 混用 | `psi_run.protocol == "PSI-CA"` 且 `status=ok` |
+| `count-and-sum` | PI-Sum 求和档真实执行过且与明文一致；产出是「基数 + 交集内关联值之和」两个数，同样不与 `verified` 混用 | `psi_run.protocol == "PJC-PI-SUM"` 且 `status=ok` |
 | `tolerance-exceeded` | SPU 跑通但超出容差 | `within_tolerance is False` |
 | `backend-direct` | 有直连后端，本次未真实执行 | PSI 未跑（环境缺失 / 空输入） |
 | `jax-verified` | JAX 生成且可追踪，无密态实跑 | `jax.jit` 追踪成功 |
@@ -1380,6 +1416,13 @@ MPC 电路输出一个比特  k == n
 交集本体：协议只计算并返回基数（登记码 `count-only`，与上表的 `intersection-body`
 并列且互不相同）。它把 `CellSetIntersect` 的暴露面收窄为"一个整数"，代价是下游不能
 再消费集合；`Intersects` / `Contains` 这类需要布尔解释的算子被显式拒绝。
+
+**求和档是第四条泄漏语义。** `--psi-sum pjc`（PI-Sum，§5.10）多交出一个
+**交集内关联值之和**（登记码 `count+sum`）。它比计数档多一个数，也就多一条反推
+通道：上游 README 自陈，某个唯一的大值、或过小的交集，都能由这个和推断出成员
+是否在交集里，而其缓解措施（加噪、剪除离群值、过小交集中止）**上游未实现**。
+因此"只出一个整数"与"出两个数"分开登记、不共用状态词（`count-only` /
+`count-and-sum`）。
 
 **精度是第二条独立披露面。** 泄漏面说的是"暴露了什么"，精度说的是"推出来的结论
 可不可信"。选用 `PROTOCOL_DP` 时两者同时变差：它既把 A 的元素当成交集元素交出去，

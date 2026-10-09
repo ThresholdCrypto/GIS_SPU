@@ -21,6 +21,7 @@ from backends.psi_backend import (
     runnable_protocols_hint,
 )
 from backends.psi_ca_backend import PSI_CA_BACKEND
+from backends.psi_sum_backend import PSI_SUM_BACKEND
 from backends.spu_backend import SPU_PROTOCOLS
 from geosecure.compiler import Compiler, CompileResult, curve_suffix, operator_status_table
 from ir import (
@@ -241,6 +242,38 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
                     _emit(f"  可运行    : {'是' if ca_report.get('runnable') else '否'}")
                     for blocker in ca_report.get("blockers") or []:
                         _emit(f"    - {blocker}")
+            elif result.psi_sum == PSI_SUM_BACKEND:
+                sum_report = result.psi_sum_capability
+                if sum_report is None:
+                    _emit("  （未执行 PI-Sum 能力核查：见上方阶段结论）")
+                else:
+                    _emit(
+                        "  实现      : "
+                        f"{sum_report.get('upstream')}"
+                        f"@{str(sum_report.get('upstream_commit') or '')[:7]}"
+                        f"（{sum_report.get('license')}；上游无 PyPI 包，"
+                        "接入对象是 Bazel 构建产物）"
+                    )
+                    _emit(
+                        "  选用      : PI-Sum（private-join-and-compute，"
+                        "只出交集基数与交集内关联值之和；不经过 libpsi）"
+                    )
+                    _emit(
+                        "  角色映射  : client=左侧输入（带关联值、获得结果），"
+                        "server=右侧输入"
+                    )
+                    _emit(
+                        "  泄漏面    : 只出两个数（基数 + 交集内和）——"
+                        "交集本体不交给任一方（与 libpsi 求交的泄漏承诺不同）"
+                    )
+                    _emit(
+                        f"  键布局    : {GRID_CODE_LAYOUT}（层级上限 L{MAX_ENCODABLE_LEVEL}；"
+                        "布局须与对端一致）"
+                    )
+                    _emit(f"  产物目录  : {sum_report.get('bin_dir') or '未指定'}")
+                    _emit(f"  可运行    : {'是' if sum_report.get('runnable') else '否'}")
+                    for blocker in sum_report.get("blockers") or []:
+                        _emit(f"    - {blocker}")
             elif report is not None:
                 _emit(f"  协议      : {', '.join(report.protocols) or '（未探测到）'}")
                 if result.psi_protocol:
@@ -340,8 +373,9 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
                 if run.result_policy:
                     disclosure = run.result_policy.get("leak_disclosure")
                     if disclosure:
-                        # 计数档（PSI-CA）的协议泄漏面与 libpsi 不同：
-                        # 旧句"接收方仍获得交集本体"在这一档是错的，必须换。
+                        # 计数档（PSI-CA）与求和档（PI-Sum）的协议泄漏面
+                        # 都与 libpsi 不同：旧句"接收方仍获得交集本体"
+                        # 在这两档是错的，必须换成本档的原文。
                         _emit(
                             f"      policy    : {run.result_policy.get('policy')}"
                             f"（业务层暴露 {run.result_policy.get('business_value')}；"
@@ -508,14 +542,29 @@ def build_command(args: argparse.Namespace) -> int:
             "本档只承接 CellSetIntersect 的计数。"
         )
 
+    # PI-Sum 档同样不经过 libpsi：协议/曲线参数在这个档里不生效，如实提示。
+    if args.psi_sum == PSI_SUM_BACKEND and (args.psi_protocol or args.psi_curve):
+        _emit(
+            "提示：--psi-sum pjc 走 PI-Sum（private-join-and-compute，"
+            "不经过 libpsi），--psi-protocol / --psi-curve 在本档不生效；"
+            "本档只承接 CellSetIntersect 的交集内求和。"
+        )
+
     # 真实输入绑定（--input NAME=PATH / --input-layout NAME=PATH）。
     # 解析/校验失败在构造期就退出：坏输入不拖到执行阶段。
     try:
         bound_inputs = _parse_name_path_pairs(args.input, flag="--input")
         bound_layouts = _parse_name_path_pairs(args.input_layout, flag="--input-layout")
+        bound_weights = _parse_name_path_pairs(
+            args.psi_sum_weights, flag="--psi-sum-weights"
+        )
         layout_shape = (
             _parse_layout_shape(args.layout_shape) if args.layout_shape else None
         )
+        # 关联值在这里就载入：坏文件/坏形态在构造期退出，不拖到执行阶段。
+        sum_weights = {
+            name: _load_weight_map(path) for name, path in bound_weights.items()
+        }
     except ValueError as exc:
         _emit(f"错误：{exc}")
         return 2
@@ -532,6 +581,8 @@ def build_command(args: argparse.Namespace) -> int:
             psi_subset=args.psi_subset,
             psi_rr22_low_comm_mode=args.psi_rr22_low_comm_mode,
             psi_count=args.psi_count,
+            psi_sum=args.psi_sum,
+            psi_sum_weights=sum_weights or None,
             inputs=bound_inputs or None,
             input_layouts=bound_layouts or None,
             layout_shape=layout_shape,
@@ -626,6 +677,71 @@ def psi_ca_check_command(args: argparse.Namespace) -> int:
     return 0 if report.runnable else 1
 
 
+def psi_sum_check_command(args: argparse.Namespace) -> int:
+    """只做 PI-Sum 环境能力核查（上游构建产物 + flag 形态）。"""
+
+    from backends.psi_sum_backend import check_psi_sum_capabilities
+
+    report = check_psi_sum_capabilities(bin_dir=getattr(args, "bin_dir", None))
+    _emit("PI-Sum 能力核查")
+    _emit(DIVIDER)
+    _emit(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+    return 0 if report.runnable else 1
+
+
+def _is_int(text: str) -> bool:
+    """整数字面量判定（关联值只有整数一种形态，不做浮点猜测）。"""
+
+    try:
+        int(text)
+    except ValueError:
+        return False
+    return True
+
+
+def _load_weight_map(path: str) -> dict[int, int]:
+    """载入 PI-Sum 关联值：CSV（grid_code,value 两列）或 JSON（码 → 值）。
+
+    首行若是表头（第一列不是整数）按表头跳过——只跳这一行，不猜别的；
+    非整数单元一律报错，不静默丢值（丢值会让"和为 0"看起来像跑通了）。
+    """
+
+    lowered = path.lower()
+    if lowered.endswith(".json"):
+        with open(path, encoding="utf-8") as handle:
+            data = json.load(handle)
+        if not isinstance(data, Mapping):
+            raise ValueError(
+                f"--psi-sum-weights 的 JSON 必须是「码 → 值」对象：{path}"
+            )
+        return {int(code): int(value) for code, value in data.items()}
+    if lowered.endswith((".csv", ".txt")):
+        weights: dict[int, int] = {}
+        with open(path, encoding="utf-8") as handle:
+            for line_no, raw in enumerate(handle, start=1):
+                line = raw.strip()
+                if not line:
+                    continue
+                columns = [item.strip() for item in line.split(",")]
+                if line_no == 1 and not _is_int(columns[0]):
+                    continue
+                if len(columns) != 2:
+                    raise ValueError(
+                        f"--psi-sum-weights 需要两列 grid_code,value："
+                        f"{path}:{line_no} 实得 {len(columns)} 列"
+                    )
+                if not (_is_int(columns[0]) and _is_int(columns[1])):
+                    raise ValueError(
+                        f"--psi-sum-weights 第 {line_no} 行不是整数对：{line!r}"
+                    )
+                weights[int(columns[0])] = int(columns[1])
+        return weights
+    raise ValueError(
+        "--psi-sum-weights 只支持 .csv（grid_code,value）或 .json（码 → 值）："
+        f"{path}"
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="geo-secure",
@@ -699,6 +815,28 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     build.add_argument(
+        "--psi-sum",
+        choices=[PSI_SUM_BACKEND],
+        default=None,
+        help=(
+            "PSI 求和档：缺省 = 不走 PI-Sum；pjc = private-join-and-compute 的"
+            "交集内求和（同时出交集基数与交集内关联值之和，只承接 "
+            "CellSetIntersect，其余算子显式拒绝；需用 --psi-sum-weights "
+            "提供左侧输入的关联值）"
+        ),
+    )
+    build.add_argument(
+        "--psi-sum-weights",
+        action="append",
+        default=None,
+        metavar="NAME=PATH",
+        help=(
+            "PI-Sum 的关联值：NAME 为左侧（client）输入名，PATH 为 CSV"
+            "（grid_code,value 两列）或 JSON（码 → 值）。可重复。"
+            "缺值不按 0 补齐——直接拒绝执行"
+        ),
+    )
+    build.add_argument(
         "--input",
         action="append",
         default=None,
@@ -741,6 +879,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="核查 PSI-Cardinality 环境能力（OpenMined PSI，只出交集基数）",
     )
     psi_ca_check.set_defaults(func=psi_ca_check_command)
+
+    psi_sum_check = sub.add_parser(
+        "psi-sum-check",
+        help="核查 PI-Sum 环境能力（private-join-and-compute 构建产物 + flag 形态）",
+    )
+    psi_sum_check.add_argument(
+        "--bin-dir",
+        default=None,
+        help="上游构建产物目录（缺省读环境变量 GIS_SPU_PJC_BIN_DIR）",
+    )
+    psi_sum_check.set_defaults(func=psi_sum_check_command)
 
     return parser
 

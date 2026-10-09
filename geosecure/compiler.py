@@ -56,6 +56,18 @@ from backends.psi_ca_backend import (
     check_psi_ca_capabilities,
     run_psi_cardinality,
 )
+from backends.psi_sum_backend import (
+    PSI_SUM_BACKEND,
+    PSI_SUM_PROTOCOL,
+    PSI_SUM_RESULT_POLICY,
+    PSI_SUM_SUPPORTED_OPS,
+    PSI_SUM_SUPPORTED_POLICIES,
+    PSI_SUM_UPSTREAM,
+    PSI_SUM_UPSTREAM_COMMIT,
+    PsiSumCapabilityReport,
+    check_psi_sum_capabilities,
+    run_psi_intersection_sum,
+)
 from backends.protocol_validation import validate_protocol_request
 from backends.spu_backend import (
     CapabilityReport,
@@ -180,6 +192,10 @@ class CompileResult:
     psi_count: str | None = None
     #: PSI-CA 环境核查结论（PsiCaCapabilityReport.to_dict()）；未走该档时为 None
     psi_ca_capability: dict[str, Any] | None = None
+    #: 本次编译的 PSI 求和档：None = 不走 PI-Sum；"pjc" = 交集内求和（PI-Sum）
+    psi_sum: str | None = None
+    #: PI-Sum 环境核查结论（PsiSumCapabilityReport.to_dict()）；未走该档时为 None
+    psi_sum_capability: dict[str, Any] | None = None
     psi_runs: dict[str, PsiRunResult] = field(default_factory=dict)
     #: 本次 PSI 执行的运行时配置快照（PsiRuntimeConfig.to_dict()）。
     #: 各 PSI 步骤配置一致时给出；不一致时为 None，逐 run 的 runtime_config 为准。
@@ -259,6 +275,8 @@ class CompileResult:
             "psi_protocol_capability": self.psi_protocol_capability,
             "psi_count": self.psi_count,
             "psi_ca_capability": self.psi_ca_capability,
+            "psi_sum": self.psi_sum,
+            "psi_sum_capability": self.psi_sum_capability,
             "psi_runs": {op: run.to_dict() for op, run in self.psi_runs.items()},
             "psi_runtime_config": (
                 dict(self.psi_runtime_config) if self.psi_runtime_config else None
@@ -292,6 +310,12 @@ class Compiler:
         #: PSI 执行档：None = libpsi 两方求交（默认）；"psi-ca" = PSI-Cardinality
         #: 只出交集基数（OpenMined PSI，只承接 CellSetIntersect）
         psi_count: str | None = None,
+        #: PSI 求和档：None = 不走 PI-Sum（默认）；"pjc" = private-join-and-compute
+        #: 的交集内求和（同时出交集基数与关联值之和，只承接 CellSetIntersect）
+        psi_sum: str | None = None,
+        #: PI-Sum 的关联值：输入名 → {格网码: 非负整数}。PI-Sum 的 client 侧
+        #: 必须带值；缺值输入在方案阶段显式拒绝，不按 0 补齐
+        psi_sum_weights: Mapping[str, Any] | None = None,
         inputs: Mapping[str, Any] | None = None,
         input_layouts: Mapping[str, Any] | None = None,
         capability_report: CapabilityReport | None = None,
@@ -393,6 +417,28 @@ class Compiler:
         # PSI 执行档：非法值在构造期显式失败（带可用清单），不静默回到默认档。
         self.psi_count = _normalize_psi_count(psi_count)
         self._psi_ca_capability: PsiCaCapabilityReport | None = None
+        self.psi_sum = _normalize_psi_sum(psi_sum)
+        self._psi_sum_capability: PsiSumCapabilityReport | None = None
+        # 两条 PSI 路径不能同时启用：计数档只出基数、求和档出基数 + 和，
+        # 混用会让"这一档到底泄漏了什么"说不清。
+        if self.psi_count is not None and self.psi_sum is not None:
+            raise ValueError(
+                f"--psi-count {PSI_CA_BACKEND} 与 --psi-sum {PSI_SUM_BACKEND} "
+                "是两条不同的 PSI 路径，不能同时启用："
+                "计数档只出基数，求和档出基数 + 交集内关联值之和"
+            )
+        # PI-Sum 的关联值：形态非法在这里显式失败，不静默丢成"没有值"——
+        # 那会把"配置写错"变成"和为 0"，看起来像跑通了。
+        self.psi_sum_weights: dict[str, dict[int, int]] = {}
+        for weights_name, weights in (psi_sum_weights or {}).items():
+            if not isinstance(weights, Mapping):
+                raise ValueError(
+                    f"psi_sum_weights[{weights_name!r}] 必须是 Mapping"
+                    f"（格网码 → 非负整数），收到 {type(weights).__name__}"
+                )
+            self.psi_sum_weights[str(weights_name)] = {
+                int(code): int(value) for code, value in weights.items()
+            }
         self._capability = capability_report
         self._psi_capability = psi_capability_report
         # 这两项以前被 *kwargs 吃掉且静默丢弃：调用方以为给了密态级别，
@@ -426,6 +472,7 @@ class Compiler:
         result.psi_curve = self.psi_curve
         result.psi_protocol_params = dict(self.psi_protocol_params)
         result.psi_count = self.psi_count
+        result.psi_sum = self.psi_sum
         result.resolved_inputs = dict(self._resolved_inputs)
         result.parties = (
             self.parties.to_dict() if self.parties.descriptors() else None
@@ -733,6 +780,8 @@ class Compiler:
             message = "方案中没有走 PSI 的算子"
             if self.psi_count == PSI_CA_BACKEND:
                 message += "（--psi-count psi-ca 未生效：本档只承接 CellSetIntersect）"
+            elif self.psi_sum == PSI_SUM_BACKEND:
+                message += "（--psi-sum pjc 未生效：本档只承接 CellSetIntersect）"
             result.stages.append(
                 StageResult(
                     "psi_capability",
@@ -746,6 +795,11 @@ class Compiler:
         # 可承接的算子与泄漏承诺都不同，这里整段改道，不混用两套结论。
         if self.psi_count == PSI_CA_BACKEND:
             self._stage_psi_ca_capability(result, psi_steps)
+            return
+        # PI-Sum 求和档同属整段改道：能力核查对象（上游两个可执行文件）、
+        # 可承接的算子与泄漏承诺都不同，不混用两套结论。
+        if self.psi_sum == PSI_SUM_BACKEND:
+            self._stage_psi_sum_capability(result, psi_steps)
             return
 
         if self._psi_capability is None:
@@ -957,6 +1011,10 @@ class Compiler:
         # PSI-CA 计数档整段改道：libpsi 的协议/配置/子集判定都不参与。
         if self.psi_count == PSI_CA_BACKEND:
             self._stage_psi_ca_simulation(result)
+            return
+        # PI-Sum 求和档同属整段改道：libpsi 的协议/配置/子集判定都不参与。
+        if self.psi_sum == PSI_SUM_BACKEND:
+            self._stage_psi_sum_simulation(result)
             return
 
         required = protocol_world_size(self.psi_protocol)
@@ -1318,6 +1376,329 @@ class Compiler:
 
         result.stages.append(StageResult("psi_simulation", status, result.psi_runs, message))
 
+    def _psi_sum_rejections(
+        self, psi_steps: Sequence[PlannedStep]
+    ) -> list[dict[str, Any]]:
+        """PI-Sum 求和档的编译期拒绝清单（空 = 全部可承接）。
+
+        三条契约与运行环境无关，离线也拦得住：
+        - 只承接 ``CellSetIntersect``（不做布尔判定、不产出集合）；
+        - 产出是**两个数**（基数 + 和），不是集合：它不能作为下游 PSI 的集合输入；
+        - 左侧输入（client = 值持有方）必须有**覆盖完整**的关联值——上游
+          client CSV 每行是「标识符, 非负整数」两列，没有值就跑不了这一档。
+        每条拒绝都带：错误位置（算子）、原因、建议替代、预计隐私计算代价。
+        """
+
+        rejections: list[dict[str, Any]] = []
+        produced = {step.output_name for step in psi_steps if step.output_name}
+        for index, step in enumerate(psi_steps, start=1):
+            cost = _cost_hint(step.estimated_cost)
+            if step.operation not in PSI_SUM_SUPPORTED_OPS:
+                rejections.append(
+                    {
+                        "operation": step.operation,
+                        "step_index": index,
+                        "kind": "unsupported-op",
+                        "reason": (
+                            f"算子 {step.operation} 不在 PI-Sum 承接清单 "
+                            f"{tuple(PSI_SUM_SUPPORTED_OPS)}；本档只计算并返回"
+                            "交集基数与交集内关联值之和，不做布尔判定、"
+                            "不产出集合本体"
+                        ),
+                        "suggestion": (
+                            "改用 CellSetIntersect 取「基数 + 和」"
+                            f"（配套策略 {', '.join(PSI_SUM_SUPPORTED_POLICIES)}）；"
+                            "只需基数请走 --psi-count psi-ca，"
+                            "需要交集本体请走 libpsi 求交路径"
+                        ),
+                        "estimated_cost": cost,
+                    }
+                )
+            for name in step.inputs:
+                if name in produced and name not in self._resolved_inputs:
+                    rejections.append(
+                        {
+                            "operation": step.operation,
+                            "step_index": index,
+                            "kind": "sum-not-set",
+                            "reason": (
+                                f"输入 {name} 是上一步 PSI 步骤的输出；"
+                                "PI-Sum 只产出两个数（基数 + 和），"
+                                "两个数都不是集合，无法作为下游集合输入"
+                            ),
+                            "suggestion": (
+                                "拆分为各自独立的 CellSetIntersect（两两求交），"
+                                "或去掉 --psi-sum pjc 走 libpsi 求交路径"
+                                "（链式数据流由它承载）"
+                            ),
+                            "estimated_cost": cost,
+                        }
+                    )
+            if step.operation not in PSI_SUM_SUPPORTED_OPS or not step.inputs:
+                continue
+            left_name = str(step.inputs[0])
+            weights = self.psi_sum_weights.get(left_name)
+            if not weights:
+                rejections.append(
+                    {
+                        "operation": step.operation,
+                        "step_index": index,
+                        "kind": "missing-associated-values",
+                        "reason": (
+                            f"左侧输入 {left_name} 没有关联值：PI-Sum 的 client "
+                            "侧 CSV 必须是「格网码, 非负整数」两列，"
+                            "没有值就只能求交不能求和"
+                        ),
+                        "suggestion": (
+                            "用 psi_sum_weights={'输入名': {格网码: 权重}} "
+                            "声明关联值（CLI：--psi-sum-weights 输入名=PATH，"
+                            f"本例输入名是 {left_name!r}）："
+                            "本项目不按 0 补齐——补齐会把「数据没接上」"
+                            "伪装成「和为 0」；只需基数请改用 --psi-count psi-ca"
+                        ),
+                        "estimated_cost": cost,
+                    }
+                )
+                continue
+            resolved = self._resolved_inputs.get(left_name)
+            if resolved is not None:
+                missing = [
+                    int(code) for code in resolved.codes if int(code) not in weights
+                ]
+                if missing:
+                    rejections.append(
+                        {
+                            "operation": step.operation,
+                            "step_index": index,
+                            "kind": "incomplete-associated-values",
+                            "reason": (
+                                f"输入 {left_name} 的关联值覆盖不全："
+                                f"{len(missing)} 个格网码没有对应值"
+                                f"（前几个：{missing[:5]}）"
+                            ),
+                            "suggestion": (
+                                "补齐 psi_sum_weights 的覆盖（绑定的每个格网码"
+                                "都要有值），或改用只出基数的 --psi-count psi-ca"
+                            ),
+                            "estimated_cost": cost,
+                        }
+                    )
+        return rejections
+
+    def _stage_psi_sum_capability(
+        self, result: CompileResult, psi_steps: Sequence[PlannedStep]
+    ) -> None:
+        """PI-Sum 求和档的能力核查：编译契约（能不能接）与环境（这里能不能跑）分开。"""
+
+        rejections = self._psi_sum_rejections(psi_steps)
+        if rejections:
+            # 契约违例与运行环境无关：这里必须是 error，不能降级成 warning，
+            # 否则"求和档跑不了这个程序"会被读成"环境问题、装好就能跑"。
+            message = "；".join(
+                f"{item['operation']}（第 {item['step_index']} 步）：{item['reason']}；"
+                f"建议：{item['suggestion']}；预计隐私计算代价：{item['estimated_cost']}"
+                for item in rejections
+            )
+            result.stages.append(
+                StageResult(
+                    "psi_capability",
+                    "error",
+                    {"rejections": rejections},
+                    f"PI-Sum（--psi-sum pjc）无法编译本程序"
+                    f"（{len(rejections)} 处）：{message}",
+                )
+            )
+            return
+
+        if self._psi_sum_capability is None:
+            self._psi_sum_capability = check_psi_sum_capabilities()
+        report = self._psi_sum_capability
+        report_dict = report.to_dict()
+        result.psi_sum_capability = report_dict
+
+        ops = ", ".join(step.operation for step in psi_steps)
+        detail = {
+            "report": report_dict,
+            "ops": [step.operation for step in psi_steps],
+            "role_mapping": "client=左侧输入（带关联值、获得结果），server=右侧输入",
+            "weights_inputs": sorted(
+                str(step.inputs[0]) for step in psi_steps if step.inputs
+            ),
+        }
+        selection = (
+            f"选用 PI-Sum（{PSI_SUM_UPSTREAM.rsplit('/', 1)[-1]}"
+            f"@{PSI_SUM_UPSTREAM_COMMIT[:7]}，只出基数与交集内和）"
+        )
+        tail = (
+            f"当前环境可执行（构建产物 {report.version}）"
+            if report.runnable
+            else f"{len(report.blockers)} 项阻断，求和结果将留空"
+        )
+        result.stages.append(
+            StageResult(
+                "psi_capability",
+                "ok" if report.runnable else "warning",
+                detail,
+                f"{len(psi_steps)} 个算子需 PSI（{ops}）；{selection}；{tail}；"
+                "协议只出两个数（基数 + 交集内关联值之和），交集本体不交给任一方",
+            )
+        )
+
+    def _stage_psi_sum_simulation(self, result: CompileResult) -> None:
+        """PI-Sum 求和档的真实执行：只跑 CellSetIntersect，只出「基数 + 和」。
+
+        与 libpsi 路径（``_stage_psi_simulation``）刻意不合并：那边装配
+        ``PsiRuntimeConfig``、做配置闭环、解释子集判定；这边的运行时是上游
+        两个可执行文件 + 本机回环 gRPC，没有可对齐的配置对象。输入装配、
+        样例兜底与参与方披露沿用同一套 ``_resolve_psi_inputs`` 口径。
+        """
+
+        plan = result.plan
+        if plan is None or plan.has_errors:
+            result.stages.append(
+                StageResult("psi_simulation", "skipped", message="隐私方案有错误，跳过模拟")
+            )
+            return
+
+        steps = [step for step in plan.steps if step.operation in PSI_OPS]
+        if not steps:
+            result.stages.append(
+                StageResult(
+                    "psi_simulation",
+                    "skipped",
+                    message="方案中没有走 PSI 的算子（--psi-sum pjc 未生效）",
+                )
+            )
+            return
+
+        if self._psi_sum_rejections(steps):
+            result.stages.append(
+                StageResult(
+                    "psi_simulation",
+                    "skipped",
+                    message="PI-Sum 能力核查未通过（见上一阶段结论），未执行",
+                )
+            )
+            return
+
+        if self._psi_sum_capability is None:
+            self._psi_sum_capability = check_psi_sum_capabilities()
+        report = self._psi_sum_capability
+
+        runtime_values: dict[str, _RuntimeValue] = {
+            name: _RuntimeValue(
+                codes=value.codes,
+                origin=f"输入绑定（{value.source or '用户数据'}）",
+                layout=value.layout,
+                party_id=value.party_id,
+            )
+            for name, value in self._resolved_inputs.items()
+        }
+
+        run_keys = _psi_run_keys(plan)
+        produced_names: set[str] = set()
+
+        for index, step in enumerate(plan.steps):
+            if step.operation not in PSI_OPS:
+                continue
+            op = step.operation
+            key = run_keys[index]
+            if step.output_name:
+                produced_names.add(step.output_name)
+            values = self._resolve_psi_inputs(step, runtime_values, produced_names)
+            if values is None:
+                result.psi_runs[key] = PsiRunResult(
+                    status="error",
+                    op=op,
+                    protocol=PSI_SUM_PROTOCOL,
+                    curve=None,
+                    world_size=PSI_RUNTIME_WORLD_SIZE,
+                    receiver_rank=0,
+                    error=(
+                        f"输入无法装配：{list(step.inputs)} 既不在绑定输入 "
+                        f"{sorted(self._resolved_inputs)}，也不是上一步输出；"
+                        "请用 inputs={...} 绑定数据或确认样例兜底存在"
+                    ),
+                    notes=("未执行 PI-Sum：输入装配失败在进入运行时之前拦下",),
+                )
+                continue
+
+            left, right = values[0], values[1]
+            weights = self.psi_sum_weights.get(str(step.inputs[0]))
+            plain_inputs = (list(left.codes), list(right.codes))
+            reference = _plain_reference(op, plain_inputs)
+
+            def reference_fn(left_codes: Any, right_codes: Any, _op: str = op) -> Any:
+                return _plain_reference(_op, (left_codes, right_codes))
+
+            binding = tuple(
+                {
+                    "role": role,
+                    "name": name,
+                    "party_id": item.party_id,
+                }
+                for role, name, item in (
+                    ("left", step.inputs[0] if len(step.inputs) > 0 else None, left),
+                    ("right", step.inputs[1] if len(step.inputs) > 1 else None, right),
+                )
+            )
+            run = run_psi_intersection_sum(
+                left.codes,
+                right.codes,
+                left_values=weights,
+                op=op,
+                result_policy=PSI_SUM_RESULT_POLICY,
+                left_layout=left.layout,
+                right_layout=right.layout,
+                party_binding=binding,
+                reference_fn=reference_fn if reference is not None else None,
+                report=report,
+            )
+            for name, value in zip(step.inputs, values):
+                note = f"输入 {name} 来源：{value.origin}"
+                if value.party_id:
+                    note += f"；参与方：{value.party_id}"
+                run.notes = run.notes + (note,)
+            if weights:
+                run.notes = run.notes + (
+                    f"关联值：{len(weights)} 个码来自 psi_sum_weights"
+                    f"[{step.inputs[0]!r}]（client 侧）",
+                )
+            if same_party_both_sides(left.party_id, right.party_id):
+                run.notes = run.notes + (
+                    f"两侧输入的 party_id 相同（{left.party_id}）：本步骤在语义上"
+                    "不是跨方求交，请核对 PartyInput 绑定",
+                )
+            result.psi_runs[key] = run
+
+        # ---------------- 阶段结论 ----------------
+        if any(run.status == "unavailable" for run in result.psi_runs.values()):
+            status = "warning"
+            message = "当前环境不可运行 PI-Sum，求和结果栏位留空（见能力核查）"
+        elif all(
+            run.ok or run.status == "empty-input" for run in result.psi_runs.values()
+        ):
+            status = "ok"
+            message = (
+                f"{len(result.psi_runs)} 个算子经 PI-Sum 真实执行"
+                "（只出交集基数与交集内关联值之和，与明文一致）"
+            )
+        else:
+            status = "error"
+            message = f"{len(result.psi_runs)} 个算子 PI-Sum 执行失败"
+
+        fallback_keys = sorted(
+            key
+            for key, run in result.psi_runs.items()
+            if any("样例兜底" in note for note in run.notes)
+        )
+        if fallback_keys:
+            message += (
+                f"；{', '.join(fallback_keys)} 的部分输入未绑定真实数据，"
+                "回退到样例默认值（见各 run 的 notes）"
+            )
+        result.stages.append(StageResult("psi_simulation", status, result.psi_runs, message))
+
     def _resolve_psi_inputs(
         self,
         step: PlannedStep,
@@ -1565,6 +1946,20 @@ def _normalize_psi_count(value: str | None) -> str | None:
     return PSI_CA_BACKEND
 
 
+def _normalize_psi_sum(value: str | None) -> str | None:
+    """解析 PSI 求和档：None = 不走 PI-Sum（默认），只接受 "pjc"。"""
+
+    if value is None:
+        return None
+    text = str(value).strip().lower()
+    if text != PSI_SUM_BACKEND:
+        raise ValueError(
+            f"未知 PSI 求和档 psi_sum={value!r}；可用：None（不走 PI-Sum）、"
+            f"{PSI_SUM_BACKEND!r}（private-join-and-compute，交集内求和）"
+        )
+    return PSI_SUM_BACKEND
+
+
 def _cost_hint(cost: Mapping[str, Any]) -> str:
     """方案代价的可读摘要（b/d/R）；缺档时如实说没有，不给臆造值。"""
 
@@ -1613,6 +2008,9 @@ def _status_word(
                               这一步没有密态保护，不能用 `verified` 概括；
     - `count-only`          : PSI-CA 计数档真实执行过且与明文计数一致——
                               产出只有基数、没有交集本体，不与 `verified` 混用；
+    - `count-and-sum`       : PI-Sum 求和档真实执行过且与明文一致——产出是
+                              「基数 + 交集内关联值之和」两个数，同样不与
+                              `verified` 混用；
     - `backend-direct`      : 有直连后端（无 JAX 路径），但本次未真正执行；
     - `plaintext-local`     : 该算子在本方明文完成（物化），本就不该有密态执行；
     - `planned`             : 仅规划，未执行。
@@ -1629,6 +2027,11 @@ def _status_word(
             # PSI-CA 计数档：真实执行过且与明文计数一致，但产出只有基数，
             # 与"求交验证"不是一回事；协议名也不在 libpsi 协议表里
             # （protocol_is_exact 对未知名会抛错），必须先分道。
+            # PI-Sum 求和档：真实执行过且与明文一致，但产出是「基数 + 交集内
+            # 关联值之和」两个数，与"求交验证"不是一回事；协议名同样不在
+            # libpsi 协议表里（protocol_is_exact 对未知名会抛错），必须先分道。
+            if psi_run.protocol == PSI_SUM_PROTOCOL:
+                return "count-and-sum"
             if psi_run.protocol == PSI_CA_PROTOCOL:
                 return "count-only"
             # 带噪协议连"与明文一致"都不成立，这一档优先于下面那档。
@@ -1691,6 +2094,8 @@ _COMPILER_KEYS = {
     "psi_rr22_low_comm_mode",
     "psi_protocol_params",
     "psi_count",
+    "psi_sum",
+    "psi_sum_weights",
     "inputs",
     "input_layouts",
     "psi_capability_report",

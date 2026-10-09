@@ -33,6 +33,7 @@ packages = [
     "backends.spu_backend",
     "backends.psi_backend",
     "backends.psi_ca_backend",
+    "backends.psi_sum_backend",
     "validator",
 ]
 
