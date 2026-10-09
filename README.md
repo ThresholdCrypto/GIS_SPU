@@ -98,13 +98,17 @@ GIS_SPU/
 │   │   ├── packing_probe.py 打包前提探针（按环元素计费？）与收益上界
 │   │   ├── slot_cost_probe.py 取槽步单价探针（掩码/右移 vs 纯乘法）
 │   │   └── runtime.py      run_spu_simulation
-│   └── psi_backend/        PSI（官方 spu.psi.psi_execute 两方求交）
-│       ├── capability.py   协议/曲线/IO 形态探测（运行期，不预设版本）
-│       └── runtime.py      run_psi_intersection / run_psi_operation
+│   ├── psi_backend/        PSI（官方 spu.psi.psi_execute 两方求交）
+│   │   ├── capability.py   协议/曲线/IO 形态探测（运行期，不预设版本）
+│   │   └── runtime.py      run_psi_intersection / run_psi_operation
+│   └── psi_ca_backend/     PSI-Cardinality 计数档（OpenMined PSI，只出交集基数；
+│       │                   与 psi_backend 并列的第二条 PSI 路径，泄漏承诺不同）
+│       ├── capability.py   环境与 API 形态核对（运行期，不预设版本）
+│       └── runtime.py      run_psi_cardinality（只承接 CellSetIntersect 计数）
 ├── validator/              编译前验证 + 六类失败模式报告
 ├── geosecure/              编译器主流程与 CLI（八阶段）
-├── examples/               五个示例（含三维 vertical_conflict.py / altitude_band.py）
-├── tests/                  三十一个测试文件
+├── examples/               八个示例（含三维 vertical_conflict.py / altitude_band.py）
+├── tests/                  三十七个测试文件
 └── docs/
     ├── SPU_CAPABILITY.md   SPU 核对结论（含证据出处）
     ├── BITPLANE_LAYOUT.md  位平面布局（D3）的口径出处、模型与边界
@@ -882,6 +886,28 @@ SPU 原生日志是**进程级**开关，PSI 路径会把它关掉，因此 `cap
 
 详见 `docs/MPC_BENCHMARK_PROTOCOL.md` §4.1。
 
+### 5.9 PSI-Cardinality 计数档（`--psi-count psi-ca`，第四个后端族）
+
+缺省的 PSI 走 libpsi 求交（接收方拿到交集本体）；`--psi-count psi-ca` 换成
+**OpenMined PSI-Cardinality**（`openmined-psi==2.0.6`，Apache-2.0）：协议只计算并返回
+**交集基数**，交集本体不交给任一方。两条路径并列、泄漏承诺不同，刻意不合并
+（libpsi 的 `REVEAL_COUNT` 只是业务层收窄，协议内部仍把交集本体交给接收方）。
+
+```bash
+geo-secure build examples/conflict_count.py --psi-count psi-ca   # 只出计数
+geo-secure psi-ca-check                                          # 环境核查
+```
+
+- 只承接 `CellSetIntersect` 的计数（`REVEAL_COUNT`）：`Intersects` / `Contains`
+  等算子、以及"计数喂给下游当集合"的链式用法，在编译期**显式拒绝**
+  （逐条给出错误位置、原因、建议替代与预计代价）；
+- 只用上游 `RAW` 数据结构（精确计数）；`GCS` / `BloomFilter` 近似档未接；
+- 状态词是 `count-only`（不是 `verified`——产出只有基数，没有交集本体可比对）；
+- 接口是进程内 protobuf（不落盘）；角色映射 client=左（获得计数）/ server=右；
+- API 不预设：运行期核对上游 API 形态，不符即 `runnable=false` 并列出缺失项；
+- **诚实登记**：本档在测试桩下已验证接入层；`openmined-psi` 真机执行未做
+  （该发行版无 Windows 轮子），WSL2 复跑命令见 `docs/PSI_CA_CAPABILITY.md`。
+
 ---
 
 ## 6. 已验证算子
@@ -905,6 +931,10 @@ SPU 原生日志是**进程级**开关，PSI 路径会把它关掉，因此 `cap
 > `HeightBand` 一列全为"不适用"是**结论而不是缺口**：它在本方明文把高度带
 > 展开成层集合，密态边界落在消费它的 `Intersects` / `Contains` / `CellSetIntersect`
 > 上（那些行已验证）。它的明文语义与 `CellSet.from_height_band` 有对拍测试。
+
+> `CellSetIntersect` 另有一条**计数档**（`--psi-count psi-ca`）：走 OpenMined
+> PSI-Cardinality，协议只出交集基数、不交交集本体。它属"接入层已验证（测试桩）、
+> 真机待复跑"状态——见 §5.9 与 `docs/PSI_CA_CAPABILITY.md`。
 
 ### 6.1 什么叫"已验证"
 
@@ -930,6 +960,7 @@ SPU 原生日志是**进程级**开关，PSI 路径会把它关掉，因此 `cap
 | `verified` | 主后端**真实执行过**且与明文一致 | PSI `status=ok` / SPU `ok` 且在容差内 |
 | `executed-noisy` | 真跑了，但所用协议**结果带噪**，不一致是设计行为 | PSI `status=ok` 且协议在 `PSI_PROTOCOLS_WITH_NOISE` 中（当前仅 `DP`） |
 | `subset-plaintext` | PSI 段真跑了，但 `Contains` 的子集判定落在**明文**上 | `--psi-subset plaintext`；或 MPC 不可用时自动退回（mode=`plaintext-fallback`） |
+| `count-only` | PSI-CA 计数档真实执行过且与明文计数一致；产出只有基数，不与 `verified` 混用 | `psi_run.protocol == "PSI-CA"` 且 `status=ok` |
 | `tolerance-exceeded` | SPU 跑通但超出容差 | `within_tolerance is False` |
 | `backend-direct` | 有直连后端，本次未真实执行 | PSI 未跑（环境缺失 / 空输入） |
 | `jax-verified` | JAX 生成且可追踪，无密态实跑 | `jax.jit` 追踪成功 |
@@ -1344,6 +1375,11 @@ MPC 电路输出一个比特  k == n
 
 每个算子的泄漏面登记在 `PSI_OP_LEAKS`，随 `PsiRunResult.reveals` 输出，
 并出现在 CLI 的 `PSI simulation` 段与编译结果的 JSON 里。
+
+**计数档是第三条泄漏语义。** `--psi-count psi-ca`（PSI-Cardinality，§5.9）不产出
+交集本体：协议只计算并返回基数（登记码 `count-only`，与上表的 `intersection-body`
+并列且互不相同）。它把 `CellSetIntersect` 的暴露面收窄为"一个整数"，代价是下游不能
+再消费集合；`Intersects` / `Contains` 这类需要布尔解释的算子被显式拒绝。
 
 **精度是第二条独立披露面。** 泄漏面说的是"暴露了什么"，精度说的是"推出来的结论
 可不可信"。选用 `PROTOCOL_DP` 时两者同时变差：它既把 A 的元素当成交集元素交出去，

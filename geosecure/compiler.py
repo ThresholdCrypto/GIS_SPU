@@ -44,7 +44,18 @@ from backends.psi_backend import (
     same_party_both_sides,
     validate_psi_protocol_params,
 )
+from backends.psi_backend.result_policy import REVEAL_COUNT
 from backends.psi_backend.subset_mpc import SUBSET_MODE_MPC
+from backends.psi_ca_backend import (
+    PSI_CA_BACKEND,
+    PSI_CA_PROTOCOL,
+    PSI_CA_STRUCTURE,
+    PSI_CA_SUPPORTED_OPS,
+    PSI_CA_SUPPORTED_POLICIES,
+    PsiCaCapabilityReport,
+    check_psi_ca_capabilities,
+    run_psi_cardinality,
+)
 from backends.protocol_validation import validate_protocol_request
 from backends.spu_backend import (
     CapabilityReport,
@@ -165,6 +176,10 @@ class CompileResult:
     psi_capability: PsiCapabilityReport | None = None
     #: 协议级三层核查结论（PsiProtocolCapability.to_dict()）
     psi_protocol_capability: dict[str, Any] | None = None
+    #: 本次编译的 PSI 执行档：None = libpsi 求交；"psi-ca" = 只出计数的 PSI-CA
+    psi_count: str | None = None
+    #: PSI-CA 环境核查结论（PsiCaCapabilityReport.to_dict()）；未走该档时为 None
+    psi_ca_capability: dict[str, Any] | None = None
     psi_runs: dict[str, PsiRunResult] = field(default_factory=dict)
     #: 本次 PSI 执行的运行时配置快照（PsiRuntimeConfig.to_dict()）。
     #: 各 PSI 步骤配置一致时给出；不一致时为 None，逐 run 的 runtime_config 为准。
@@ -242,6 +257,8 @@ class CompileResult:
             "psi_protocol_params": dict(self.psi_protocol_params),
             "psi_capability": self.psi_capability.to_dict() if self.psi_capability else None,
             "psi_protocol_capability": self.psi_protocol_capability,
+            "psi_count": self.psi_count,
+            "psi_ca_capability": self.psi_ca_capability,
             "psi_runs": {op: run.to_dict() for op, run in self.psi_runs.items()},
             "psi_runtime_config": (
                 dict(self.psi_runtime_config) if self.psi_runtime_config else None
@@ -272,6 +289,9 @@ class Compiler:
         psi_subset: str = SUBSET_MODE_MPC,
         psi_rr22_low_comm_mode: bool = False,
         psi_protocol_params: Mapping[str, Any] | None = None,
+        #: PSI 执行档：None = libpsi 两方求交（默认）；"psi-ca" = PSI-Cardinality
+        #: 只出交集基数（OpenMined PSI，只承接 CellSetIntersect）
+        psi_count: str | None = None,
         inputs: Mapping[str, Any] | None = None,
         input_layouts: Mapping[str, Any] | None = None,
         capability_report: CapabilityReport | None = None,
@@ -370,6 +390,9 @@ class Compiler:
         # `Contains` 的子集判定走哪条路。默认 MPC；显式选明文时也照做，
         # 但状态词会变成 subset-plaintext，不会被读成密态子集比较。
         self.psi_subset = resolve_subset_mode(psi_subset)
+        # PSI 执行档：非法值在构造期显式失败（带可用清单），不静默回到默认档。
+        self.psi_count = _normalize_psi_count(psi_count)
+        self._psi_ca_capability: PsiCaCapabilityReport | None = None
         self._capability = capability_report
         self._psi_capability = psi_capability_report
         # 这两项以前被 *kwargs 吃掉且静默丢弃：调用方以为给了密态级别，
@@ -402,6 +425,7 @@ class Compiler:
         result.psi_protocol = self.psi_protocol
         result.psi_curve = self.psi_curve
         result.psi_protocol_params = dict(self.psi_protocol_params)
+        result.psi_count = self.psi_count
         result.resolved_inputs = dict(self._resolved_inputs)
         result.parties = (
             self.parties.to_dict() if self.parties.descriptors() else None
@@ -706,13 +730,22 @@ class Compiler:
 
         psi_steps = [step for step in result.plan.steps if step.operation in PSI_OPS]
         if not psi_steps:
+            message = "方案中没有走 PSI 的算子"
+            if self.psi_count == PSI_CA_BACKEND:
+                message += "（--psi-count psi-ca 未生效：本档只承接 CellSetIntersect）"
             result.stages.append(
                 StageResult(
                     "psi_capability",
                     "skipped",
-                    message="方案中没有走 PSI 的算子",
+                    message=message,
                 )
             )
+            return
+
+        # PSI-CA 计数档是与 libpsi 求交并列的第二条 PSI 路径：能力核查对象、
+        # 可承接的算子与泄漏承诺都不同，这里整段改道，不混用两套结论。
+        if self.psi_count == PSI_CA_BACKEND:
+            self._stage_psi_ca_capability(result, psi_steps)
             return
 
         if self._psi_capability is None:
@@ -794,6 +827,116 @@ class Compiler:
             )
         )
 
+    def _psi_ca_rejections(self, psi_steps: Sequence[PlannedStep]) -> list[dict[str, Any]]:
+        """PSI-CA 计数档的编译期拒绝清单（空 = 全部可承接）。
+
+        两条契约与运行环境无关，离线也拦得住：
+        - 只承接 ``CellSetIntersect``（不做布尔判定、不产出集合）；
+        - 计数不是集合：上一步的计数输出不能作为下游 PSI 步骤的集合输入。
+        每条拒绝都带：错误位置（算子）、原因、建议替代、预计隐私计算代价。
+        """
+
+        rejections: list[dict[str, Any]] = []
+        produced = {step.output_name for step in psi_steps if step.output_name}
+        for index, step in enumerate(psi_steps, start=1):
+            cost = _cost_hint(step.estimated_cost)
+            if step.operation not in PSI_CA_SUPPORTED_OPS:
+                rejections.append(
+                    {
+                        "operation": step.operation,
+                        "step_index": index,
+                        "kind": "unsupported-op",
+                        "reason": (
+                            f"算子 {step.operation} 不在 PSI-CA 承接清单 "
+                            f"{tuple(PSI_CA_SUPPORTED_OPS)}；本档只计算并返回交集基数，"
+                            "不做布尔判定、不产出集合本体"
+                        ),
+                        "suggestion": (
+                            "改用 CellSetIntersect 取得基数"
+                            f"（配套策略 {', '.join(PSI_CA_SUPPORTED_POLICIES)}），"
+                            "或去掉 --psi-count psi-ca 走 libpsi 求交路径"
+                            "（Intersects / Contains 由 libpsi 求交后解释）"
+                        ),
+                        "estimated_cost": cost,
+                    }
+                )
+            for name in step.inputs:
+                if name in produced and name not in self._resolved_inputs:
+                    rejections.append(
+                        {
+                            "operation": step.operation,
+                            "step_index": index,
+                            "kind": "count-not-set",
+                            "reason": (
+                                f"输入 {name} 是上一步 PSI 步骤的输出；PSI-CA 计数档"
+                                "不产出交集本体，计数无法作为下游集合输入"
+                            ),
+                            "suggestion": (
+                                "拆分为各自独立的 CellSetIntersect（两两求交），"
+                                "或去掉 --psi-count psi-ca 走 libpsi 求交路径"
+                                "（求交链式数据流由它承载）"
+                            ),
+                            "estimated_cost": cost,
+                        }
+                    )
+        return rejections
+
+    def _stage_psi_ca_capability(
+        self, result: CompileResult, psi_steps: Sequence[PlannedStep]
+    ) -> None:
+        """PSI-CA 计数档的能力核查：编译契约（能不能接）与环境（这里能不能跑）分开。"""
+
+        rejections = self._psi_ca_rejections(psi_steps)
+        if rejections:
+            # 契约违例与运行环境无关：这里必须是 error，不能降级成 warning，
+            # 否则"计数档跑不了这个程序"会被读成"环境问题、装好就能跑"。
+            message = "；".join(
+                f"{item['operation']}（第 {item['step_index']} 步）：{item['reason']}；"
+                f"建议：{item['suggestion']}；预计隐私计算代价：{item['estimated_cost']}"
+                for item in rejections
+            )
+            result.stages.append(
+                StageResult(
+                    "psi_capability",
+                    "error",
+                    {"rejections": rejections},
+                    f"PSI-CA（--psi-count psi-ca）无法编译本程序（{len(rejections)} 处）：{message}",
+                )
+            )
+            return
+
+        if self._psi_ca_capability is None:
+            self._psi_ca_capability = check_psi_ca_capabilities()
+        report = self._psi_ca_capability
+        report_dict = report.to_dict()
+        result.psi_ca_capability = report_dict
+
+        ops = ", ".join(step.operation for step in psi_steps)
+        detail = {
+            "report": report_dict,
+            "ops": [step.operation for step in psi_steps],
+            "structure": PSI_CA_STRUCTURE,
+            "role_mapping": "client=左侧输入（获得计数），server=右侧输入",
+        }
+        selection = (
+            f"选用 PSI-CA（{report_dict['distribution']}/{PSI_CA_STRUCTURE}，"
+            "只出交集基数）"
+        )
+        tail = (
+            f"当前环境可执行（openmined-psi {report.version}）"
+            if report.runnable
+            else f"{len(report.blockers)} 项阻断，计数结果将留空"
+        )
+        result.stages.append(
+            StageResult(
+                "psi_capability",
+                "ok" if report.runnable else "warning",
+                detail,
+                f"{len(psi_steps)} 个算子需 PSI（{ops}）；{selection}；{tail}；"
+                "协议只出计数，交集本体不交给任一方",
+            )
+        )
+
     def _stage_psi_simulation(self, result: CompileResult) -> None:
         """对走 PSI 的算子做真实两方求交验证（真实输入 + 链式数据流）。
 
@@ -809,6 +952,11 @@ class Compiler:
             return
         if not self.run_simulation:
             result.stages.append(StageResult("psi_simulation", "skipped", message="按要求跳过模拟"))
+            return
+
+        # PSI-CA 计数档整段改道：libpsi 的协议/配置/子集判定都不参与。
+        if self.psi_count == PSI_CA_BACKEND:
+            self._stage_psi_ca_simulation(result)
             return
 
         required = protocol_world_size(self.psi_protocol)
@@ -1019,6 +1167,153 @@ class Compiler:
             message += (
                 f"；{', '.join(plaintext_subsets)} 的子集判定未走 MPC，"
                 "具体模式见各 run 的 subset 字段"
+            )
+
+        result.stages.append(StageResult("psi_simulation", status, result.psi_runs, message))
+
+    def _stage_psi_ca_simulation(self, result: CompileResult) -> None:
+        """PSI-CA 计数档的真实执行：只跑 CellSetIntersect，只出交集基数。
+
+        与 libpsi 路径（``_stage_psi_simulation``）刻意不合并：那边装配
+        ``PsiRuntimeConfig``、做配置闭环、解释子集判定；这边的运行时是
+        OpenMined PSI 的进程内句柄，没有可对齐的配置对象。输入装配、
+        样例兜底与参与方披露沿用同一套 ``_resolve_psi_inputs`` 口径。
+        """
+
+        plan = result.plan
+        if plan is None or plan.has_errors:
+            result.stages.append(
+                StageResult("psi_simulation", "skipped", message="隐私方案有错误，跳过模拟")
+            )
+            return
+
+        steps = [step for step in plan.steps if step.operation in PSI_OPS]
+        if not steps:
+            result.stages.append(
+                StageResult(
+                    "psi_simulation",
+                    "skipped",
+                    message="方案中没有走 PSI 的算子（--psi-count psi-ca 未生效）",
+                )
+            )
+            return
+
+        if self._psi_ca_rejections(steps):
+            result.stages.append(
+                StageResult(
+                    "psi_simulation",
+                    "skipped",
+                    message="PSI-CA 能力核查未通过（见上一阶段结论），未执行",
+                )
+            )
+            return
+
+        if self._psi_ca_capability is None:
+            self._psi_ca_capability = check_psi_ca_capabilities()
+        report = self._psi_ca_capability
+
+        runtime_values: dict[str, _RuntimeValue] = {
+            name: _RuntimeValue(
+                codes=value.codes,
+                origin=f"输入绑定（{value.source or '用户数据'}）",
+                layout=value.layout,
+                party_id=value.party_id,
+            )
+            for name, value in self._resolved_inputs.items()
+        }
+
+        run_keys = _psi_run_keys(plan)
+        produced_names: set[str] = set()
+
+        for index, step in enumerate(plan.steps):
+            if step.operation not in PSI_OPS:
+                continue
+            op = step.operation
+            key = run_keys[index]
+            if step.output_name:
+                produced_names.add(step.output_name)
+            values = self._resolve_psi_inputs(step, runtime_values, produced_names)
+            if values is None:
+                result.psi_runs[key] = PsiRunResult(
+                    status="error",
+                    op=op,
+                    protocol=PSI_CA_PROTOCOL,
+                    curve=None,
+                    world_size=PSI_RUNTIME_WORLD_SIZE,
+                    receiver_rank=0,
+                    error=(
+                        f"输入无法装配：{list(step.inputs)} 既不在绑定输入 "
+                        f"{sorted(self._resolved_inputs)}，也不是上一步输出；"
+                        "请用 inputs={...} 绑定数据或确认样例兜底存在"
+                    ),
+                    notes=("未执行 PSI-CA：输入装配失败在进入运行时之前拦下",),
+                )
+                continue
+
+            left, right = values[0], values[1]
+            plain_inputs = (list(left.codes), list(right.codes))
+            reference = _plain_reference(op, plain_inputs)
+
+            def reference_fn(left_codes: Any, right_codes: Any, _op: str = op) -> Any:
+                return _plain_reference(_op, (left_codes, right_codes))
+
+            binding = tuple(
+                {
+                    "role": role,
+                    "name": name,
+                    "party_id": item.party_id,
+                }
+                for role, name, item in (
+                    ("left", step.inputs[0] if len(step.inputs) > 0 else None, left),
+                    ("right", step.inputs[1] if len(step.inputs) > 1 else None, right),
+                )
+            )
+            run = run_psi_cardinality(
+                left.codes,
+                right.codes,
+                op=op,
+                result_policy=REVEAL_COUNT,
+                left_layout=left.layout,
+                right_layout=right.layout,
+                party_binding=binding,
+                reference_fn=reference_fn if reference is not None else None,
+                report=report,
+            )
+            for name, value in zip(step.inputs, values):
+                note = f"输入 {name} 来源：{value.origin}"
+                if value.party_id:
+                    note += f"；参与方：{value.party_id}"
+                run.notes = run.notes + (note,)
+            if same_party_both_sides(left.party_id, right.party_id):
+                run.notes = run.notes + (
+                    f"两侧输入的 party_id 相同（{left.party_id}）：本步骤在语义上"
+                    "不是跨方求交，请核对 PartyInput 绑定",
+                )
+            result.psi_runs[key] = run
+
+        # ---------------- 阶段结论 ----------------
+        if any(run.status == "unavailable" for run in result.psi_runs.values()):
+            status = "warning"
+            message = "当前环境不可运行 PSI-CA，计数结果栏位留空（见能力核查）"
+        elif all(run.ok or run.status == "empty-input" for run in result.psi_runs.values()):
+            status = "ok"
+            message = (
+                f"{len(result.psi_runs)} 个算子经 PSI-CA 真实执行"
+                "（只出交集基数，与明文计数一致）"
+            )
+        else:
+            status = "error"
+            message = f"{len(result.psi_runs)} 个算子 PSI-CA 执行失败"
+
+        fallback_keys = sorted(
+            key
+            for key, run in result.psi_runs.items()
+            if any("样例兜底" in note for note in run.notes)
+        )
+        if fallback_keys:
+            message += (
+                f"；{', '.join(fallback_keys)} 的部分输入未绑定真实数据，"
+                "回退到样例默认值（见各 run 的 notes）"
             )
 
         result.stages.append(StageResult("psi_simulation", status, result.psi_runs, message))
@@ -1256,6 +1551,29 @@ def _check_config_closure(
     return problems
 
 
+def _normalize_psi_count(value: str | None) -> str | None:
+    """解析 PSI 执行档：None = libpsi 求交（默认），只接受 "psi-ca"。"""
+
+    if value is None:
+        return None
+    text = str(value).strip().lower()
+    if text != PSI_CA_BACKEND:
+        raise ValueError(
+            f"未知 PSI 执行档 psi_count={value!r}；可用：None（libpsi 两方求交）、"
+            f"{PSI_CA_BACKEND!r}（PSI-Cardinality，只出交集基数）"
+        )
+    return PSI_CA_BACKEND
+
+
+def _cost_hint(cost: Mapping[str, Any]) -> str:
+    """方案代价的可读摘要（b/d/R）；缺档时如实说没有，不给臆造值。"""
+
+    parts = [
+        f"{key}={cost[key]}" for key in ("b", "d", "R") if cost.get(key) is not None
+    ]
+    return "，".join(parts) if parts else "（方案未登记 b/d/R 代价档）"
+
+
 def curve_suffix(protocol: str, curve: str | None) -> str:
     """把"协议 + 曲线"渲染成一句可读后缀。
 
@@ -1293,6 +1611,8 @@ def _status_word(
     - `subset-plaintext`    : PSI 段真实执行过，但 `Contains` 的**子集判定**
                               落在明文上（显式选择或 MPC 不可用的退路）——
                               这一步没有密态保护，不能用 `verified` 概括；
+    - `count-only`          : PSI-CA 计数档真实执行过且与明文计数一致——
+                              产出只有基数、没有交集本体，不与 `verified` 混用；
     - `backend-direct`      : 有直连后端（无 JAX 路径），但本次未真正执行；
     - `plaintext-local`     : 该算子在本方明文完成（物化），本就不该有密态执行；
     - `planned`             : 仅规划，未执行。
@@ -1306,6 +1626,11 @@ def _status_word(
 
     if psi_run is not None:
         if psi_run.status == "ok":
+            # PSI-CA 计数档：真实执行过且与明文计数一致，但产出只有基数，
+            # 与"求交验证"不是一回事；协议名也不在 libpsi 协议表里
+            # （protocol_is_exact 对未知名会抛错），必须先分道。
+            if psi_run.protocol == PSI_CA_PROTOCOL:
+                return "count-only"
             # 带噪协议连"与明文一致"都不成立，这一档优先于下面那档。
             if not protocol_is_exact(psi_run.protocol):
                 return "executed-noisy"
@@ -1365,6 +1690,7 @@ _COMPILER_KEYS = {
     "psi_curve",
     "psi_rr22_low_comm_mode",
     "psi_protocol_params",
+    "psi_count",
     "inputs",
     "input_layouts",
     "psi_capability_report",

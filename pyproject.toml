@@ -31,6 +31,8 @@ packages = [
     "backends.plain",
     "backends.jax_backend",
     "backends.spu_backend",
+    "backends.psi_backend",
+    "backends.psi_ca_backend",
     "validator",
 ]
 

@@ -32,6 +32,7 @@ def check_conflict(route, no_fly_zone):
 | `backends/jax_backend` | `DistanceLE` / `WeightedSum` / `TemporalOverlap` 的 JAX 生成（可 `jax.jit` 追踪、无 Python 运行时依赖） | 完成 |
 | `backends/spu_backend` | SPU 能力核查、模拟执行、通信量采集、打包前提与取槽单价探针 | 完成 |
 | `backends/psi_backend` | PSI 协议 ECDH(SM2) / KKRT / RR22(+`low_comm`) / DP / NPC 族接入与真机执行；NPC 与 DP 属"显式放行"档 | 完成 |
+| `backends/psi_ca_backend` | PSI-Cardinality 计数档（OpenMined PSI，只出交集基数）：能力/API 核对、`--psi-count psi-ca` 接入、编译期拒绝契约 | 接入层完成（真机待 WSL 复跑） |
 | `semantic` / `validator` | 关系三元组产出；六类失败模式的错误报告（错误位置 + 原因 + 建议替代算子 + 预计隐私计算代价） | 完成 |
 | CLI | `geo-secure build`，八阶段输出 + 「算子-表征-后端-状态」表 | 完成 |
 
@@ -55,6 +56,7 @@ def check_conflict(route, no_fly_zone):
 | 2026-10-08 | `1dbc8c8` | P0 收尾：`dot` 读数根因定位（计费维度改按输出个数）+ 协议覆盖镜像修正 | `957 passed` |
 | 2026-10-08 | `ec0b4ee` | P2/P3：`MpcProtocolSpec` 协议元数据 + 统一 capability validation（field / world_size / 语义 / 参数编译期前置拒绝） | **`1004 passed`** |
 | 2026-10-09 | （工作区） | Phase 5 定界 + NPC 族**编译期显式放行**（`explicit_only`）+ E2E / benchmark 开关 | 待 WSL 复跑 |
+| 2026-10-09 | （工作区） | 层面 3 起步：PSI-Cardinality 计数档接入（`--psi-count psi-ca` / `psi-ca-check` / 只接 `CellSetIntersect` + `REVEAL_COUNT` 的拒绝契约 / 测试桩 29 项） | 桩下全绿；全量 `912 passed`（Windows 离线环境） |
 
 > 「+ 工作区改动」表示该轮结果记录于提交前后的工作区状态，逐轮明细见
 > `docs/VERSION_COMPATIBILITY.md`。
@@ -107,6 +109,9 @@ def check_conflict(route, no_fly_zone):
   `docs/GEO_RR22_COVERAGE.md`（国标码有前缀覆盖规则，21973 条真实码实测；
   本项目 64 位码是字段切分布局、解不出真实层级，且 `(X, Y)` 与 `L` 的口径未声明）。
   剪枝在没有无损规则前等于把近似引进精确路径，**不实现**；
+- **PSI-Cardinality 真机执行**：`openmined-psi==2.0.6` 无 Windows 轮子，本仓库当前
+  环境只能验证到测试桩层（调用序列 / 计数口径 / 拒绝路径）；真机复跑命令见
+  `docs/PSI_CA_CAPABILITY.md` §8；
 - 通用 GeoPandas / Shapely 源码自动转换（**明确不做**，只支持登记的业务 API）
 - 三维示例的默认输入仍是二维码集（换码集即可）
 
@@ -154,6 +159,9 @@ def check_conflict(route, no_fly_zone):
    下一阶段）；`runtime_adapter` / `benchmark_profile` 元数据位尚未登记（两族
    执行接口保持独立）；**另起"SPU 未实现过的新协议"工程**（层面 3：选一个开源
    PSI/MPC 协议内核，按 `backends/` 新族接入，不改 SPU 源码）。
+   **层面 3 已起步（本版）**：首个外部协议内核落地为 `backends/psi_ca_backend`
+   （PSI-Cardinality 计数档）——与 libpsi 路径并列为第二条 PSI 路径，
+   接入层（编译期契约 + 执行装配 + 测试桩）完成，真机复跑待 WSL。
 
 ---
 

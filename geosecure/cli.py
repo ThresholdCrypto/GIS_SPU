@@ -20,6 +20,7 @@ from backends.psi_backend import (
     resolve_psi_protocol,
     runnable_protocols_hint,
 )
+from backends.psi_ca_backend import PSI_CA_BACKEND
 from backends.spu_backend import SPU_PROTOCOLS
 from geosecure.compiler import Compiler, CompileResult, curve_suffix, operator_status_table
 from ir import (
@@ -209,7 +210,38 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
             _emit(DIVIDER)
             _emit("PSI capability check")
             report = result.psi_capability
-            if report is not None:
+            if result.psi_count == PSI_CA_BACKEND:
+                ca_report = result.psi_ca_capability
+                if ca_report is None:
+                    _emit("  （未执行 PSI-CA 能力核查：见上方阶段结论）")
+                else:
+                    _emit(
+                        "  实现      : "
+                        f"{ca_report.get('distribution')} "
+                        f"{ca_report.get('version') or ca_report.get('pinned_version')}"
+                        f"（{ca_report.get('structure')} 精确计数；只承接 "
+                        + ", ".join(ca_report.get("supported_ops") or [])
+                        + " / "
+                        + ", ".join(ca_report.get("supported_policies") or [])
+                        + "）"
+                    )
+                    _emit(
+                        "  选用      : PSI-CA（OpenMined PSI-Cardinality，"
+                        "只出交集基数；不经过 libpsi）"
+                    )
+                    _emit("  角色映射  : client=左侧输入（获得计数），server=右侧输入")
+                    _emit(
+                        "  泄漏面    : 只出计数——交集本体不交给任一方"
+                        "（与 libpsi 求交的泄漏承诺不同）"
+                    )
+                    _emit(
+                        f"  键布局    : {GRID_CODE_LAYOUT}（层级上限 L{MAX_ENCODABLE_LEVEL}；"
+                        "布局须与对端一致）"
+                    )
+                    _emit(f"  可运行    : {'是' if ca_report.get('runnable') else '否'}")
+                    for blocker in ca_report.get("blockers") or []:
+                        _emit(f"    - {blocker}")
+            elif report is not None:
                 _emit(f"  协议      : {', '.join(report.protocols) or '（未探测到）'}")
                 if result.psi_protocol:
                     _emit(
@@ -306,11 +338,21 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
                 if run.result_semantics:
                     _emit(f"      result-sems: {run.result_semantics}")
                 if run.result_policy:
-                    _emit(
-                        f"      policy    : {run.result_policy.get('policy')}"
-                        f"（业务层暴露 {run.result_policy.get('business_value')}；"
-                        "协议内部泄漏面不随策略改变：接收方仍获得交集本体）"
-                    )
+                    disclosure = run.result_policy.get("leak_disclosure")
+                    if disclosure:
+                        # 计数档（PSI-CA）的协议泄漏面与 libpsi 不同：
+                        # 旧句"接收方仍获得交集本体"在这一档是错的，必须换。
+                        _emit(
+                            f"      policy    : {run.result_policy.get('policy')}"
+                            f"（业务层暴露 {run.result_policy.get('business_value')}；"
+                            f"{disclosure}）"
+                        )
+                    else:
+                        _emit(
+                            f"      policy    : {run.result_policy.get('policy')}"
+                            f"（业务层暴露 {run.result_policy.get('business_value')}；"
+                            "协议内部泄漏面不随策略改变：接收方仍获得交集本体）"
+                        )
                 if run.party_binding:
                     roles = ", ".join(
                         f"{item.get('role')}={item.get('party_id') or '未标注'}"
@@ -458,6 +500,14 @@ def build_command(args: argparse.Namespace) -> int:
             f"协议 {psi_protocol} 不使用它。"
         )
 
+    # PSI-CA 档不经过 libpsi：协议/曲线参数在这个档里不生效，如实提示。
+    if args.psi_count == PSI_CA_BACKEND and (args.psi_protocol or args.psi_curve):
+        _emit(
+            "提示：--psi-count psi-ca 走 PSI-Cardinality（OpenMined PSI，"
+            "不经过 libpsi），--psi-protocol / --psi-curve 在本档不生效；"
+            "本档只承接 CellSetIntersect 的计数。"
+        )
+
     # 真实输入绑定（--input NAME=PATH / --input-layout NAME=PATH）。
     # 解析/校验失败在构造期就退出：坏输入不拖到执行阶段。
     try:
@@ -481,6 +531,7 @@ def build_command(args: argparse.Namespace) -> int:
             psi_curve=psi_curve,
             psi_subset=args.psi_subset,
             psi_rr22_low_comm_mode=args.psi_rr22_low_comm_mode,
+            psi_count=args.psi_count,
             inputs=bound_inputs or None,
             input_layouts=bound_layouts or None,
             layout_shape=layout_shape,
@@ -563,6 +614,18 @@ def psi_check_command(args: argparse.Namespace) -> int:
     return 0 if report.runnable else 1
 
 
+def psi_ca_check_command(args: argparse.Namespace) -> int:
+    """只做 PSI-Cardinality 环境能力核查。"""
+
+    from backends.psi_ca_backend import check_psi_ca_capabilities
+
+    report = check_psi_ca_capabilities()
+    _emit("PSI-CA 能力核查")
+    _emit(DIVIDER)
+    _emit(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+    return 0 if report.runnable else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="geo-secure",
@@ -626,6 +689,16 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     build.add_argument(
+        "--psi-count",
+        choices=[PSI_CA_BACKEND],
+        default=None,
+        help=(
+            "PSI 执行档：缺省 = libpsi 两方求交（接收方获得交集本体）；"
+            "psi-ca = PSI-Cardinality（OpenMined PSI，只出交集基数，"
+            "只承接 CellSetIntersect，其余算子显式拒绝）"
+        ),
+    )
+    build.add_argument(
         "--input",
         action="append",
         default=None,
@@ -662,6 +735,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     psi_check = sub.add_parser("psi-check", help="核查 PSI 环境能力（协议/曲线/IO 形态）")
     psi_check.set_defaults(func=psi_check_command)
+
+    psi_ca_check = sub.add_parser(
+        "psi-ca-check",
+        help="核查 PSI-Cardinality 环境能力（OpenMined PSI，只出交集基数）",
+    )
+    psi_ca_check.set_defaults(func=psi_ca_check_command)
 
     return parser
 
