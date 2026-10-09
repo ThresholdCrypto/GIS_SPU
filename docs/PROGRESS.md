@@ -166,7 +166,7 @@ def check_conflict(route, no_fly_zone):
    Google private-join-and-compute，Apache-2.0）——第三条 PSI 路径，泄漏承诺是
    「基数 + 交集内关联值之和」（登记码 `count+sum`）。接入层（能力核查跑上游
    `--help` 核 flag 形态、编译期拒绝清单、执行装配、测试桩）完成；上游需 Bazel
-   构建且无官方 PyPI 包，真机复跑待 Linux/WSL——命令见
+   构建且无官方 PyPI 包，**真机已复跑（2026-10-09，WSL2）**：Bazel 构建成功、PI-Sum 协议跑通，`result = (2, 13)` 与登记期望一致——命令见
    `docs/PSI_SUM_CAPABILITY.md` §8。
 
 ---

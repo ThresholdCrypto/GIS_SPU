@@ -105,12 +105,19 @@ server = 右侧输入（只持标识符）
 状态词是 `count-and-sum`（不是 `verified`：产出是两个数，没有交集本体可比对；
 也不是 `count-only`：本档多交了一个和）。
 
-## 7. 诚实登记：未验证项
+## 7. 诚实登记：已验证 / 未验证
 
-1. **本会话未在真机复跑**：沙箱内 `wsl.exe` 被拒绝，上游也需 Bazel 构建
-   （无法在本会话完成）。因此以下**均未实测**：`bazel build` 能否在本机成功；
-   两个二进制在本机能否启动；真实协议输出的结果行是否与本文件登记的原文字节一致；
-   Paillier `1536` 位模数在本机的耗时与内存占用。
+1. **真机已复跑（2026-10-09，WSL2 Ubuntu + Python 3.11.16）**：
+   `bazel build //private_join_and_compute:all` 成功（Bazel 8.0.1，与登记的上游
+   `.bazelversion` 一致），两个二进制启动、协议跑通，**结果行解析与登记原文一致**：
+   `|A|=3  |A∩B|=2`、`result = (2, 13)`、
+   `reference = (3076832715348377604, 3076973452836732932)`、`agree=True`、
+   `result-sems = exact`、client 退出码 0；能力核查 `runnable=true`，实际使用
+   `paillier_modulus_size=1536`（与上游默认一致）。命令见 §8，能力核查原文见
+   `docs/psi_sum_capability_report_wsl.json`。
+   **仍未实测**：Paillier 1536 位模数在本机的耗时与内存占用；跨机部署
+   （两侧 `LocalCredentials(LOCAL_TCP)` 只允许同机，跨机须自行加通道保护）。
+
 2. **接入层已验证**：`tests/test_psi_sum_backend.py`（32 项）与
    `tests/test_cli_psi_sum.py`（20 项）在**测试桩**下全绿。桩替换的是
    runtime 的"唯一进程启动点"`spawn_pjc` 与 capability 的 `probe_binary_flags`，
@@ -120,7 +127,7 @@ server = 右侧输入（只持标识符）
 3. **未接的档**：上游没有"只出和不出基数"或"带噪和"的开关，本项目也不提供
    （不制造"已配置精度"的错觉）。
 
-## 8. Linux / WSL 复跑命令（待执行）
+## 8. Linux / WSL 复跑命令（已于 2026-10-09 真机执行）
 
 > 这串步骤已整理成脚本：`bash scripts/verify_pi_sum_wsl.sh`
 > （自动按上游 `.bazelversion` 取 Bazel 版本、clone 失败回退 SSH、对 `(2, 13)`
@@ -141,3 +148,13 @@ geo-secure build examples/intersection_sum.py --psi-sum pjc \
 
 期望：状态表里 `CellSetIntersect` 的 Status 为 `count-and-sum`，
 结果行打印 `(2, 13)`（交集码 B、C，权重 4 + 9）。
+
+**实测（2026-10-09，WSL2 Ubuntu + Python 3.11.16）**
+- 8 阶段全 OK；`|A|=3  |A∩B|=2`；`result = (2, 13)`；
+  `reference = (3076832715348377604, 3076973452836732932)`，`agree=True`；
+  `result-sems = exact`；`policy = REVEAL_INTERSECTION_SUM`；client 退出码 0；
+  状态表 `CellSetIntersect | CompactCellSet | PSI | count-and-sum`。
+- 上游 clone 得到 `950c5e4（2026-03-09）`、`.bazelversion = 8.0.1`，与登记一致。
+- 首次构建在这台 20 核机器上约 11 分钟（Bazel 日志 16:22:19 起、脚本 16:34 结束，5,683 个 action）。
+- 同一环境 `spu 0.9.5` / `jax 0.4.34`，SPU 能力核查 `runnable=true`；
+  但 `openmined-psi` 未安装（PSI-CA 档在该环境不可执行，需 `pip install openmined-psi==2.0.6`）——与本档无关，如实记录。

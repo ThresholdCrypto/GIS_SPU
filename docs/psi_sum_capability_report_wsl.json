@@ -1,0 +1,35 @@
+{
+  "backend": "pjc",
+  "upstream": "google/private-join-and-compute",
+  "upstream_commit": "950c5e4c88d7effe85147beb7856152f7c53394b",
+  "license": "Apache-2.0",
+  "bin_env": "GIS_SPU_PJC_BIN_DIR",
+  "bin_dir": "/tmp/pjc/bazel-bin/private_join_and_compute",
+  "installed": true,
+  "version": "950c5e4",
+  "runnable": true,
+  "binaries": {
+    "client": "/tmp/pjc/bazel-bin/private_join_and_compute/client",
+    "server": "/tmp/pjc/bazel-bin/private_join_and_compute/server"
+  },
+  "supported_ops": [
+    "CellSetIntersect"
+  ],
+  "supported_policies": [
+    "REVEAL_INTERSECTION_SUM"
+  ],
+  "blockers": [],
+  "api_problems": [],
+  "notes": [
+    "实现：google/private-join-and-compute（Apache-2.0），核对提交 950c5e4（2026-03-09）",
+    "上游无官方 PyPI 包：需 Bazel 构建（.bazelversion = 8.0.1）；PyPI 上的同名包 private-join-and-compute / pjc 与本项目无关，不得顶替",
+    "结果语义 exact：Paillier 同态求和无噪声，交集大小与和值都是精确值；但和值须落在 int64 内（上游 ToIntValue），关联值须为非负 int64",
+    "只出「基数 + 和」：交集本体不交给任一方——与 libpsi 求交、PSI-CA 计数档都不同，见 docs/PSI_SUM_CAPABILITY.md",
+    "传输面：两侧都用 gRPC LocalCredentials(LOCAL_TCP)，仅本机回环、无 TLS、无身份认证——跨机部署须自行加通道保护",
+    "上游自查泄漏告警：唯一值或过小交集可由 intersection-sum 反推成员；上游 README 明言其缓解措施（加噪、剪除离群值、过小交集中止）本库未实现",
+    "不依赖 SPU / libpsi；与 psi_backend / psi_ca_backend 是三条独立执行路径",
+    "构建产物的具体提交无法从二进制反查：本后端按 950c5e4 的 flag / 输出形态核对；若你构建的是别的提交，形态核对仍会逐项跑，但语义假设未经核对"
+  ],
+  "python_version": "3.11.16",
+  "platform": "linux"
+}
