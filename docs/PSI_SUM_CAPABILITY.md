@@ -122,6 +122,10 @@ server = 右侧输入（只持标识符）
 
 ## 8. Linux / WSL 复跑命令（待执行）
 
+> 这串步骤已整理成脚本：`bash scripts/verify_pi_sum_wsl.sh`
+> （自动按上游 `.bazelversion` 取 Bazel 版本、clone 失败回退 SSH、对 `(2, 13)`
+> 做断言；日志落在 `/tmp/pjc_setup/`）。
+
 ```bash
 git clone https://github.com/google/private-join-and-compute.git /tmp/pjc
 cd /tmp/pjc && bazel build //private_join_and_compute:all
