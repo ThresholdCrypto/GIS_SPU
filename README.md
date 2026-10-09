@@ -910,8 +910,10 @@ geo-secure psi-ca-check                                          # 环境核查
 - 状态词是 `count-only`（不是 `verified`——产出只有基数，没有交集本体可比对）；
 - 接口是进程内 protobuf（不落盘）；角色映射 client=左（获得计数）/ server=右；
 - API 不预设：运行期核对上游 API 形态，不符即 `runnable=false` 并列出缺失项；
-- **诚实登记**：本档在测试桩下已验证接入层；`openmined-psi` 真机执行未做
-  （该发行版无 Windows 轮子），WSL2 复跑命令见 `docs/PSI_CA_CAPABILITY.md`。
+- **真机已验证（2026-10-09，WSL2 + `openmined-psi==2.0.6`）**：`psi-ca-check`
+  `runnable=true`（blockers 为空）；`build examples/conflict_count.py --psi-count psi-ca`
+  真实执行 `|A|=3  |A∩B|=2`、状态词 `count-only`、`agree=True`；命令与实测输出见
+  `docs/PSI_CA_CAPABILITY.md` §8，环境快照 `docs/psi_ca_capability_report_wsl.json`。
 
 ### 5.10 PI-Sum 交集内求和档（`--psi-sum pjc`，第五个后端族）
 

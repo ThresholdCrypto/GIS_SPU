@@ -1,0 +1,27 @@
+{
+  "backend": "psi-ca",
+  "distribution": "openmined-psi",
+  "pinned_version": "2.0.6",
+  "import_path": "private_set_intersection.python",
+  "installed": true,
+  "version": "2.0.6",
+  "runnable": true,
+  "structure": "RAW",
+  "supported_ops": [
+    "CellSetIntersect"
+  ],
+  "supported_policies": [
+    "REVEAL_COUNT"
+  ],
+  "blockers": [],
+  "api_problems": [],
+  "notes": [
+    "实现：openmined-psi 2.0.6（Apache-2.0；PyPI 只发布 macOS 与 manylinux 轮子，Windows 无轮子）",
+    "只用 RAW 数据结构：精确计数（上游源码注明 RAW 忽略 fpr）；GCS / BloomFilter 近似档未接、未实测",
+    "只出基数：交集本体不交给任一方——与 libpsi 求交（把交集本体交给接收方）是两种不同的泄漏承诺，见 docs/PSI_CA_CAPABILITY.md",
+    "不落盘：全程内存 protobuf 消息，不产生临时 CSV",
+    "不依赖 SPU / libpsi；与 backends/psi_backend 是两条独立执行路径"
+  ],
+  "python_version": "3.11.16",
+  "platform": "linux"
+}

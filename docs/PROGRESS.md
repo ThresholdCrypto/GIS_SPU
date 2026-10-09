@@ -32,7 +32,7 @@ def check_conflict(route, no_fly_zone):
 | `backends/jax_backend` | `DistanceLE` / `WeightedSum` / `TemporalOverlap` 的 JAX 生成（可 `jax.jit` 追踪、无 Python 运行时依赖） | 完成 |
 | `backends/spu_backend` | SPU 能力核查、模拟执行、通信量采集、打包前提与取槽单价探针 | 完成 |
 | `backends/psi_backend` | PSI 协议 ECDH(SM2) / KKRT / RR22(+`low_comm`) / DP / NPC 族接入与真机执行；NPC 与 DP 属"显式放行"档 | 完成 |
-| `backends/psi_ca_backend` | PSI-Cardinality 计数档（OpenMined PSI，只出交集基数）：能力/API 核对、`--psi-count psi-ca` 接入、编译期拒绝契约 | 接入层完成（真机待 WSL 复跑） |
+| `backends/psi_ca_backend` | PSI-Cardinality 计数档（OpenMined PSI，只出交集基数）：能力/API 核对、`--psi-count psi-ca` 接入、编译期拒绝契约 | 完成（真机已验证，2026-10-09 WSL2） |
 | `semantic` / `validator` | 关系三元组产出；六类失败模式的错误报告（错误位置 + 原因 + 建议替代算子 + 预计隐私计算代价） | 完成 |
 | CLI | `geo-secure build`，八阶段输出 + 「算子-表征-后端-状态」表 | 完成 |
 
@@ -58,6 +58,7 @@ def check_conflict(route, no_fly_zone):
 | 2026-10-09 | （工作区） | Phase 5 定界 + NPC 族**编译期显式放行**（`explicit_only`）+ E2E / benchmark 开关 | 待 WSL 复跑 |
 | 2026-10-09 | （工作区） | 层面 3 起步：PSI-Cardinality 计数档接入（`--psi-count psi-ca` / `psi-ca-check` / 只接 `CellSetIntersect` + `REVEAL_COUNT` 的拒绝契约 / 测试桩 29 项） | 桩下全绿；全量 `912 passed`（Windows 离线环境） |
 | 2026-10-09 | （工作区） | 管控层：复跑脚本**供应链固定**（上游钉 commit + bazelisk `v1.29.0` sha256 校验）+ 细粒度沙箱档草案（`docs/SANDBOX_AND_SUPPLY_CHAIN.md` / `scripts/codex_permissions.example.toml`） | 脚本已实测：sha256 正/反例、按 sha fetch 得 `950c5e4`；沙箱档已实测：本机 Windows 后端兑现不了（deny-glob 需 elevated、schannel TLS 不可用、白名单未见生效）——**暂不启用** |
+| 2026-10-09 | （工作区） | 真机确认：SPU 模拟路径 `distance_check` / `risk_score` 全 `verified`（err=0.0）+ PSI-CA 计数档真机验证（`openmined-psi==2.0.6`，解除该档「未验证」） | 全量 `1094 passed`（0 failed / 0 skipped，WSL spu311）；PSI-CA 两文件 `29 passed` |
 
 > 「+ 工作区改动」表示该轮结果记录于提交前后的工作区状态，逐轮明细见
 > `docs/VERSION_COMPATIBILITY.md`。
@@ -110,9 +111,9 @@ def check_conflict(route, no_fly_zone):
   `docs/GEO_RR22_COVERAGE.md`（国标码有前缀覆盖规则，21973 条真实码实测；
   本项目 64 位码是字段切分布局、解不出真实层级，且 `(X, Y)` 与 `L` 的口径未声明）。
   剪枝在没有无损规则前等于把近似引进精确路径，**不实现**；
-- **PSI-Cardinality 真机执行**：`openmined-psi==2.0.6` 无 Windows 轮子，本仓库当前
-  环境只能验证到测试桩层（调用序列 / 计数口径 / 拒绝路径）；真机复跑命令见
-  `docs/PSI_CA_CAPABILITY.md` §8；
+- ~~PSI-Cardinality 真机执行~~ ——**已闭合（2026-10-09，WSL2）**：装上
+  `openmined-psi==2.0.6` 后真机执行 `|A∩B|=2`、状态词 `count-only`、`agree=True`；
+  快照 `docs/psi_ca_capability_report_wsl.json`，命令与输出见 `docs/PSI_CA_CAPABILITY.md` §8；
 - 通用 GeoPandas / Shapely 源码自动转换（**明确不做**，只支持登记的业务 API）
 - 三维示例的默认输入仍是二维码集（换码集即可）
 
@@ -162,7 +163,7 @@ def check_conflict(route, no_fly_zone):
    PSI/MPC 协议内核，按 `backends/` 新族接入，不改 SPU 源码）。
    **层面 3 已起步（本版）**：首个外部协议内核落地为 `backends/psi_ca_backend`
    （PSI-Cardinality 计数档）——与 libpsi 路径并列为第二条 PSI 路径，
-   接入层（编译期契约 + 执行装配 + 测试桩）完成，真机复跑待 WSL。
+   接入层（编译期契约 + 执行装配 + 测试桩）完成；**真机已验证（2026-10-09，WSL2）**：`|A∩B|=2`、状态词 `count-only`、`agree=True`。
    **层面 3 第二个内核（本版）**：`backends/psi_sum_backend`（PI-Sum 交集内求和，
    Google private-join-and-compute，Apache-2.0）——第三条 PSI 路径，泄漏承诺是
    「基数 + 交集内关联值之和」（登记码 `count+sum`）。接入层（能力核查跑上游

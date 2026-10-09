@@ -3,7 +3,8 @@
 > 纪律（任务文档 §21）：**不靠版本号推断兼容**。升级 SPU 或 JAX 后，
 > 必须重新跑能力核查与真机测试，再更新本文件。
 > 能力核查依据与快照：`docs/SPU_CAPABILITY.md`、`docs/PSI_CAPABILITY.md`、
-> `docs/spu_capability_report_wsl.json`、`docs/psi_capability_report_wsl.json`。
+> `docs/spu_capability_report_wsl.json`、`docs/psi_capability_report_wsl.json`、
+> `docs/psi_ca_capability_report_wsl.json`。
 
 ## 1. 当前验证矩阵
 
@@ -24,6 +25,7 @@
 | MPC 代价基线 | 见 `docs/mpc_benchmark_baseline.json`（本阶段新增，规程 `docs/MPC_BENCHMARK_PROTOCOL.md`） |
 | MPC 通信量基线 | 见 `docs/mpc_comm_baseline.json`（P2-2 新增，规程 §8.4） |
 | `TemporalOverlap` 电路 A/B | 见 `docs/mpc_temporal_ab.json`（P3 新增，规程 §4.1） |
+| PSI-CA 真机计数 | `openmined-psi==2.0.6` 真机执行：`\|A∩B\|=2`、状态词 `count-only`、`agree=True`（2026-10-09，WSL2）；快照 `docs/psi_ca_capability_report_wsl.json` |
 | 环境快照 | `docs/psi_capability_report_wsl.json` |
 
 ## 2. 已知的版本脆弱点（升级前先看）

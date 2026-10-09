@@ -84,10 +84,19 @@ server = 右侧输入
   只提示不阻断）、`RAW` 调用序列（两侧 `reveal_intersection=False`、fpr=0.0、
   计数取回）、排序去重、空输入不启协议、全部拒绝路径、泄漏登记一致性、
   CLI 全链路（`tests/test_psi_ca_backend.py` / `tests/test_cli_psi_ca.py`）。
-- **未验证**：**`openmined-psi` 真机执行**（本仓库当前开发环境为 Windows，
-  该发行版无 Windows 轮子）。真机复跑前，不得对外宣称"PSI-Cardinality 已验证"。
+- **已验证（真机，2026-10-09，WSL2 + `openmined-psi==2.0.6`）**：
+  `psi-ca-check` → `installed=true` / `version=2.0.6` / `runnable=true`，
+  `blockers` 与 `api_problems` 均为空；`build examples/conflict_count.py --psi-count psi-ca`
+  8 阶段全绿（第 4/6 阶段按设计 WARNING / SKIPPED），PSI 仿真真实执行：
+  `|A|=3  |A∩B|=2`、`result=2`、`reference=(3076832715348377604, 3076973452836732932)`、
+  `agree=True`、`result-sems=exact`、`policy=REVEAL_COUNT`，状态词 `count-only`；
+  独立最小验证 `GetIntersectionSize=2`；`tests/test_psi_ca_backend.py` +
+  `tests/test_cli_psi_ca.py` 29 项通过（真机分支：`runnable=true` ⇒ 断言
+  `status=ok` / `value=2` / `agree=True` / `count-only`）。
+- **仍未验证**：`GCS` / `BloomFilter` 近似档（未接）、跨机部署（当前是进程内链路）、
+  近似档的 fpr 语义（RAW 档上游注明忽略 fpr）。
 
-## 8. WSL2 / Linux 复跑
+## 8. WSL2 / Linux 复跑（已于 2026-10-09 真机执行）
 
 ```bash
 # 1) 安装（Linux / WSL2）
@@ -102,6 +111,20 @@ server = 右侧输入
 # 4) 测试（真机下 TestCountModeExecution 走 "ok + count-only" 分支）
 /opt/miniconda3/envs/spu311/bin/python -m pytest tests/test_psi_ca_backend.py tests/test_cli_psi_ca.py -q
 ```
+
+**实测（2026-10-09，WSL2 Ubuntu + Python 3.11.16）**
+- 安装落点：`/opt/miniconda3/envs/spu311` 的 site-packages 属 root，pip 自动走
+  **user site**（`~/.local/lib/python3.11/site-packages`，`ENABLE_USER_SITE=True`），
+  导入正常；同时带入 `protobuf==6.30.2`（该环境原本没有 protobuf，spu 也不依赖它，无冲突）。
+- `psi-ca-check`：`installed=true` / `version=2.0.6` / `runnable=true`，
+  `blockers=[]`、`api_problems=[]`；快照 `docs/psi_ca_capability_report_wsl.json`。
+- `build examples/conflict_count.py --psi-count psi-ca`：8 阶段全绿（第 4/6 阶段按设计
+  WARNING / SKIPPED），PSI 仿真关键行 `|A|=3  |A∩B|=2`、`result : 2`、
+  `reference : (3076832715348377604, 3076973452836732932)   agree=True`、
+  `result-sems: exact`、`policy : REVEAL_COUNT`，最终表
+  `CellSetIntersect | CompactCellSet | PSI | count-only`。
+- 测试：两个文件 `29 passed`；同环境全量 `python -m pytest tests/ -q` →
+  **`1094 passed`（0 failed / 0 skipped）**。
 
 最小独立验证（不依赖本仓库装配）：
 
