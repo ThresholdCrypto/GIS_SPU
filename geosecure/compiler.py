@@ -257,6 +257,8 @@ class CompileResult:
                     "security_level": s.security_level,
                     "protocol": s.protocol,
                     "protocol_params": dict(s.protocol_params),
+                    "mpc_protocol": s.mpc_protocol,
+                    "mpc_protocol_basis": s.mpc_protocol_basis,
                     "status": s.status,
                 }
                 for s in (self.plan.steps if self.plan else [])
@@ -452,10 +454,11 @@ class Compiler:
 
     @property
     def protocol_in_use(self) -> str:
-        """执行期实际使用的 MPC 协议（具体值，不会为 None）。
+        """方案的**代表** MPC 协议（具体值，不会为 None）。
 
-        `self.protocol` 为 None 时取**方案里按实测代价选出**的协议；
-        方案也没有（纯 PSI 程序，没有 MPC 步骤）→ 回落到登记默认值。
+        取值链：显式指定 > **方案里第一个** MPC 步骤选出的协议 > 登记默认值。
+        仅用于“整个方案只用一个 MPC 协议”的摘要/展示场景；执行期逐步解析
+        （见 `_step_protocol`），不把这个单值套到所有步骤上。
         """
 
         return (
@@ -463,6 +466,23 @@ class Compiler:
             or self.protocol
             or MPC_RULE_DEFAULT_PROTOCOL
         )
+
+    def _step_protocol(self, step: PlannedStep) -> str:
+        """单个 MPC 步骤的执行期协议：显式指定 > 方案实测选择 > 登记默认值。
+
+        按**步骤**解析，而不是取方案里第一个 MPC 步骤的协议：同一个程序里两个
+        MPC 步骤各自选中不同协议时，Runtime 必须各跑各的——把单值套到所有步骤
+        上等于让后一步静默换协议（验收口径：Runtime 不允许静默更换协议）。
+
+        归一化“能认就认”：认不出的名字原样返回，交给下游 fail-fast 抛 ValueError，
+        不在这里改变既有的报错契约。
+        """
+
+        raw = self.protocol or step.mpc_protocol or MPC_RULE_DEFAULT_PROTOCOL
+        try:
+            return normalize_protocol(raw)
+        except ValueError:
+            return str(raw)
 
     def compile_source(
         self, source: str, filename: str = "<source>", *, entry: str | None = None
@@ -560,9 +580,10 @@ class Compiler:
             )
         )
 
-        # 执行期协议一次性定型：显式指定 > 方案里的实测选择 > 登记默认值。
-        # "自动选择"的依据来自方案本身（planner 已按实测通信量选过），这里只把
-        # 方案的结论取出来交给执行层，不另做一次判断——两道闸门只留一道判断源。
+        # 方案级“代表协议”：显式指定 > 方案里第一个 MPC 步骤的选择 > 登记默认值。
+        # 仅供 `protocol_in_use` 这个摘要属性使用——执行期**不**按这个单值跑：同一
+        # 程序里多个 MPC 步骤可以各选各的协议，逐步解析见 `_step_protocol`（否则
+        # 第 2 步会被静默换成第 1 步的协议，违反“Runtime 不允许静默更换协议”）。
         self._protocol_in_use = self.protocol or next(
             (step.mpc_protocol for step in plan.steps if step.mpc_protocol), None
         )
@@ -682,6 +703,7 @@ class Compiler:
 
         planned_but_not_jax: list[str] = []
         not_routed: list[str] = []
+        mpc_closure_problems: list[str] = []
         for step in result.plan.steps:
             if _is_plaintext_local(step.operation):
                 # 物化算子不进密态：既没有 JAX 实现，也不该算作"缺 JAX 实现"，
@@ -706,11 +728,12 @@ class Compiler:
                 # 返回 None，进而误报为 SPU 执行失败。
                 return _plain_reference(_op, self._plain_args(_op, args))
 
+            step_protocol = self._step_protocol(step)
             try:
                 run = run_spu_simulation(
                     fn,
                     [np.asarray(x) for x in examples],
-                    protocol=self.protocol_in_use,
+                    protocol=step_protocol,
                     field=self.field,
                     world_size=self.world_size,
                     reference_fn=reference_fn if reference is not None else None,
@@ -724,11 +747,12 @@ class Compiler:
                 # `geo-secure build x.py --protocol SPDZ2K` 就是这样崩的。
                 run = SpuRunResult(
                     status="error",
-                    protocol=self.protocol_in_use,
+                    protocol=step_protocol,
                     field=str(self.field),
                     world_size=self.world_size or 2,
                     error=str(exc),
                 )
+            mpc_closure_problems.extend(_check_mpc_closure(step, step_protocol, run))
             result.spu_runs[step.operation] = run
 
         if not result.spu_runs:
@@ -748,6 +772,17 @@ class Compiler:
 
             result.stages.append(
                 StageResult("spu_simulation", "skipped", result.spu_runs, message)
+            )
+            return
+
+        if mpc_closure_problems:
+            result.stages.append(
+                StageResult(
+                    "spu_simulation",
+                    "error",
+                    result.spu_runs,
+                    "MPC 执行配置闭环核对失败：" + "；".join(mpc_closure_problems),
+                )
             )
             return
 
@@ -1127,8 +1162,9 @@ class Compiler:
                 reference_fn=reference_fn if reference is not None else None,
                 subset_via=self.psi_subset,
                 # 子集判定这条 MPC 电路沿用编译器的协议/环宽，与其它 MPC 算子
-                # 共用同一套开关，不另开一个配置面。
-                mpc_protocol=self.protocol_in_use,
+                # 共用同一套开关，不另开一个配置面。协议同样按**本步骤**解析：
+                # Contains 步骤的协议未必等于方案里第一个 MPC 步骤的协议。
+                mpc_protocol=self._step_protocol(step),
                 mpc_field=self.field,
                 mpc_world_size=self.world_size,
                 mpc_report=self._capability,
@@ -1930,6 +1966,24 @@ def _check_config_closure(
             f"{config.protocol!r} 不一致"
         )
     return problems
+
+
+def _check_mpc_closure(
+    step: PlannedStep, protocol: str, run: SpuRunResult
+) -> list[str]:
+    """核对“方案里的 MPC 协议”与“运行实际使用的协议”是否一致（Phase 4 验收）。
+
+    PSI 侧的逐字段对拍在 `_check_config_closure`；MPC 侧唯一由**方案逐步决定**的
+    量就是协议本身（环宽 / 参与方数量同源于编译器配置，不由某个步骤选择），因此
+    这里只比协议：方案写 A、实际跑 B 必须显式失败——Runtime 不允许静默更换协议。
+    """
+
+    if run.protocol != protocol:
+        return [
+            f"算子 {step.operation}：Runtime 实际使用协议 {run.protocol!r} 与方案协议 "
+            f"{protocol!r} 不一致（Runtime 不允许静默更换协议）"
+        ]
+    return []
 
 
 def _normalize_psi_count(value: str | None) -> str | None:

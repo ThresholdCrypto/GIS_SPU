@@ -24,8 +24,8 @@ Python 地理业务代码
 ```
 
 > **项目进展说明**（完成度、里程碑时间线、已验证 / 未落地、关键实测结论、复现方式）
-> 见 [`docs/PROGRESS.md`](docs/PROGRESS.md)。当前 `main` 共 **15 个提交**、
-> **957 项测试全部通过、0 跳过**（2026-10-08 于 WSL2 + spu 0.9.5 复跑）。
+> 见 [`docs/PROGRESS.md`](docs/PROGRESS.md)。当前 `main` 共 **27 个提交**、
+> **1103 项测试全部通过、0 跳过**（2026-10-10 于 WSL2 + spu 0.9.5 复跑）。
 
 ## 快速开始
 
@@ -47,7 +47,7 @@ bash scripts/setup_wsl_spu.sh         # 一键：系统依赖 + Python 3.11 + �
 
 ```bash
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 957 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 1103 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -742,6 +742,15 @@ geo-secure build examples/route_zone_chain.py \
 `low_comm_mode` 等）沿 Planner → Compiler → Runtime → `PsiRunResult` 单链传递；
 编译 JSON 带 `psi_runtime_config` 与每步 `protocol_params`，四层可直接对拍。
 
+**MPC 协议闭环（本版 Phase 4）**：MPC 侧唯一由方案**逐步决定**的参数就是协议本身
+（环宽 / 参与方数量同源于编译器配置），执行期按**步骤**解析
+（`Compiler._step_protocol`：显式指定 > 方案实测选择 > 登记默认值）——同一程序里
+两个 MPC 步骤各选不同协议时**各跑各的**，不再把“第一个 MPC 步骤的协议”套到所有
+步骤上。`_check_mpc_closure` 在阶段 6 兜底核对，漂移即阶段报错
+（验收口径：Runtime 不允许静默更换协议）。编译 JSON 的 plan 步带出 `mpc_protocol`
+与 `mpc_protocol_basis`，与 `spu_runs[op].protocol` 可直接对拍；
+见 `tests/test_mpc_execution_chain.py`。
+
 ### 5.8 性能基线（本版新增）
 
 `tests/benchmarks/benchmark_psi.py`：确定性 GeoSOT-3D 测试集，真机测量
@@ -1051,22 +1060,28 @@ P2-1 把 `scale` 改成编译期常量后，该算子生成代码里**不再有�
 ```
 tests/test_ir.py                  38 项   类型系统、格网口径、算子/程序/关系
 tests/test_frontend.py            41 项   表达式级调用识别、输入可解析性、敏感度不降级、链式类型、语义
-tests/test_planner.py             56 项   注册表、五元组、敏感度策略、代价模型、无副作用、PSI/MPC 两套协议候选校验
+tests/test_planner.py             58 项   注册表、五元组、敏感度策略、代价模型、无副作用、PSI/MPC 两套协议候选校验
 tests/test_bitplane_layout.py     23 项   位平面布局（D3）：课题产物逐项复算、归约轴决策、不给形状不给数字、与实测前提对账
 tests/test_packing_probe.py       30 项   打包前提探针（P6）：位宽扫描/规模扫描、按环元素计费、收益上界、缺数诚实留空、真机位宽等价
-tests/test_slot_cost_probe.py      25 项   取槽步单价（P7-P0）：掩码/右移/全量提取 vs 纯乘法的 A/B、位运算语义、比价基准不许拿 0 B 变体
+tests/test_slot_cost_probe.py     25 项   取槽步单价（P7-P0）：掩码/右移/全量提取 vs 纯乘法的 A/B、位运算语义、比价基准不许拿 0 B 变体
 tests/test_primitive_probe.py     27 项   逐原语真机核验（P0）：D3 点名原语全覆盖、登记名与 capability 白名单对账、计费维度对账（收缩类按输出计费、收缩长度免费）、只有同维度的不可能读数才标可疑
-tests/test_slot_reduction_probe.py 19 项  免逐槽提取路线筛选（P0）：路线 a/c 必须继续对拍失败（纯 jax 复算）、批间差参与判定、SWAR 树同语义比价
-tests/test_geo_rr22_coverage.py   12 项  Geo-RR22 覆盖关系判定实证：国标前缀性质（构造 + 21973 条真实码）、本项目码解不出真实层级、剪枝入口不得出现
-tests/test_protocol_registry.py   18 项   协议元数据单一来源、结果语义、Planner 与后端交叉一致
+tests/test_slot_reduction_probe.py 19 项   免逐槽提取路线筛选（P0）：路线 a/c 必须继续对拍失败（纯 jax 复算）、批间差参与判定、SWAR 树同语义比价
+tests/test_geo_rr22_coverage.py   12 项   Geo-RR22 覆盖关系判定实证：国标前缀性质（构造 + 21973 条真实码）、本项目码解不出真实层级、剪枝入口不得出现
+tests/test_protocol_registry.py   23 项   协议元数据单一来源、结果语义、Planner 与后端交叉一致
 tests/test_protocol_coverage.py   13 项   协议覆盖镜像：登记协议必须显式归类（已验证/不可执行/无密码学保护）、登记即有真机用例（扫描用例的 parametrize 源须恰为 SPU_PROTOCOLS），不许静默滑过
 tests/test_protocol_selection.py  21 项   MPC 协议按实测代价选择、REF2K 不自动选中、拒绝信息可操作、排序第二协议真跑
+tests/test_protocol_validation.py 47 项   统一 capability validation（Phase 3）：协议/family/world_size/field/语义/参数编译期拒绝、自动选中协议同样复核、Runtime fail-fast 契约
+tests/test_mpc_execution_chain.py  9 项   Planner → Runtime 的 MPC 协议闭环（Phase 4）：逐步协议一致、两步不同协议各跑各的、显式覆盖、闭环核对器正反例
 tests/test_jax_backend.py         48 项   生成器、可追踪性、原语核对、与明文对拍、TemporalOverlap 两套电路等价
 tests/test_spu_backend.py         52 项   协议/环宽规范化、能力门控、私有接口与共享库回归、SPU 实跑、sweep 电路真机
 tests/test_spu_profile.py         13 项   SPU 通信量剖析：pphlo 日志解析与 fd 级捕获（P2-2）
 tests/test_benchmark_mpc.py       70 项   MPC 基线：用例构造、协议×算子×环宽矩阵、通信量采集、策略 A/B、诚实留空、四个探针开关的产物路径与互斥
 tests/test_benchmark.py           33 项   PSI 基线生成器确定性/合法性、记录 schema、unavailable 诚实规则、写入器、真实 RR22 记录
 tests/test_psi_backend.py         82 项   PSI 能力/协议归一化/真实求交/空输入/泄漏面/诚实留空/日志卫生/带噪与精确披露/RR22 参数链路
+tests/test_psi_ca_backend.py      16 项   PSI-Cardinality 计数档（第四后端族）：能力/API 核对、只出交集基数、编译期拒绝契约、执行装配与真机判读
+tests/test_psi_sum_backend.py     32 项   PI-Sum 交集内求和档（第五后端族）：上游 flag 形态核对、编译期拒绝清单、执行装配与真机结果判读
+tests/test_cli_psi_ca.py          13 项   CLI 计数档 `--psi-count`：开关生效、与 `--psi-protocol`/`--psi-curve` 互斥提示、报告
+tests/test_cli_psi_sum.py         20 项   CLI 求和档 `--psi-sum`：开关生效、互斥提示、报告
 tests/test_psi_runtime_config.py  11 项   PsiRuntimeConfig 拆分/注入/单一配置源/非法 rank/曲线/协议
 tests/test_psi_capability.py      14 项   参数级校验（bool 型 rank 拒绝）、三层能力核查、RR22 低通信探测
 tests/test_subset_mpc.py          30 项   Contains 密态子集比较：电路原语与注册表一致、模式口径、逐点精确、只有基数进 MPC、退路披露
@@ -1082,17 +1097,17 @@ tests/test_height_planner.py      12 项   第 6 类失败模式、三维工作�
 tests/test_input_adapter.py       18 项   CSV/JSON/CellSet 输入适配、错误定位到行、布局加载
 tests/test_execution_chain.py     15 项   链式执行使用上一步 PSI 输出、样例兜底披露、布局不一致阻断、CLI --input
 tests/test_rr22_geosot.py          8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
-tests/test_end_to_end.py          75 项   全流程、状态表、CLI（协议/曲线/子集/RR22/布局形状/MPC 协议）、六类失败报告、编译入口参数、诊断聚合、确定性
+tests/test_end_to_end.py          77 项   全流程、状态表、CLI（协议/曲线/子集/RR22/布局形状/MPC 协议）、六类失败报告、编译入口参数、诊断聚合、确定性
                                   ─────
-                                  957 通过 / 0 跳过
+                                  1103 通过 / 0 跳过
 ```
 
 在 **WSL2 + Linux + Python 3.11.16 + jax 0.4.34 + spu 0.9.5** 上，
-**957 项全部通过，无跳过**。真实执行隐私协议的用例：
+**1103 项全部通过，无跳过**。真实执行隐私协议的用例：
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
-| SPU(MPC) 真跑 | 10 项 | `test_spu_backend` 3 项 + 子集比较电路 2 项 + 打包探针 3 项 + 取槽单价探针 2 项；整数路径误差 0.0 |
+| SPU(MPC) 真跑 | 15 项 | `test_spu_backend` 3 项 + 子集比较电路 2 项 + 打包探针 3 项 + 取槽单价探针 2 项 + **MPC 协议闭环 5 项**；整数路径误差 0.0 |
 | PSI 真机求交（`@needs_psi`） | 23 项函数 | 真调 `psi_execute`，非 mock；含链式执行 / 真实输入绑定 / 布局握手 / 配置闭环 / RR22 / benchmark 记录（grep 口径：`grep -rc needs_psi tests/*.py`） |
 | PSI 空输入路径 | 6 项 | 前置判定，不启动协议 |
 | PSI 原生日志卫生 | 4 项 | 真机执行 + 校验不落 CWD 日志 |
@@ -1348,7 +1363,7 @@ DistanceLE  QuantizedVector  MPC/SPU  verified
 ```bash
 # WSL2 / Linux 上（Python 3.10 或 3.11）
 pip install -r requirements-spu.txt      # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q               # 957 项全部通过（0 跳过）
+python -m pytest tests/ -q               # 1103 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -1543,6 +1558,16 @@ MPC 电路输出一个比特  k == n
 > **1424–1496 B/元素 = 纯乘法 16 B/元素 的 89–94 倍**（区间来自批间差）。结论是**前置判据**：元素数下降的
 > 倍数必须先超过这个量级，打包才可能划算。见 8.4 与 `docs/BITPLANE_LAYOUT.md` §5.1。
 
+> 已闭合（本版 Phase 4）：**Planner → Runtime 的 MPC 协议闭环**。执行期协议此前只取
+> **方案里第一个** MPC 步骤的协议并套到所有步骤上——同一程序里两个 MPC 步骤各选
+> 不同协议时，第 2 步会被**静默换协议**（与验收口径冲突）。现在改为**逐步解析**
+> （`Compiler._step_protocol`：显式指定 > 方案实测选择 > 登记默认值），并新增
+> `_check_mpc_closure` 在阶段 6 兜底核对，漂移即阶段报错。对拍覆盖
+> `planned.mpc_protocol == runtime.protocol`、环宽、参与方数量；编译 JSON 的 plan 步
+> 带出 `mpc_protocol` / `mpc_protocol_basis`。真机证据：收窄候选构造出两步不同协议
+> （WeightedSum→SEMI2K〔2 方〕/ TemporalOverlap→ABY3〔3 方〕）后**各跑各的**、
+> 结果与明文逐位一致（err=0.0）。见 5.7 与 `tests/test_mpc_execution_chain.py`（9 项）。
+
 ### 8.1 接入新增隐私后端
 
 `planner.registry.OperatorRule` 的 `backend` 字段是自由字符串，
@@ -1605,7 +1630,7 @@ backends/
 
 - ~~在 WSL2 / Linux + Python 3.11 环境下接通真实 SPU 模拟，
   把 `tests/test_spu_backend.py::TestRealSpuSimulation` 从 skip 变为通过~~
-  ——**已闭合**：本机 `957 passed / 0 failed / 0 skipped`，无一条真实执行用例被跳过。
+  ——**已闭合**：本机 `1103 passed / 0 failed / 0 skipped`，无一条真实执行用例被跳过。
 - 补 `FM128` 路径测试（64 位键的溢出场景）。
 - ~~补不同协议的代价实测（`semi2k` / `aby3` / `cheetah`）~~ ——**已闭合（本版 P1）**：
   `tests/benchmarks/benchmark_mpc.py` 已把 3 个 MPC 算子 × 5 个 SPU 协议 × 3 个环宽

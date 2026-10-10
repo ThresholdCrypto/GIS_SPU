@@ -1,8 +1,8 @@
 # 项目进展说明：geo-secure 低门槛隐私计算编译器（MVP）
 
 > **口径对齐**：2026 年 9 月工作月报（任务 3）。
-> **截至 2026-10-08**，本地与远程 `main` 一致：**16 个提交**、
-> **1004 项自动化测试全部通过（0 失败 / 0 跳过）**。
+> **截至 2026-10-10**，本地与远程 `main` 一致：**27 个提交**、
+> **1103 项自动化测试全部通过（0 失败 / 0 跳过）**。
 > **验证环境**：WSL2 Ubuntu 26.04.1 / x86_64，Python 3.11.16，spu 0.9.5，jax 0.4.34。
 
 ---
@@ -59,6 +59,7 @@ def check_conflict(route, no_fly_zone):
 | 2026-10-09 | （工作区） | 层面 3 起步：PSI-Cardinality 计数档接入（`--psi-count psi-ca` / `psi-ca-check` / 只接 `CellSetIntersect` + `REVEAL_COUNT` 的拒绝契约 / 测试桩 29 项） | 桩下全绿；全量 `912 passed`（Windows 离线环境） |
 | 2026-10-09 | （工作区） | 管控层：复跑脚本**供应链固定**（上游钉 commit + bazelisk `v1.29.0` sha256 校验）+ 细粒度沙箱档草案（`docs/SANDBOX_AND_SUPPLY_CHAIN.md` / `scripts/codex_permissions.example.toml`） | 脚本已实测：sha256 正/反例、按 sha fetch 得 `950c5e4`；沙箱档已实测：本机 Windows 后端兑现不了（deny-glob 需 elevated、schannel TLS 不可用、白名单未见生效）——**暂不启用** |
 | 2026-10-09 | （工作区） | 真机确认：SPU 模拟路径 `distance_check` / `risk_score` 全 `verified`（err=0.0）+ PSI-CA 计数档真机验证（`openmined-psi==2.0.6`，解除该档「未验证」） | 全量 `1094 passed`（0 failed / 0 skipped，WSL spu311）；PSI-CA 两文件 `29 passed` |
+| 2026-10-10 | （本提交） | **Phase 4：Planner → Runtime 的 MPC 协议闭环**——执行期协议改为**逐步解析**（`_step_protocol`：显式指定 > 方案实测选择 > 登记默认值），修掉“两个 MPC 步骤各选不同协议时被统一成第一个协议”的静默换协议；新增 `_check_mpc_closure` 兜底核对与 9 项对拍测试；编译 JSON 的 plan 步带出 `mpc_protocol` / `mpc_protocol_basis` | **`1103 passed`**（WSL2 真机，0 跳过） |
 
 > 「+ 工作区改动」表示该轮结果记录于提交前后的工作区状态，逐轮明细见
 > `docs/VERSION_COMPATIBILITY.md`。
@@ -95,8 +96,12 @@ def check_conflict(route, no_fly_zone):
 
 - 6 个地理算子：`Intersects` / `Contains` / `DistanceLE` / `CellSetIntersect` / `WeightedSum` / `TemporalOverlap`
 - MPC 协议：ABY3 / SEMI2K / SECURENN / CHEETAH（`REF2K` 可显式指定，不参与自动选择）
+- MPC（SPU）协议闭环：方案**逐步**选什么、执行就**逐步**跑什么
+  （`Compiler._step_protocol` + `_check_mpc_closure`）；构造出“两步不同协议”
+  （SEMI2K / ABY3）后真机**各跑各的**，结果与明文逐位一致
+  （`tests/test_mpc_execution_chain.py`，9 项）
 - PSI 协议：ECDH(SM2) / KKRT / RR22（+ `low_comm`）/ DP-PSI（带噪语义单独披露）/ NPC 族（ECDH_NPC、KKRT_NPC，显式放行）
-- 真机用例：SPU(MPC) 真跑 10 项、PSI 真机求交 23 项函数等（统计口径见 `README.md` §6.4）
+- 真机用例：SPU(MPC) 真跑 15 项、PSI 真机求交 23 项函数等（统计口径见 `README.md` §6.4）
 
 **未落地（如实标注）**
 
@@ -156,11 +161,16 @@ def check_conflict(route, no_fly_zone):
    可通过编译期并带披露），并补齐编译器路径测试与 benchmark 显式开关。
    因此原先"选一个 SPU 已支持的**新**协议走完整接入流程"字面对象已不存在——
    扩展机制改由 NPC 族演练的后半段（编译期放行 + 基准 + E2E）验收。
-   下一步（Phase 4 / 5 余项）：**Planner → Runtime 协议参数一致性对拍测试**；
-   自动协议选择按 `world_size` **过滤候选**（当前策略是拒绝并给出替代，过滤属
-   下一阶段）；`runtime_adapter` / `benchmark_profile` 元数据位尚未登记（两族
-   执行接口保持独立）；**另起"SPU 未实现过的新协议"工程**（层面 3：选一个开源
-   PSI/MPC 协议内核，按 `backends/` 新族接入，不改 SPU 源码）。
+   ~~Planner → Runtime 协议参数一致性对拍测试~~ ——**已闭合（本版 Phase 4）**：
+   PSI 侧原有 `_check_config_closure` 逐字段对拍；MPC 侧补上**逐步协议解析**
+   （`_step_protocol`：显式指定 > 方案实测选择 > 登记默认值——修掉“两个 MPC 步骤
+   各选不同协议时被统一成第一个协议”的静默换协议）与 `_check_mpc_closure` 兜底
+   核对（漂移即阶段报错）；对拍覆盖协议 / 环宽 / 参与方数量，并带反面用例；
+   编译 JSON 的 plan 步带出 `mpc_protocol` / `mpc_protocol_basis`，四层可直接对拍。
+   下一步（Phase 4 / 5 余项）：自动协议选择按 `world_size` **过滤候选**（当前策略是
+   拒绝并给出替代，过滤属下一阶段）；`runtime_adapter` / `benchmark_profile`
+   元数据位尚未登记（两族执行接口保持独立）；**另起"SPU 未实现过的新协议"工程**
+   （层面 3：选一个开源 PSI/MPC 协议内核，按 `backends/` 新族接入，不改 SPU 源码）。
    **层面 3 已起步（本版）**：首个外部协议内核落地为 `backends/psi_ca_backend`
    （PSI-Cardinality 计数档）——与 libpsi 路径并列为第二条 PSI 路径，
    接入层（编译期契约 + 执行装配 + 测试桩）完成；**真机已验证（2026-10-09，WSL2）**：`|A∩B|=2`、状态词 `count-only`、`agree=True`。
@@ -178,7 +188,7 @@ def check_conflict(route, no_fly_zone):
 ```bash
 git clone git@github.com:ThresholdCrypto/GIS_SPU.git && cd GIS_SPU
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 957 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 1103 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
