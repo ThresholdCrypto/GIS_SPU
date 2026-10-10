@@ -568,6 +568,11 @@ class Compiler:
             # world_size 校验（选择发生在规划层内部，构造期无法替它判断）。
             mpc_field=self.field,
             mpc_world_size=self.world_size,
+            # 外部 PSI 执行档（PSI-CA / PI-Sum）也要进规划层：否则计划表与
+            # 最终状态表的 Backend 列仍写 "PSI"，与执行层给出的状态词
+            # count-only / count-and-sum 自相矛盾。
+            psi_count=self.psi_count,
+            psi_sum=self.psi_sum,
             layout_shape=self.layout_shape,
         )
         result.plan = plan
@@ -1833,7 +1838,7 @@ class Compiler:
                 {
                     "operation": step.operation,
                     "representation": step.representation,
-                    "backend": step.backend,
+                    "backend": step.reported_backend,
                     "protocol": step.protocol,
                     "protocol_params": dict(step.protocol_params),
                     "status": status,

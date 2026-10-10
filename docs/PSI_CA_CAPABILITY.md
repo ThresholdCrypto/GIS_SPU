@@ -13,6 +13,7 @@
 | 接口形态 | CSV 文件（落盘） | 进程内 protobuf 消息（不落盘、无临时文件） |
 | 承接算子 | `Intersects` / `Contains` / `CellSetIntersect` | **只承接 `CellSetIntersect` 的 `REVEAL_COUNT`** |
 | 触发 | 缺省 | `--psi-count psi-ca` |
+| 规划层后端名 | `PSI` | `PSI-CA`（Phase 8 起；计划表与最终状态表同口径） |
 
 两条路径**刻意不合并**：泄漏承诺不同。若把计数档并进 libpsi 的 `REVEAL_COUNT`
 策略，会把"业务层收窄"误读成"协议层不再交交集本体"——后者才是本档的真实差别。
@@ -93,6 +94,11 @@ server = 右侧输入
   独立最小验证 `GetIntersectionSize=2`；`tests/test_psi_ca_backend.py` +
   `tests/test_cli_psi_ca.py` 29 项通过（真机分支：`runnable=true` ⇒ 断言
   `status=ok` / `value=2` / `agree=True` / `count-only`）。
+- **规划层标注（Phase 8，2026-10-10）**：开档后计划表与最终状态表的 Backend 列
+  为 `PSI-CA`——此前两处都写 `PSI`，与状态词 `count-only` 自相矛盾。步骤的
+  `backend` 保留登记值、实际执行族存 `execution_backend`，档强制的 `REVEAL_COUNT`
+  与泄漏码 `count-only` 随 `reasons` 留痕；由 `tests/test_external_psi_planning.py`
+  锁定（含环境缺失时 Backend 列仍为 `PSI-CA` 的分支）。
 - **仍未验证**：`GCS` / `BloomFilter` 近似档（未接）、跨机部署（当前是进程内链路）、
   近似档的 fpr 语义（RAW 档上游注明忽略 fpr）。
 

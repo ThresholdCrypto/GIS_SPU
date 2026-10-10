@@ -1,8 +1,8 @@
 # 项目进展说明：geo-secure 低门槛隐私计算编译器（MVP）
 
 > **口径对齐**：2026 年 9 月工作月报（任务 3）。
-> **截至 2026-10-10**，本地与远程 `main` 一致：**28 个提交**、
-> **1151 项自动化测试全部通过（0 失败 / 0 跳过）**。
+> **截至 2026-10-10**，本地与远程 `main` 一致：**29 个提交**、
+> **1172 项自动化测试全部通过（0 失败 / 0 跳过）**。
 > **验证环境**：WSL2 Ubuntu 26.04.1 / x86_64，Python 3.11.16，spu 0.9.5，jax 0.4.34。
 
 ---
@@ -28,11 +28,12 @@ def check_conflict(route, no_fly_zone):
 |---|---|---|
 | `frontend` | 业务 API → Geo-IR 的语义识别（含嵌套调用、链式类型、敏感度不降级） | 完成 |
 | `ir` | `GeoProgram` / `GeoOperation` / `GeoValue` / `GeoType` / `GeoEntity` / `GeoRelation`；关系六元组（subject / predicate / object / time / spatial_scope / sensitivity） | 完成 |
-| `planner` | Operator Registry + Privacy Planner，输出 `{operation, representation, backend, estimated_cost, security_level}`；MPC 协议按实测代价自动选择；位平面布局（D3）预测层 | 完成 |
+| `planner` | Operator Registry + Privacy Planner，输出 `{operation, representation, backend, estimated_cost, security_level}`；MPC 协议按实测代价自动选择；位平面布局（D3）预测层；外部 PSI 执行档（PSI-CA / PI-Sum）的后端族标注（Phase 8） | 完成 |
 | `backends/jax_backend` | `DistanceLE` / `WeightedSum` / `TemporalOverlap` 的 JAX 生成（可 `jax.jit` 追踪、无 Python 运行时依赖） | 完成 |
 | `backends/spu_backend` | SPU 能力核查、模拟执行、通信量采集、打包前提与取槽单价探针 | 完成 |
 | `backends/psi_backend` | PSI 协议 ECDH(SM2) / KKRT / RR22(+`low_comm`) / DP / NPC 族接入与真机执行；NPC 与 DP 属"显式放行"档 | 完成 |
 | `backends/psi_ca_backend` | PSI-Cardinality 计数档（OpenMined PSI，只出交集基数）：能力/API 核对、`--psi-count psi-ca` 接入、编译期拒绝契约 | 完成（真机已验证，2026-10-09 WSL2） |
+| `backends/psi_sum_backend` | PI-Sum 交集内求和档（Google private-join-and-compute）：能力/flags 核对、`--psi-sum pjc` 接入、编译期拒绝清单 | 完成（真机已验证，2026-10-09 WSL2） |
 | `semantic` / `validator` | 关系三元组产出；六类失败模式的错误报告（错误位置 + 原因 + 建议替代算子 + 预计隐私计算代价） | 完成 |
 | CLI | `geo-secure build`，八阶段输出 + 「算子-表征-后端-状态」表 | 完成 |
 
@@ -61,6 +62,7 @@ def check_conflict(route, no_fly_zone):
 | 2026-10-09 | （工作区） | 真机确认：SPU 模拟路径 `distance_check` / `risk_score` 全 `verified`（err=0.0）+ PSI-CA 计数档真机验证（`openmined-psi==2.0.6`，解除该档「未验证」） | 全量 `1094 passed`（0 failed / 0 skipped，WSL spu311）；PSI-CA 两文件 `29 passed` |
 | 2026-10-10 | （本提交） | **Phase 4：Planner → Runtime 的 MPC 协议闭环**——执行期协议改为**逐步解析**（`_step_protocol`：显式指定 > 方案实测选择 > 登记默认值），修掉“两个 MPC 步骤各选不同协议时被统一成第一个协议”的静默换协议；新增 `_check_mpc_closure` 兜底核对与 9 项对拍测试；编译 JSON 的 plan 步带出 `mpc_protocol` / `mpc_protocol_basis` | **`1103 passed`**（WSL2 真机，0 跳过） |
 | 2026-10-10 | （本提交） | **Phase 7：统一 benchmark metadata**——新增 `backends/benchmark_schema.py`（共有 13 字段 + 两族指标 + 缺口登记）与投影器 `scripts/unify_benchmark.py`，48 项测试；跨协议比较只比 `ok` 行、不同族/算子/规模直接报错、同用例重测取中位数（见 `docs/BENCHMARK_SCHEMA.md`） | **`1151 passed`**（WSL2 真机，0 跳过） |
+| 2026-10-10 | （本提交） | **Phase 8：外部 PSI 执行档接入方案层**——`--psi-count psi-ca` / `--psi-sum pjc` 的计划步骤带出 `execution_backend`（`PSI-CA` / `PI-Sum`），计划表与最终状态表的 Backend 列不再写 `PSI`（与状态词 `count-only` / `count-and-sum` 同一口径）；登记表 `EXTERNAL_PSI_FAMILY_*` 与 backends 逐项交叉断言（21 项测试） | **`1172 passed`**（WSL2 真机，0 跳过） |
 
 > 「+ 工作区改动」表示该轮结果记录于提交前后的工作区状态，逐轮明细见
 > `docs/VERSION_COMPATIBILITY.md`。
@@ -188,7 +190,12 @@ def check_conflict(route, no_fly_zone):
    某族确实没采集的指标登记成缺口并由测试在真实产物上锁死；跨协议比较只比 `ok` 行、
    不同族/算子/规模直接报错、同用例重测取中位数并带出样本数与极差。
    见 `docs/BENCHMARK_SCHEMA.md`。
-   下一步（Phase 8）：result policy / regulator-only 与底层密码协议解耦的 MPC 侧与统一入口。
+   **Phase 8 前半已闭合（本提交）**：外部 PSI 执行档接入方案层——计划步骤带出
+   `execution_backend`（`PSI-CA` / `PI-Sum`）与该档强制的结果策略、协议泄漏面
+   （`planner/registry.py` 的 `EXTERNAL_PSI_FAMILY_*`，与两个 backends 逐项交叉断言）。
+   **仍开放**：`REVEAL_TO_REGULATOR`（部署期模式，显式拒绝）与 MPC 侧的策略↔协议解耦；
+   `benchmark_schema.BENCHMARK_FAMILIES` 仍只覆盖 libpsi 一条 PSI 路径——两条外部
+   路径要并入得先有真实基线产物，不拿推测数字填表。
 
 ---
 
@@ -197,11 +204,13 @@ def check_conflict(route, no_fly_zone):
 ```bash
 git clone git@github.com:ThresholdCrypto/GIS_SPU.git && cd GIS_SPU
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 1151 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 1172 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
 WSL2 / Linux 上一键脚本：`bash scripts/setup_wsl_spu.sh`。
+外部 PSI 执行档（PSI-CA / PI-Sum）在方案层的标注复核：
+`bash scripts/verify_external_family_plan.sh`（三种档位的最终状态表 + 全量回归）。
 
 ---
 

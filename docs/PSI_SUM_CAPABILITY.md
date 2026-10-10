@@ -15,6 +15,7 @@
 | 承接算子 | `Intersects` / `Contains` / `CellSetIntersect` | `CellSetIntersect` + `REVEAL_COUNT` | `CellSetIntersect` + `REVEAL_INTERSECTION_SUM` |
 | 输入形态 | CSV 文件 | 进程内 protobuf | CSV 文件（本机回环 gRPC 传消息） |
 | 触发 | 缺省 | `--psi-count psi-ca` | `--psi-sum pjc`（另需关联值） |
+| 规划层后端名 | `PSI` | `PSI-CA` | `PI-Sum`（Phase 8 起；计划表与最终状态表同口径） |
 
 三条路径**刻意不合并**：泄漏承诺互不相同。把求和档并进 libpsi 或 PSI-CA，
 都会把"协议层多交了一个和"这件事抹平成"又一个输出开关"——而多出来的那个和
@@ -126,6 +127,11 @@ server = 右侧输入（只持标识符）
    **不证明上游密码学语义**。
 3. **未接的档**：上游没有"只出和不出基数"或"带噪和"的开关，本项目也不提供
    （不制造"已配置精度"的错觉）。
+4. **规划层标注（Phase 8，2026-10-10）**：开档后计划表与最终状态表的 Backend 列
+   为 `PI-Sum`（此前写 `PSI`）；步骤带出 `execution_backend`，档强制的
+   `REVEAL_INTERSECTION_SUM` 与泄漏码 `count+sum` 随 `reasons` 留痕；由
+   `tests/test_external_psi_planning.py` 锁定。上游产物未构建时，环境缺失如实报
+   `backend-direct` 且求和栏位留空，**不改后端名**。
 
 ## 8. Linux / WSL 复跑命令（已于 2026-10-09 真机执行）
 

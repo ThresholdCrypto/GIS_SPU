@@ -19,6 +19,12 @@ from .planner import (
     plan_table_rows,
 )
 from .registry import (
+    EXTERNAL_PSI_FAMILY_BACKENDS,
+    EXTERNAL_PSI_FAMILY_OPS,
+    EXTERNAL_PSI_FAMILY_PROTOCOL_LEAK,
+    EXTERNAL_PSI_FAMILY_PSI_CA,
+    EXTERNAL_PSI_FAMILY_PSI_SUM,
+    EXTERNAL_PSI_FAMILY_RESULT_POLICY,
     MPC_PROTOCOL_CANDIDATES,
     MPC_RULE_DEFAULT_PROTOCOL,
     OPERATOR_REGISTRY,
@@ -35,12 +41,19 @@ from .registry import (
     mpc_protocol_candidates_for,
     mpc_protocol_ranking_hint,
     registered_ops,
+    resolve_external_psi_family,
     select_mpc_protocol,
     validate_mpc_protocol_for_operation,
     validate_protocol_for_operation,
 )
 
 __all__ = [
+    "EXTERNAL_PSI_FAMILY_BACKENDS",
+    "EXTERNAL_PSI_FAMILY_OPS",
+    "EXTERNAL_PSI_FAMILY_PROTOCOL_LEAK",
+    "EXTERNAL_PSI_FAMILY_PSI_CA",
+    "EXTERNAL_PSI_FAMILY_PSI_SUM",
+    "EXTERNAL_PSI_FAMILY_RESULT_POLICY",
     "LAYOUT_L1",
     "LAYOUT_L2",
     "LAYOUT_NAIVE",
@@ -71,6 +84,7 @@ __all__ = [
     "plan_program",
     "plan_table_rows",
     "registered_ops",
+    "resolve_external_psi_family",
     "select_mpc_protocol",
     "validate_mpc_protocol_for_operation",
     "validate_protocol_for_operation",

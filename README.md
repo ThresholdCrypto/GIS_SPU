@@ -24,8 +24,8 @@ Python 地理业务代码
 ```
 
 > **项目进展说明**（完成度、里程碑时间线、已验证 / 未落地、关键实测结论、复现方式）
-> 见 [`docs/PROGRESS.md`](docs/PROGRESS.md)。当前 `main` 共 **28 个提交**、
-> **1151 项测试全部通过、0 跳过**（2026-10-10 于 WSL2 + spu 0.9.5 复跑）。
+> 见 [`docs/PROGRESS.md`](docs/PROGRESS.md)。当前 `main` 共 **29 个提交**、
+> **1172 项测试全部通过、0 跳过**（2026-10-10 于 WSL2 + spu 0.9.5 复跑）。
 
 ## 快速开始
 
@@ -47,7 +47,7 @@ bash scripts/setup_wsl_spu.sh         # 一键：系统依赖 + Python 3.11 + �
 
 ```bash
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 1151 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 1172 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -350,6 +350,19 @@ render_operations_table(ops) # 算子表
 `HeightBand` 的 `Backend = Plaintext` 是有意的：层集合的编码在本方完成，
 不进任何密态后端。它出现在规划表里，是为了让代价账和最终状态表**完整**——
 看到 `plaintext-local` 就知道这一步没有也不需要有密态执行。
+
+另有两个**外部 PSI 执行档**（第三方内核，不经 libpsi），由 CLI 开关选定。
+它们**不改写上表的登记值**，只把步骤的实际执行族标注出来（`execution_backend`），
+并决定计划表与最终状态表的 Backend 列怎么写：
+
+| CLI 开关 | 承接算子 | 表征 | 展示后端名 | 状态词 | 安全级别 |
+|---|---|---|---|---|---|
+| `--psi-count psi-ca` | CellSetIntersect | CompactCellSet | `PSI-CA` | `count-only` | high |
+| `--psi-sum pjc` | CellSetIntersect | CompactCellSet | `PI-Sum` | `count-and-sum` | high |
+
+登记表在 `planner/registry.py`（`EXTERNAL_PSI_FAMILY_*`），与两个 backends 的
+能力登记逐项交叉断言（`tests/test_external_psi_planning.py`），防止两处漂移。
+详见 §5.9 / §5.10。
 
 ### 4.2 输出五元组
 
@@ -923,6 +936,10 @@ geo-secure psi-ca-check                                          # 环境核查
   `runnable=true`（blockers 为空）；`build examples/conflict_count.py --psi-count psi-ca`
   真实执行 `|A|=3  |A∩B|=2`、状态词 `count-only`、`agree=True`；命令与实测输出见
   `docs/PSI_CA_CAPABILITY.md` §8，环境快照 `docs/psi_ca_capability_report_wsl.json`。
+- **规划层标注（Phase 8）**：开档后计划表与最终状态表的 Backend 列都写 `PSI-CA`
+  （此前仍写 `PSI`，与状态词 `count-only` 自相矛盾）；步骤的 `backend` 保留登记值，
+  实际执行族另存 `execution_backend`，档强制的结果策略（`REVEAL_COUNT`）与协议泄漏面
+  （`count-only`）随 `reasons` 留痕。WSL2 真机：`CellSetIntersect  CompactCellSet  PSI-CA  count-only`。
 
 ### 5.10 PI-Sum 交集内求和档（`--psi-sum pjc`，第五个后端族）
 
@@ -951,8 +968,15 @@ geo-secure build examples/intersection_sum.py --psi-sum pjc \
   PyPI 上的同名包与本项目无关，不得顶替；
 - 传输面：上游两侧都走 gRPC `LocalCredentials(LOCAL_TCP)`，**只能同机**、无 TLS、
   无身份认证；本项目把监听地址从 `0.0.0.0` 收紧到 `127.0.0.1`；
-- **诚实登记**：本档在测试桩下已验证接入层；上游需 Bazel 构建，真机执行未做，
-  Linux/WSL 复跑命令见 `docs/PSI_SUM_CAPABILITY.md` §8。
+- **诚实登记**：接入层在测试桩下已验证；上游需 Bazel 构建，**真机已复跑
+  （2026-10-09，WSL2）**——`bazel build //private_join_and_compute:all` 成功、协议跑通、
+  `result = (2, 13)` 与登记期望一致（命令与输出见 `docs/PSI_SUM_CAPABILITY.md` §8）；
+  **仍未实测**：Paillier-1536 的耗时与内存占用、跨机部署（两侧
+  `LocalCredentials(LOCAL_TCP)` 只允许同机）。
+- **规划层标注（Phase 8）**：开档后计划表与最终状态表的 Backend 列都写 `PI-Sum`
+  （此前仍写 `PSI`）；步骤带出 `execution_backend`，档强制的结果策略
+  （`REVEAL_INTERSECTION_SUM`）与协议泄漏面（`count+sum`）随 `reasons` 留痕。
+  本机未构建上游产物时，环境缺失如实报 `backend-direct` / 求和栏位留空，不改后端名。
 
 ---
 
@@ -1083,6 +1107,7 @@ tests/test_psi_ca_backend.py      16 项   PSI-Cardinality 计数档（第四后
 tests/test_psi_sum_backend.py     32 项   PI-Sum 交集内求和档（第五后端族）：上游 flag 形态核对、编译期拒绝清单、执行装配与真机结果判读
 tests/test_cli_psi_ca.py          13 项   CLI 计数档 `--psi-count`：开关生效、与 `--psi-protocol`/`--psi-curve` 互斥提示、报告
 tests/test_cli_psi_sum.py         20 项   CLI 求和档 `--psi-sum`：开关生效、互斥提示、报告
+tests/test_external_psi_planning.py  21 项   外部 PSI 执行档接入方案层（Phase 8）：Backend 列跟着 `--psi-count`/`--psi-sum` 走、档与结果策略/泄漏面绑定、与两个 backends 逐项交叉断言
 tests/test_psi_runtime_config.py  11 项   PsiRuntimeConfig 拆分/注入/单一配置源/非法 rank/曲线/协议
 tests/test_psi_capability.py      14 项   参数级校验（bool 型 rank 拒绝）、三层能力核查、RR22 低通信探测
 tests/test_subset_mpc.py          30 项   Contains 密态子集比较：电路原语与注册表一致、模式口径、逐点精确、只有基数进 MPC、退路披露
@@ -1100,11 +1125,11 @@ tests/test_execution_chain.py     15 项   链式执行使用上一步 PSI 输�
 tests/test_rr22_geosot.py          8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
 tests/test_end_to_end.py          77 项   全流程、状态表、CLI（协议/曲线/子集/RR22/布局形状/MPC 协议）、六类失败报告、编译入口参数、诊断聚合、确定性
                                   ─────
-                                  1151 通过 / 0 跳过
+                                  1172 通过 / 0 跳过
 ```
 
 在 **WSL2 + Linux + Python 3.11.16 + jax 0.4.34 + spu 0.9.5** 上，
-**1151 项全部通过，无跳过**。真实执行隐私协议的用例：
+**1172 项全部通过，无跳过**。真实执行隐私协议的用例：
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
@@ -1364,7 +1389,7 @@ DistanceLE  QuantizedVector  MPC/SPU  verified
 ```bash
 # WSL2 / Linux 上（Python 3.10 或 3.11）
 pip install -r requirements-spu.txt      # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q               # 1151 项全部通过（0 跳过）
+python -m pytest tests/ -q               # 1172 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -1631,7 +1656,7 @@ backends/
 
 - ~~在 WSL2 / Linux + Python 3.11 环境下接通真实 SPU 模拟，
   把 `tests/test_spu_backend.py::TestRealSpuSimulation` 从 skip 变为通过~~
-  ——**已闭合**：本机 `1151 passed / 0 failed / 0 skipped`，无一条真实执行用例被跳过。
+  ——**已闭合**：本机 `1172 passed / 0 failed / 0 skipped`，无一条真实执行用例被跳过。
 - 补 `FM128` 路径测试（64 位键的溢出场景）。
 - ~~补不同协议的代价实测（`semi2k` / `aby3` / `cheetah`）~~ ——**已闭合（本版 P1）**：
   `tests/benchmarks/benchmark_mpc.py` 已把 3 个 MPC 算子 × 5 个 SPU 协议 × 3 个环宽

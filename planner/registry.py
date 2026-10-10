@@ -189,6 +189,61 @@ PSI_PROTOCOL_CANDIDATES: tuple[str, ...] = (
 #: 真实 RR22 跑通并完成性能/正确性验证前**不把默认改成 RR22**（课题要求）。
 PSI_RULE_DEFAULT_PROTOCOL = "PROTOCOL_ECDH"
 
+#: 外部 PSI 协议族（不经 libpsi）的执行档登记。
+#:
+#: 这两个族是独立第三方内核（PSI-Cardinality / PI-Sum），可承接的算子与
+#: 协议泄漏面都与 libpsi 求交不同。规划层必须知道它们的存在：否则
+#: ``--psi-count psi-ca`` 跑完后步骤仍写 Backend=PSI，与执行层给出的状态词
+#: ``count-only`` 自相矛盾（方案层说 PSI，实际跑的是 PSI-CA）。
+#:
+#: 与 ``PSI_PROTOCOL_CANDIDATES`` 同理，这里是**字面量登记**——planner 不能在
+#: 导入期依赖 backends（模块级互导成环）。与 backends.psi_ca_backend /
+#: backends.psi_sum_backend 的一致性由 tests/test_external_psi_planning.py 的
+#: 交叉断言锁定。
+EXTERNAL_PSI_FAMILY_PSI_CA = "psi-ca"
+EXTERNAL_PSI_FAMILY_PSI_SUM = "pjc"
+
+#: 执行档 → 方案层展示的后端名（与 libpsi 的 "PSI" 并列，不混用）
+EXTERNAL_PSI_FAMILY_BACKENDS: Mapping[str, str] = {
+    EXTERNAL_PSI_FAMILY_PSI_CA: "PSI-CA",
+    EXTERNAL_PSI_FAMILY_PSI_SUM: "PI-Sum",
+}
+
+#: 执行档 → 可承接的算子（只登记，不做强制；强制在编译器的既有拒绝清单里）
+EXTERNAL_PSI_FAMILY_OPS: Mapping[str, tuple[str, ...]] = {
+    EXTERNAL_PSI_FAMILY_PSI_CA: ("CellSetIntersect",),
+    EXTERNAL_PSI_FAMILY_PSI_SUM: ("CellSetIntersect",),
+}
+
+#: 执行档 → 该档**强制**的结果策略（档与策略一一绑定，调用方不另选策略）
+EXTERNAL_PSI_FAMILY_RESULT_POLICY: Mapping[str, str] = {
+    EXTERNAL_PSI_FAMILY_PSI_CA: "REVEAL_COUNT",
+    EXTERNAL_PSI_FAMILY_PSI_SUM: "REVEAL_INTERSECTION_SUM",
+}
+
+#: 执行档 → 协议内部泄漏面登记码（三族互不相同，不能互相顶替）
+EXTERNAL_PSI_FAMILY_PROTOCOL_LEAK: Mapping[str, str] = {
+    EXTERNAL_PSI_FAMILY_PSI_CA: "count-only",
+    EXTERNAL_PSI_FAMILY_PSI_SUM: "count+sum",
+}
+
+
+def resolve_external_psi_family(family: str | None) -> str | None:
+    """归一化外部 PSI 执行档名：None/空 → None（= libpsi 求交），认不出即报错。"""
+
+    if family is None:
+        return None
+    text = str(family).strip()
+    if not text:
+        return None
+    if text not in EXTERNAL_PSI_FAMILY_BACKENDS:
+        raise ValueError(
+            f"未知外部 PSI 执行档 {family!r}；可用："
+            f"{tuple(EXTERNAL_PSI_FAMILY_BACKENDS)}（None = 走 libpsi 求交）"
+        )
+    return text
+
+
 #: MPC（SPU）族算子共享的协议候选。理由与 PSI 侧相同：planner 不能在导入期
 #: 依赖 backends（模块级互导成环），故此处仍是字面量登记；与
 #: backends.spu_backend.capability.SPU_PROTOCOLS 的一致性由交叉断言锁定

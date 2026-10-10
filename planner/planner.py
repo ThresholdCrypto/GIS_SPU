@@ -18,12 +18,17 @@ from ir import GeoOperation, GeoProgram, Sensitivity, requires_crypto
 
 from .layout import LayoutShape, plan_layout
 from .registry import (
+    EXTERNAL_PSI_FAMILY_BACKENDS,
+    EXTERNAL_PSI_FAMILY_OPS,
+    EXTERNAL_PSI_FAMILY_PROTOCOL_LEAK,
+    EXTERNAL_PSI_FAMILY_RESULT_POLICY,
     OPERATOR_REGISTRY,
     SELECTION_BASIS_EXPLICIT,
     OperatorRule,
     get_rule,
     mpc_protocol_ranking_hint,
     resolve_cost,
+    resolve_external_psi_family,
     select_mpc_protocol,
     validate_mpc_protocol_for_operation,
     validate_protocol_for_operation,
@@ -39,6 +44,11 @@ class PlannedStep:
     backend: str
     estimated_cost: Mapping[str, Any]
     security_level: str
+    #: 实际执行族对应的后端名（"PSI-CA" / "PI-Sum"）：外部 PSI 执行档
+    #: （--psi-count psi-ca / --psi-sum pjc）把步骤整档改道到第三方内核时，
+    #: `backend` 仍是登记规则里的值（"PSI"），这里补上真正的执行族。
+    #: None = 与 `backend` 一致（libpsi 求交 / SPU / 明文）。
+    execution_backend: str | None = None
     #: PSI 族算子选用的协议（来自算子规则 default_protocol，或编译器显式指定）。
     #: None = 该算子不经过协议化的后端（数值算子 / 明文物化算子）。
     protocol: str | None = None
@@ -67,16 +77,27 @@ class PlannedStep:
         return requires_crypto(self.sensitivity)
 
     @property
+    def reported_backend(self) -> str:
+        """对外展示的后端：实际执行族优先于登记规则的后端。
+
+        方案层与执行层对同一件事的说法必须一致——`--psi-count psi-ca` 把步骤
+        改道到 PSI-Cardinality 后，最终状态表不能仍写着 `Backend=PSI`。
+        """
+
+        return self.execution_backend or self.backend
+
+    @property
     def effective_backend(self) -> str:
         """不需要密态时的实际执行后端。"""
 
-        return self.backend if self.needs_crypto else "Plaintext"
+        return self.reported_backend if self.needs_crypto else "Plaintext"
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "operation": self.operation,
             "representation": self.representation,
             "backend": self.backend,
+            "execution_backend": self.execution_backend,
             "estimated_cost": dict(self.estimated_cost),
             "security_level": self.security_level,
             "protocol": self.protocol,
@@ -144,6 +165,8 @@ class Planner:
         *,
         psi_protocol: str | None = None,
         psi_protocol_params: Mapping[str, Any] | None = None,
+        psi_count: str | None = None,
+        psi_sum: str | None = None,
         mpc_protocol: str | None = None,
         mpc_field: str | int | None = None,
         mpc_world_size: int | None = None,
@@ -154,6 +177,17 @@ class Planner:
         self.psi_protocol = psi_protocol
         #: 随协议变化的协议级参数（如 RR22 的 low_comm_mode）
         self.psi_protocol_params = dict(psi_protocol_params or {})
+        #: 外部 PSI 执行档（--psi-count psi-ca / --psi-sum pjc）；None = libpsi。
+        #: 只决定"这一步实际跑在哪个族上"的标注；执行层的整档改道在 compiler。
+        self.psi_count = resolve_external_psi_family(psi_count)
+        self.psi_sum = resolve_external_psi_family(psi_sum)
+        # 两条外部路径不能同时启用（与 compiler 的构造期校验同口径）：计数档
+        # 只出基数、求和档出基数 + 交集内和，混用会让这一档的泄漏面说不清。
+        if self.psi_count is not None and self.psi_sum is not None:
+            raise ValueError(
+                f"外部 PSI 执行档 {self.psi_count} 与 {self.psi_sum} "
+                "是两条不同的路径，不能同时启用"
+            )
         #: 编译器显式选择的 MPC（SPU）协议；None = 该算子按实测代价自动选择
         #: （`select_mpc_protocol`），没有实测依据时退回登记默认值。
         self.mpc_protocol = mpc_protocol
@@ -201,6 +235,14 @@ class Planner:
                 "--layout-shape 的 attributes（与位平面布局同一口径）",
             )
         return None, None
+
+    def _external_family(self, op: str) -> str | None:
+        """本算子被哪个外部 PSI 执行档承接（按登记的承接清单，不猜）。"""
+
+        for family in (self.psi_count, self.psi_sum):
+            if family is not None and op in EXTERNAL_PSI_FAMILY_OPS[family]:
+                return family
+        return None
 
     # ---------------- 单算子规划 ----------------
 
@@ -260,6 +302,17 @@ class Planner:
             f"算子 {operation.op} 的默认表征为 {rule.representation}",
             f"首选后端 {rule.primary_backend}，安全级别 {rule.security_level}",
         ]
+        # 外部 PSI 执行档：方案层要把"这一步实际跑在哪个族上"写清楚，否则
+        # 计划写 PSI、执行层跑 PSI-CA，同一份报告里两处口径不一致。
+        family = self._external_family(operation.op)
+        execution_backend: str | None = None
+        if family is not None:
+            execution_backend = EXTERNAL_PSI_FAMILY_BACKENDS[family]
+            reasons.append(
+                f"执行档 {family} 承接本算子：实际后端为 {execution_backend}"
+                f"，结果策略固定为 {EXTERNAL_PSI_FAMILY_RESULT_POLICY[family]}"
+                f"，协议泄漏面 {EXTERNAL_PSI_FAMILY_PROTOCOL_LEAK[family]}"
+            )
         if mpc_reason:
             reasons.append(mpc_reason)
         status = "planned"
@@ -326,6 +379,7 @@ class Planner:
             operation=operation.op,
             representation=rule.representation,
             backend=rule.backend,
+            execution_backend=execution_backend,
             estimated_cost=cost,
             security_level=rule.security_level,
             protocol=protocol,
@@ -376,6 +430,8 @@ def plan_program(
     *,
     psi_protocol: str | None = None,
     psi_protocol_params: Mapping[str, Any] | None = None,
+    psi_count: str | None = None,
+    psi_sum: str | None = None,
     mpc_protocol: str | None = None,
     mpc_field: str | int | None = None,
     mpc_world_size: int | None = None,
@@ -387,6 +443,10 @@ def plan_program(
     给了就覆盖算子规则的默认协议，并把参数并进每个 PSI 步骤的 protocol_params。
     `mpc_protocol` 是编译器对 MPC（SPU）族算子的协议选择；给了就覆盖这些算子
     的 default_mpc_protocol（命名空间是 REF2K/SEMI2K/...，与 PSI 不通用）。
+    `psi_count` / `psi_sum` 是编译器选定的**外部 PSI 执行档**（第三方内核，
+    不经 libpsi）；给了就把该档承接的步骤标注到 `execution_backend` 上，并
+    在步骤的 `reasons` 里写明该档强制的结果策略与协议泄漏面。执行层的整档
+    改道仍在编译器里，规划层只负责把"这一步跑在哪个族上"说对。
     `mpc_field` / `mpc_world_size` 是编译器显式给出的执行配置；给了就参与
     算子×协议的统一能力校验（Phase 3：不匹配的组合在编译期拒绝）。
     `layout_shape` 是位平面布局（D3）的规模形状；不给就只做轴向决策、不预测条数。
@@ -396,6 +456,8 @@ def plan_program(
         registry,
         psi_protocol=psi_protocol,
         psi_protocol_params=psi_protocol_params,
+        psi_count=psi_count,
+        psi_sum=psi_sum,
         mpc_protocol=mpc_protocol,
         mpc_field=mpc_field,
         mpc_world_size=mpc_world_size,
@@ -413,7 +475,7 @@ def plan_table_rows(plan: PrivacyPlan) -> list[list[str]]:
             [
                 step.operation,
                 step.representation,
-                step.backend,
+                step.reported_backend,
                 f"b={cost.get('b', '?')} d={cost.get('d', '?')} R={cost.get('R', '?')}",
                 step.security_level,
                 step.status,
