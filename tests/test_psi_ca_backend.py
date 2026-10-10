@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import types
+
 import pytest
 
 from backends.psi_backend.result_policy import (
@@ -11,6 +13,7 @@ from backends.psi_backend.result_policy import (
 )
 from backends.psi_ca_backend import (
     PSI_CA_BACKEND,
+    PSI_CA_COMMUNICATION_METER,
     PSI_CA_LEARNING_RANK,
     PSI_CA_OP_LEAKS,
     PSI_CA_PINNED_VERSION,
@@ -107,6 +110,38 @@ class TestRuntimeExecution:
         assert ("client.CreateWithNewKey", False) in stub.calls
         assert ("server.CreateWithNewKey", False) in stub.calls
         assert ("server.CreateSetupMessage", 0.0, len(LEFT), PSI_CA_STRUCTURE) in stub.calls
+
+    def test_protocol_payload_is_measured_and_split_by_direction(self, monkeypatch):
+        # Phase 11：量「协议消息的 protobuf 载荷」本身，不是网络观测
+        # （本档是进程内链路、无 socket）。方向：send = client 的 Request；
+        # recv = server 的 ServerSetup + Response。
+        install_stub_psi(monkeypatch)
+        run = run_psi_cardinality(LEFT, RIGHT, reference_fn=_plain_intersection)
+        assert run.status == "ok", run.error
+        comm = run.communication
+        assert comm["meter"] == PSI_CA_COMMUNICATION_METER
+        assert comm["send_bytes"] == comm["by_message"]["Request"]
+        assert comm["recv_bytes"] == (
+            comm["by_message"]["ServerSetup"] + comm["by_message"]["Response"]
+        )
+        assert comm["total_bytes"] == comm["send_bytes"] + comm["recv_bytes"]
+        assert comm["client_to_server_bytes"] == comm["send_bytes"]
+        assert comm["server_to_client_bytes"] == comm["recv_bytes"]
+        assert comm["total_bytes"] > 0
+
+    def test_payload_drift_leaves_communication_empty_with_a_note(self, monkeypatch):
+        # 上游 API 漂移（消息对象没有 SerializeToString）时：留空 + 注明，
+        # 不以 0 或推测值填充——「没测到」不能读成「测得 0」。
+        stub = install_stub_psi(monkeypatch)
+        monkeypatch.setattr(
+            stub.client,
+            "CreateRequest",
+            lambda data: types.SimpleNamespace(items=[str(item) for item in data]),
+        )
+        run = run_psi_cardinality(LEFT, RIGHT, reference_fn=_plain_intersection)
+        assert run.status == "ok", run.error
+        assert run.communication is None
+        assert any("载荷" in note for note in run.notes)
 
     def test_inputs_are_sorted_and_deduplicated_before_protocol(self, monkeypatch):
         stub = install_stub_psi(monkeypatch)

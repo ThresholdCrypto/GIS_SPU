@@ -37,6 +37,7 @@ from .capability import (
     missing_api,
 )
 from .runtime import (
+    PSI_CA_COMMUNICATION_METER,
     PSI_CA_LEARNING_RANK,
     PSI_CA_OP_LEAKS,
     PSI_CA_PROTOCOL,
@@ -46,6 +47,7 @@ from .runtime import (
 
 __all__ = [
     "PSI_CA_BACKEND",
+    "PSI_CA_COMMUNICATION_METER",
     "PSI_CA_DISTRIBUTION",
     "PSI_CA_IMPORT_PATH",
     "PSI_CA_LEARNING_RANK",

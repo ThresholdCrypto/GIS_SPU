@@ -552,8 +552,15 @@ def run_psi_intersection_sum(
     try:
         server_csv = os.path.join(workdir, "server_data.csv")
         client_csv = os.path.join(workdir, "client_data.csv")
+        # 输入 I/O 计时（口径见 docs/PSI_SUM_CAPABILITY.md §7.2）：只覆盖
+        # 「把两份输入 CSV 落到本机临时目录」这一段。上游结果从 stdout 读回，
+        # 本档没有输出文件读取段，故不产生 io_read_ms。
+        _t_io = time.perf_counter()
         _write_server_csv(server_csv, right_codes)
         _write_client_csv(client_csv, left_codes, left_values)
+        result.timings_ms["io_write_ms"] = round(
+            (time.perf_counter() - _t_io) * 1000.0, 3
+        )
 
         server_bin = report.binaries.get(
             PSI_SUM_SERVER_BINARY

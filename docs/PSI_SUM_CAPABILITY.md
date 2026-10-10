@@ -146,6 +146,22 @@ server = 右侧输入（只持标识符）
 两个子进程并发采样，`peak_rss_mb` 取较大者、不是合计。三条读数与
 `agreement=true` 一同入库 `docs/psi_sum_benchmark_baseline.json`。
 
+### 7.2 Phase 11 输入 I/O 计时（2026-10-10，WSL2，基线三条）
+
+`io_write_ms` = 把两份输入 CSV（server 1 列/行、client 2 列/行）落到本机临时
+目录的耗时，**单段计时**。上游结果从 **stdout** 读回，本档没有输出文件读取段，
+故**不产生 `io_read_ms`**——不填 0 冒充「读得很快」。统一层把它投影成 §九 的
+`input_io_time`（`metadata.input_io_time`）。
+
+| 规模 | `io_write_ms` |
+|---|---:|
+| N=2^8 | 0.123 ms |
+| N=2^10 | 0.316 ms |
+| N=2^12 | 1.116 ms |
+
+参考量级：同轮 `pi_sum_execute_ms` 是 8 034 / 24 536 / 13 557 ms——输入落盘在
+本档**不构成瓶颈**（这正是"分两段测"要说清的事，而不是把 I/O 混进协议耗时里）。
+
 2. **接入层已验证**：`tests/test_psi_sum_backend.py`（32 项）与
    `tests/test_cli_psi_sum.py`（20 项）在**测试桩**下全绿。桩替换的是
    runtime 的"唯一进程启动点"`spawn_pjc` 与 capability 的 `probe_binary_flags`，

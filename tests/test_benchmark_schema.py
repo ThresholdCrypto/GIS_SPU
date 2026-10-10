@@ -285,7 +285,23 @@ class TestPsiCaProjection:
             assert record.compute_time == raw["psi_ca_execute_ms"]
             assert record.total_time == raw["total_ms"]
             assert record.status == raw["status"]
-            assert record.communication_bytes is None
+            # Phase 11 起通信量有值：协议消息载荷合计（口径见 §7.1）
+            assert record.communication_bytes == raw["total_bytes"]
+
+    def test_protocol_payload_is_split_by_direction(
+        self, psi_ca_records, psi_ca_raw
+    ):
+        for record, raw in zip(psi_ca_records, psi_ca_raw):
+            assert raw["comm_meter"] == "protobuf-payload"
+            assert raw["send_bytes"] > 0 and raw["recv_bytes"] > 0
+            assert raw["send_bytes"] + raw["recv_bytes"] == raw["total_bytes"]
+            assert record.metadata["send_bytes"] == raw["send_bytes"]
+            assert record.metadata["recv_bytes"] == raw["recv_bytes"]
+            assert record.metadata["total_bytes"] == raw["total_bytes"]
+            assert record.communication_bytes == raw["total_bytes"]
+            # 口径随数走：方向标签与计量名必须一起带出来
+            assert "Request" in raw["comm_direction"]
+            assert "ServerSetup" in raw["comm_direction"]
 
     def test_memory_is_the_runner_process_peak_rss(
         self, psi_ca_records, psi_ca_raw
@@ -351,6 +367,16 @@ class TestPsiSumProjection:
             assert record.metadata["peak_memory_mb"] == raw["peak_rss_mb"]
             assert record.communication_bytes == raw["total_bytes"]
             assert record.memory_bytes is not None
+
+    def test_input_io_time_comes_from_the_write_leg(
+        self, psi_sum_records, psi_sum_raw
+    ):
+        # Phase 11：PI-Sum 的输入 I/O 只计「输入 CSV 落盘」一段；
+        # 结果走 stdout，没有输出文件读取段，故产物里不该有 io_read_ms。
+        for record, raw in zip(psi_sum_records, psi_sum_raw):
+            assert raw["io_write_ms"] is not None
+            assert "io_read_ms" not in raw
+            assert record.metadata["input_io_time"] == raw["io_write_ms"]
 
     def test_sum_matches_the_constructed_expectation(
         self, psi_sum_records, psi_sum_raw
@@ -537,6 +563,18 @@ class TestMissingMetricsAreReal:
             if record.status != bs.STATUS_OK:
                 continue
             assert record.metadata["input_io_time"] is not None
+
+    def test_psi_sum_io_time_is_not_a_gap(self, psi_sum_records):
+        for record in psi_sum_records:
+            if record.status != bs.STATUS_OK:
+                continue
+            assert record.metadata["input_io_time"] is not None
+
+    def test_psi_ca_communication_is_not_a_gap(self, psi_ca_records):
+        for record in psi_ca_records:
+            if record.status != bs.STATUS_OK:
+                continue
+            assert record.communication_bytes is not None
 
 
 

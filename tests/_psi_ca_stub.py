@@ -16,6 +16,12 @@ import types
 #: 上游模块级属性清单（missing_api 核对用；桩必须齐全才能代表 2.0.6 形态）
 MODULE_ATTRS = ("client", "server", "DataStructure", "ServerSetup", "Request", "Response")
 
+#: 桩里的「消息载荷」基数 / 每条目增量（字节）。
+#: 只用来验证计量接线与方向拆分，**不代表真实编码长度**（真实长度由 protobuf
+#: 与上游实现决定，真机读数见 docs/PSI_CA_CAPABILITY.md §7.1）。
+PAYLOAD_BASE_BYTES = 16
+PAYLOAD_PER_ITEM_BYTES = 8
+
 
 class _DataStructure:
     RAW = "RAW"
@@ -27,15 +33,31 @@ class _Setup:
     def __init__(self, items):
         self.items = list(items)
 
+    def SerializeToString(self) -> bytes:
+        return b"S" * (
+            PAYLOAD_BASE_BYTES + PAYLOAD_PER_ITEM_BYTES * len(self.items)
+        )
+
 
 class _Request:
     def __init__(self, items):
         self.items = list(items)
 
+    def SerializeToString(self) -> bytes:
+        return b"Q" * (
+            PAYLOAD_BASE_BYTES + PAYLOAD_PER_ITEM_BYTES * len(self.items)
+        )
+
 
 class _Response:
     def __init__(self, request):
         self.request = request
+
+    def SerializeToString(self) -> bytes:
+        return b"P" * (
+            PAYLOAD_BASE_BYTES
+            + PAYLOAD_PER_ITEM_BYTES * len(self.request.items)
+        )
 
 
 class _Client:

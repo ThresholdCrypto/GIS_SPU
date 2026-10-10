@@ -30,16 +30,21 @@
       "impl": "openmined-psi",
       "impl_version": "2.0.6"
     },
-    "setup_ms": 0.838,
-    "psi_ca_execute_ms": 196.3267419996555,
-    "total_ms": 196.4063739978883,
-    "wall_ms": 197.313,
+    "setup_ms": 0.885,
+    "psi_ca_execute_ms": 190.5396229994949,
+    "total_ms": 190.60470499971416,
+    "wall_ms": 191.553,
     "timings_ms": {
-      "psi_execute_ms": 196.3267419996555,
-      "total_ms": 196.4063739978883
+      "psi_execute_ms": 190.5396229994949,
+      "total_ms": 190.60470499971416
     },
+    "send_bytes": 35840,
+    "recv_bytes": 71684,
+    "total_bytes": 107524,
+    "comm_meter": "protobuf-payload",
+    "comm_direction": "send=client→server（Request）；recv=server→client（ServerSetup + Response）",
     "memory_mb": 1.9,
-    "peak_rss_mb": 47.2,
+    "peak_rss_mb": 47.7,
     "agreement": true,
     "intersection_count": 512,
     "intersection_count_expected": 512
@@ -75,16 +80,21 @@
       "impl": "openmined-psi",
       "impl_version": "2.0.6"
     },
-    "setup_ms": 2.964,
-    "psi_ca_execute_ms": 755.1861380015907,
-    "total_ms": 755.3815399987798,
-    "wall_ms": 758.475,
+    "setup_ms": 2.975,
+    "psi_ca_execute_ms": 760.002782997617,
+    "total_ms": 760.1850799983367,
+    "wall_ms": 763.28,
     "timings_ms": {
-      "psi_execute_ms": 755.1861380015907,
-      "total_ms": 755.3815399987798
+      "psi_execute_ms": 760.002782997617,
+      "total_ms": 760.1850799983367
     },
+    "send_bytes": 143360,
+    "recv_bytes": 286724,
+    "total_bytes": 430084,
+    "comm_meter": "protobuf-payload",
+    "comm_direction": "send=client→server（Request）；recv=server→client（ServerSetup + Response）",
     "memory_mb": 2.8,
-    "peak_rss_mb": 50.0,
+    "peak_rss_mb": 50.5,
     "agreement": true,
     "intersection_count": 2048,
     "intersection_count_expected": 2048
@@ -120,16 +130,21 @@
       "impl": "openmined-psi",
       "impl_version": "2.0.6"
     },
-    "setup_ms": 12.421,
-    "psi_ca_execute_ms": 3027.8994430009334,
-    "total_ms": 3028.762599999027,
-    "wall_ms": 3041.724,
+    "setup_ms": 12.477,
+    "psi_ca_execute_ms": 3058.4827220009174,
+    "total_ms": 3059.212915999524,
+    "wall_ms": 3072.079,
     "timings_ms": {
-      "psi_execute_ms": 3027.8994430009334,
-      "total_ms": 3028.762599999027
+      "psi_execute_ms": 3058.4827220009174,
+      "total_ms": 3059.212915999524
     },
-    "memory_mb": 11.6,
-    "peak_rss_mb": 61.8,
+    "send_bytes": 573440,
+    "recv_bytes": 1146884,
+    "total_bytes": 1720324,
+    "comm_meter": "protobuf-payload",
+    "comm_direction": "send=client→server（Request）；recv=server→client（ServerSetup + Response）",
+    "memory_mb": 11.7,
+    "peak_rss_mb": 62.3,
     "agreement": true,
     "intersection_count": 8192,
     "intersection_count_expected": 8192

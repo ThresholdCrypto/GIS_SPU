@@ -1,0 +1,33 @@
+# PSI-Cardinality 档（openmined-psi 计数档）的依赖 —— **哈希固定**版
+#
+# 用法（安装即校验：拿不到这个产物、或哈希对不上，pip 直接失败，不会静默降级）：
+#   python -m pip install -r requirements-psi-ca.txt
+#
+# 为什么钉哈希（而不只钉版本号）：
+#   openmined-psi 是外部二进制轮子（内含 ECDH/BloomFilter 原生实现），本项目
+#   依赖它给出「交集基数」这种对外结论。只钉版本号挡不住「版本号没变、产物
+#   被换掉」的静默漂移。哈希值取自 PyPI 官方 JSON API
+#   （https://pypi.org/pypi/openmined-psi/2.0.6/json 的 digests.sha256；
+#   protobuf 同法取自 https://pypi.org/pypi/protobuf/6.30.2/json），
+#   与 docs/PSI_CA_CAPABILITY.md §8 的表格逐字一致。
+#
+# 平台范围：本档只在 Linux / WSL2 跑（PyPI 上 openmined-psi **没有 Windows
+#   轮子**）。下表覆盖 Python 3.10 / 3.11 的 manylinux x86_64 轮子：
+#   - manylinux_2_39 = Ubuntu 24.04 一类（glibc >= 2.39；本仓库 WSL2 实测环境）
+#   - manylinux_2_35 = Ubuntu 22.04 一类（glibc >= 2.35）
+#   换平台/换小版本（cp312+）前，先取该轮子的 sha256 再加一行——不要放宽成
+#   「不校验」。若所在平台不在表内，pip 会报「hashes 不匹配」而不是装个别的。
+
+--require-hashes
+--only-binary=:all:
+
+openmined-psi==2.0.6 \
+    --hash=sha256:57992c9f968f9123f34d5d9504a322b8e6449dddac91e17b2a7cad7eedfd7efa \
+    --hash=sha256:ae39769a37b997868894c432a9b1a84ba46d7f3277078a5927902753344baf06 \
+    --hash=sha256:346b44c634aa487cc4a7928d39995382a582f832cb3a2b5e10efaf278ac4279b \
+    --hash=sha256:2981aa1b02358d996e6874cfb76e9b833c52f16cc832d3917b9333c8b0bc985e
+
+# openmined-psi 的硬依赖（其元数据 Requires-Dist: protobuf==6.30.2）
+protobuf==6.30.2 \
+    --hash=sha256:4f6c687ae8efae6cf6093389a596548214467778146b7245e886f35e1485315d \
+    --hash=sha256:ae86b030e69a98e08c77beab574cbcb9fff6d031d57209f574a5aea1445f4b51

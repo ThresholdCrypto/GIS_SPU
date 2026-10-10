@@ -25,7 +25,7 @@ Python 地理业务代码
 
 > **项目进展说明**（完成度、里程碑时间线、已验证 / 未落地、关键实测结论、复现方式）
 > 见 [`docs/PROGRESS.md`](docs/PROGRESS.md)。当前 `main` 共 **31 个提交**、
-> **1205 项测试全部通过、0 跳过**（2026-10-10 于 WSL2 + spu 0.9.5 复跑）。
+> **1212 项测试全部通过、0 跳过**（2026-10-10 于 WSL2 + spu 0.9.5 复跑）。
 
 ## 快速开始
 
@@ -47,7 +47,7 @@ bash scripts/setup_wsl_spu.sh         # 一键：系统依赖 + Python 3.11 + �
 
 ```bash
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 1205 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 1212 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -1104,10 +1104,10 @@ tests/test_spu_backend.py         52 项   协议/环宽规范化、能力门控
 tests/test_spu_profile.py         13 项   SPU 通信量剖析：pphlo 日志解析与 fd 级捕获（P2-2）
 tests/test_benchmark_mpc.py       70 项   MPC 基线：用例构造、协议×算子×环宽矩阵、通信量采集、策略 A/B、诚实留空、四个探针开关的产物路径与互斥
 tests/test_benchmark.py           33 项   PSI 基线生成器确定性/合法性、记录 schema、unavailable 诚实规则、写入器、真实 RR22 记录
-tests/test_benchmark_schema.py   65 项   统一 benchmark metadata（Phase 7 / 9 / 10）：四族（PSI / PSI-CA / PI-SUM / MPC）13 字段投影、缺口在真实产物上锁死、跨协议比较（只比 ok 行 / 不同规模不比 / 重复取中位数）、Phase 10 计量投影（send / recv / total / peak）
+tests/test_benchmark_schema.py   69 项   统一 benchmark metadata（Phase 7 / 9 / 10 / 11）：四族（PSI / PSI-CA / PI-SUM / MPC）13 字段投影、缺口在真实产物上锁死、跨协议比较（只比 ok 行 / 不同规模不比 / 重复取中位数）、Phase 10/11 计量投影（send / recv / total / peak / input I/O）
 tests/test_psi_backend.py         82 项   PSI 能力/协议归一化/真实求交/空输入/泄漏面/诚实留空/日志卫生/带噪与精确披露/RR22 参数链路
-tests/test_psi_ca_backend.py      16 项   PSI-Cardinality 计数档（第四后端族）：能力/API 核对、只出交集基数、编译期拒绝契约、执行装配与真机判读
-tests/test_psi_sum_backend.py     32 项   PI-Sum 交集内求和档（第五后端族）：上游 flag 形态核对、编译期拒绝清单、执行装配与真机结果判读
+tests/test_psi_ca_backend.py      18 项   PSI-Cardinality 计数档（第四后端族）：能力/API 核对、只出交集基数、编译期拒绝契约、执行装配与真机判读、协议消息载荷计量（Phase 11）
+tests/test_psi_sum_backend.py     33 项   PI-Sum 交集内求和档（第五后端族）：上游 flag 形态核对、编译期拒绝清单、执行装配与真机结果判读、输入 I/O 计时（Phase 11）
 tests/test_cli_psi_ca.py          13 项   CLI 计数档 `--psi-count`：开关生效、与 `--psi-protocol`/`--psi-curve` 互斥提示、报告
 tests/test_cli_psi_sum.py         20 项   CLI 求和档 `--psi-sum`：开关生效、互斥提示、报告
 tests/test_external_psi_planning.py  21 项   外部 PSI 执行档接入方案层（Phase 8）：Backend 列跟着 `--psi-count`/`--psi-sum` 走、档与结果策略/泄漏面绑定、与两个 backends 逐项交叉断言
@@ -1128,11 +1128,11 @@ tests/test_execution_chain.py     15 项   链式执行使用上一步 PSI 输�
 tests/test_rr22_geosot.py          8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
 tests/test_end_to_end.py          80 项   全流程、状态表、CLI（协议/曲线/子集/RR22/布局形状/MPC 协议）、MPC 结果策略随步骤带出 / CLI 打印、六类失败报告、编译入口参数、诊断聚合、确定性
                                   ─────
-                                  1205 通过 / 0 跳过
+                                  1212 通过 / 0 跳过
 ```
 
 在 **WSL2 + Linux + Python 3.11.16 + jax 0.4.34 + spu 0.9.5** 上，
-**1205 项全部通过，无跳过**。真实执行隐私协议的用例：
+**1212 项全部通过，无跳过**。真实执行隐私协议的用例：
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
@@ -1392,7 +1392,7 @@ DistanceLE  QuantizedVector  MPC/SPU  verified
 ```bash
 # WSL2 / Linux 上（Python 3.10 或 3.11）
 pip install -r requirements-spu.txt      # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q               # 1205 项全部通过（0 跳过）
+python -m pytest tests/ -q               # 1212 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -1669,7 +1669,7 @@ backends/
 
 - ~~在 WSL2 / Linux + Python 3.11 环境下接通真实 SPU 模拟，
   把 `tests/test_spu_backend.py::TestRealSpuSimulation` 从 skip 变为通过~~
-  ——**已闭合**：本机 `1205 passed / 0 failed / 0 skipped`，无一条真实执行用例被跳过。
+  ——**已闭合**：本机 `1212 passed / 0 failed / 0 skipped`，无一条真实执行用例被跳过。
 - 补 `FM128` 路径测试（64 位键的溢出场景）。
 - ~~补不同协议的代价实测（`semi2k` / `aby3` / `cheetah`）~~ ——**已闭合（本版 P1）**：
   `tests/benchmarks/benchmark_mpc.py` 已把 3 个 MPC 算子 × 5 个 SPU 协议 × 3 个环宽
@@ -1856,9 +1856,11 @@ geo-secure build examples/distance_check.py \
 - 三条 PSI 路径泄漏承诺互不相同（`intersection-body` / `count-only` / `count+sum`），
   记录在 `metadata.protocol_leak`，不混成一个“PSI”；
 - §九 清单 21 项逐条登记去向（`common:` / `metadata:` / `missing`），
-  某族**确实没采集**的指标显式登记成缺口（Phase 10 后 PI-Sum 侧只剩
-  `encode_time` / `dedup_time` / `input_io_time` / `semantic_processing_time` /
-  `layout_agreement` 五项），并由测试在真实产物上锁死；
+  某族**确实没采集**的指标显式登记成缺口（Phase 11 后 PI-Sum 侧只剩
+  `encode_time` / `dedup_time` / `semantic_processing_time` /
+  `layout_agreement` 四项；PSI-CA 侧剩 `encode_time` / `dedup_time` /
+  `input_io_time` / `semantic_processing_time` / `layout_agreement` 五项），
+  并由测试在真实产物上锁死；
 - 两条外部路径各有基线运行器（`tests/benchmarks/benchmark_psi_ca.py` /
   `benchmark_psi_sum.py`），真实基线产物 `docs/psi_ca_benchmark_baseline.json`
   （3 条）与 `docs/psi_sum_benchmark_baseline.json`（3 条）已入库；
@@ -1866,10 +1868,14 @@ geo-secure build examples/distance_check.py \
   一条命令重算两条外部基线 + 统一层测试：`bash scripts/verify_external_baselines_wsl.sh`；
 - **Phase 10 起** PI-Sum 记录带 `send_bytes` / `recv_bytes` / `total_bytes` /
   `peak_rss_mb`：投影层 `communication_bytes` / `memory_bytes` 两栏不再留空；
+- **Phase 11 起** PSI-CA 记录带协议消息载荷（`comm_meter = "protobuf-payload"`，
+  进程内链路 ⇒ 是网络字节的**下界**），PI-Sum 记录带输入 I/O 计时
+  `io_write_ms`；PSI-CA 档依赖按 `requirements-psi-ca.txt` **哈希固定**
+  （`--require-hashes`，哈希不符即装不上）；
 - 跨协议比较 `compare_protocols`：只比 `ok` 行、不同族/算子/规模直接报错、
   同用例重测取中位数并带出样本数与极差。
 
-详见 `docs/BENCHMARK_SCHEMA.md`；测试 `tests/test_benchmark_schema.py`（65 项）。
+详见 `docs/BENCHMARK_SCHEMA.md`；测试 `tests/test_benchmark_schema.py`（69 项）。
 
 ---
 

@@ -30,6 +30,9 @@
     都以 `False`（不要交集本体）创建。
 - 发行版：`openmined-psi==2.0.6`（PyPI），依赖 `protobuf==6.30.2`；
   轮子只有 macOS 与 manylinux（cp39–cp313），**Windows 无轮子**。
+- **供应链固定（Phase 11）**：依赖按 `requirements-psi-ca.txt` **哈希固定**安装
+  （`--require-hashes`：拿不到钉死的产物、或哈希对不上，pip 直接失败）；钉死的
+  wheel sha256 与实测正反例见 §8.1。
 
 本项目不预设 API：`backends/psi_ca_backend/capability.py` 在运行期核对模块属性与
 方法清单；形态不符时 `runnable=False` 并列出缺失项，不做"猜 API"的执行。
@@ -99,14 +102,57 @@ server = 右侧输入
   `backend` 保留登记值、实际执行族存 `execution_backend`，档强制的 `REVEAL_COUNT`
   与泄漏码 `count-only` 随 `reasons` 留痕；由 `tests/test_external_psi_planning.py`
   锁定（含环境缺失时 Backend 列仍为 `PSI-CA` 的分支）。
+- **通信量计量（Phase 11，2026-10-10，真机 WSL2）**：量**协议消息的
+  protobuf 载荷**（口径与依据见 §7.1）。三条基线全部 `ok`、`agree=true` 保持：
+  载荷合计 107 524 / 430 084 / 1 720 324 B（N=2^10 / 2^12 / 2^14），
+  与元素数严格线性（send 35 B/元素、recv 70 B/元素）。
 - **仍未验证**：`GCS` / `BloomFilter` 近似档（未接）、跨机部署（当前是进程内链路）、
   近似档的 fpr 语义（RAW 档上游注明忽略 fpr）。
+
+### 7.1 通信量口径与读数（Phase 11，2026-10-10）
+
+**口径：量「协议消息的 protobuf 载荷」，不是网络观测。**
+
+本档是**进程内链路**——client / server 对象同进程、没有 socket，可观测的网络
+为零；而真实部署里过网的就是这三条消息。所以量它们的序列化长度
+（上游消息对象都有 `SerializeToString()`）：
+
+| 方向 | 由哪些消息构成 | 依据 |
+|---|---|---|
+| `send_bytes`（client→server） | `Request` | 上游 proto 注释：Request「sent to the server」 |
+| `recv_bytes`（server→client） | `ServerSetup` + `Response` | Response「sent back to client」；`ServerSetup` 只由 `server.CreateSetupMessage` 产出、只由 `client.GetIntersectionSize` 消费，必须传到 client |
+
+**不含**任何传输封装（gRPC / HTTP2 / TLS）与 TCP/IP 头——真实部署的网络字节
+**≥** 这里报的数：这是一条**下界**，不是等号。计量名随数走：产物里
+`comm_meter = "protobuf-payload"`、`comm_direction` 写明方向；上游 API 漂移
+（消息对象没有 `SerializeToString`）时**留空 + 注明**，不填 0、不推测。
+
+实测（WSL2 + `openmined-psi==2.0.6`，产物 `docs/psi_ca_benchmark_baseline.json`）：
+
+| 规模 | send | recv | 合计 | 每元素（send / recv） |
+|---|---:|---:|---:|---|
+| N=2^10 | 35 840 B | 71 684 B | 107 524 B | 35.0 / 70.0 B |
+| N=2^12 | 143 360 B | 286 724 B | 430 084 B | 35.0 / 70.0 B |
+| N=2^14 | 573 440 B | 1 146 884 B | 1 720 324 B | 35.0 / 70.0 B |
+
+逐条消息（另跑 N=1024 / 4096 取证，RAW 档一条元素一个条目）：`Request = 35n`、
+`Response = 35n`、`ServerSetup = 35n + 4`，即 `send = 35n`、`recv = 70n + 4`
+——三档读数与公式完全吻合。
+
+与另外两条 PSI 路径的口径差别（别混着比）：
+
+| 路径 | 量的东西 | 含传输封装？ |
+|---|---|---|
+| PSI（libpsi 求交） | **未采集**（需 SDK 计量钩子，仍开放） | — |
+| PSI-CA（本档） | 协议消息 protobuf 载荷 | 否（进程内链路 ⇒ 下界） |
+| PI-Sum | 回环 TCP 中继逐字节（应用层） | 含 gRPC / HTTP2，不含 TCP/IP 头 |
 
 ## 8. WSL2 / Linux 复跑（已于 2026-10-09 真机执行）
 
 ```bash
-# 1) 安装（Linux / WSL2）
-/opt/miniconda3/envs/spu311/bin/python -m pip install openmined-psi==2.0.6
+# 1) 安装（Linux / WSL2；**哈希固定**：版本 + wheel sha256，拿不到钉死的产物
+#    或哈希对不上，pip 直接失败——不会静默换个产物装上）
+/opt/miniconda3/envs/spu311/bin/python -m pip install -r requirements-psi-ca.txt
 
 # 2) 环境核查（期望 runnable=true、installed=true）
 /opt/miniconda3/envs/spu311/bin/python -m geosecure.cli psi-ca-check
@@ -147,3 +193,35 @@ request = client.CreateRequest(["2", "3", "9"])
 response = server.ProcessRequest(request)
 print(client.GetIntersectionSize(setup, response))   # 期望 2
 ```
+
+### 8.1 依赖哈希固定（Phase 11，2026-10-10 实测）
+
+`requirements-psi-ca.txt` 用 `--require-hashes` 把本档依赖钉到**产物**级：版本号
+没变、产物被换，同样装不上（不是"提示一下"）。哈希取自 PyPI 官方 JSON API 的
+`digests.sha256`（来源 URL 写在 requirements 文件头）。
+
+| 包 | 版本 | 轮子 | sha256 |
+|---|---|---|---|
+| openmined-psi | 2.0.6 | cp311 manylinux_2_39 x86_64 | `346b44c634aa487cc4a7928d39995382a582f832cb3a2b5e10efaf278ac4279b` |
+| openmined-psi | 2.0.6 | cp311 manylinux_2_35 x86_64 | `2981aa1b02358d996e6874cfb76e9b833c52f16cc832d3917b9333c8b0bc985e` |
+| openmined-psi | 2.0.6 | cp310 manylinux_2_39 x86_64 | `57992c9f968f9123f34d5d9504a322b8e6449dddac91e17b2a7cad7eedfd7efa` |
+| openmined-psi | 2.0.6 | cp310 manylinux_2_35 x86_64 | `ae39769a37b997868894c432a9b1a84ba46d7f3277078a5927902753344baf06` |
+| protobuf | 6.30.2 | cp39-abi3-manylinux2014_x86_64 | `4f6c687ae8efae6cf6093389a596548214467778146b7245e886f35e1485315d` |
+| protobuf | 6.30.2 | py3-none-any | `ae86b030e69a98e08c77beab574cbcb9fff6d031d57209f574a5aea1445f4b51` |
+
+同一版本列了多份轮子：pip 只会在这几份**已核过**的产物里按平台挑（本仓库 WSL2
+实际命中 `manylinux_2_39`），挑不到就失败——不会放宽成"不校验"。
+
+实测证据（WSL2，pip 26.2.1）：
+
+- 正例 `pip install -r requirements-psi-ca.txt`：两条都 `Requirement already satisfied`，
+  版本与钉死值一致；
+- 正例（强制重解析、只下载不安装）：`--dry-run --force-reinstall --no-cache-dir`
+  → 下载 `openmined_psi-2.0.6-cp311-cp311-manylinux_2_39_x86_64.whl` 与
+  `protobuf-6.30.2-cp39-abi3-manylinux2014_x86_64.whl`，哈希校验通过；
+- 反例（把 openmined-psi 的 4 个哈希全改掉）：pip 报
+  `THESE PACKAGES DO NOT MATCH THE HASHES FROM THE REQUIREMENTS FILE`、`rc=1`，
+  并回显实际值 `346b44c6…4279b`——与上表逐字一致（顺手复核了 pin 的真实性）。
+
+复跑脚本已强制这一步：`scripts/verify_external_baselines_wsl.sh` 的 **1/5**
+核对「本环境装的版本 == 钉死版本」，不一致直接停（不给"用了别的版本还能出基线"的口子）。

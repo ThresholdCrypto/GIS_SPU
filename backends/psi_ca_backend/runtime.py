@@ -96,6 +96,37 @@ def _agree_count(reference: Any, count: int) -> bool | None:
     return expected == count
 
 
+#: 通信量计量口径名：协议消息的 protobuf 载荷（不是网络观测；口径见
+#: docs/PSI_CA_CAPABILITY.md §7.1）。
+PSI_CA_COMMUNICATION_METER = "protobuf-payload"
+
+
+def _message_payload_sizes(
+    setup: Any, request: Any, response: Any
+) -> dict[str, int] | None:
+    """三条协议消息的序列化载荷（字节）；任一取不到就返回 None（不填 0）。
+
+    之所以量「消息载荷」而不是「网络字节」：本档是**进程内链路**
+    （client / server 对象同进程、无 socket），没有可观测的网络；而在上线的
+    真实部署里，这三条消息就是要过网的全部内容——方向出自上游 proto 注释
+    （`private_set_intersection/proto/psi.proto`：Request 发往 server、
+    Response 发回 client）与 API 形态（ServerSetup 只由 server 产出、
+    只由 client 消费，故必须传到 client）。
+    """
+
+    sizes: dict[str, int] = {}
+    messages = (("Request", request), ("ServerSetup", setup), ("Response", response))
+    for name, message in messages:
+        serializer = getattr(message, "SerializeToString", None)
+        if not callable(serializer):
+            return None
+        try:
+            sizes[name] = len(serializer())
+        except Exception:
+            return None
+    return sizes
+
+
 def run_psi_cardinality(
     left: Sequence[int],
     right: Sequence[int],
@@ -236,6 +267,7 @@ def run_psi_cardinality(
         return result
 
     # ---------------- 协议执行（调用上游实现；全程内存消息） ----------------
+    payload: dict[str, int] | None = None
     try:
         psi_mod = capability.import_openmined_psi()
         client_items = [str(code) for code in left_codes]
@@ -252,6 +284,7 @@ def run_psi_cardinality(
         request = client.CreateRequest(client_items)
         response = server.ProcessRequest(request)
         count = int(client.GetIntersectionSize(setup, response))
+        payload = _message_payload_sizes(setup, request, response)
     except Exception as exc:
         result.status = "error"
         result.error = f"PSI-CA 执行失败：{type(exc).__name__}: {exc}"
@@ -260,6 +293,32 @@ def run_psi_cardinality(
 
     result.timings_ms["psi_execute_ms"] = (time.perf_counter() - _t_enter) * 1000.0
     result.status = "ok"
+    if payload is None:
+        result.notes = result.notes + (
+            "未能取到协议消息载荷（上游 API 漂移：消息对象缺少 SerializeToString）"
+            "——通信量留空，不以 0 或推测值填充",
+        )
+    else:
+        send_bytes = payload["Request"]
+        recv_bytes = payload["ServerSetup"] + payload["Response"]
+        result.communication = {
+            "send_bytes": send_bytes,
+            "recv_bytes": recv_bytes,
+            "total_bytes": send_bytes + recv_bytes,
+            "client_to_server_bytes": send_bytes,
+            "server_to_client_bytes": recv_bytes,
+            "by_message": dict(payload),
+            "meter": PSI_CA_COMMUNICATION_METER,
+            "direction": (
+                "send=client→server（Request）；"
+                "recv=server→client（ServerSetup + Response）"
+            ),
+            "note": (
+                "协议三条消息的 protobuf 载荷（SerializeToString 实测）；"
+                "本档是进程内链路、无 socket，故不含任何传输封装"
+                "（gRPC / HTTP2 / TLS）与 TCP/IP 头——真实部署的网络字节 ≥ 此值"
+            ),
+        }
     result.intersection_count = count
     result.intersection_unique_count = count
     result.value = count

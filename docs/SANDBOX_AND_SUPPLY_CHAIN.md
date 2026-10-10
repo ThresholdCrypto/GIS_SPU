@@ -19,6 +19,8 @@ Bazel 的第三方依赖、pip/conda 包）。控件只有两个抓手：
 |---|---|---|
 | 上游源码 `google/private-join-and-compute` | commit `950c5e4c88d7effe85147beb7856152f7c53394b`（2026-03-09） | `git rev-parse HEAD` 断言相等，不等即 `die` |
 | `bazelisk`（Bazel 启动器） | `v1.29.0` 的 `bazelisk-linux-amd64` | `sha256sum -c`，期望 `5a408715e932c0250d28bd84555f12edbf70117de42f9181691c736eacc4a992` |
+| `openmined-psi`（PSI-CA 依赖，Phase 11） | `2.0.6` 的 manylinux 轮子（cp310 / cp311 × manylinux_2_35 / _2_39） | `pip install --require-hashes`（清单 `requirements-psi-ca.txt`），哈希不符即失败；实测正反例见 `docs/PSI_CA_CAPABILITY.md` §8.1 |
+| `protobuf`（同上依赖） | `6.30.2`（manylinux2014_x86_64 / py3-none-any） | 同上（同一个哈希固定清单） |
 
 改动全在 `scripts/verify_pi_sum_wsl.sh`：不再用 `releases/latest`、
 不再 `clone` 默认分支最新；两者都可以用同名环境变量覆盖
@@ -46,7 +48,9 @@ EXPECT = 950c5e4c88d7effe85147beb7856152f7c53394b
 
 - **Bazel 自己拉的第三方依赖**（absl / grpc / protobuf…）：由上游 `WORKSPACE`
   的 `http_archive` 声明与校验，本仓库不改上游源码，这一层不在本项目控制内。
-- **pip / conda 依赖**：`requirements*.txt` 只钉版本号，**没做 hash pinning**。
+- **pip / conda 依赖**：`requirements-jax.txt` / `requirements-spu.txt` 只钉版本号，
+  **没做 hash pinning**；PSI-CA 档已闭合这一项（`requirements-psi-ca.txt`，
+  Phase 11，`--require-hashes` + 正反例实测，见 `docs/PSI_CA_CAPABILITY.md` §8.1）。
 - **上游 commit 无签名**：GitHub API 显示该 commit `verified: false`（unsigned）。
   钉死只防「上游漂移」，不防「上游投毒」。
 - **SPU wheel**：来源与版本见 `requirements-spu.txt` 与

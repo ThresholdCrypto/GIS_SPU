@@ -125,7 +125,8 @@ FIELD_SEMANTICS: Mapping[str, str] = {
     "communication_bytes": (
         "发送 + 接收字节 = §九 的 send_bytes + recv_bytes。"
         "MPC = comm_total_bytes；PI-Sum = 回环中继总字节（Phase 10）；"
-        "PSI / PSI-CA 基线未采集通信量（None）"
+        "PSI-CA = 协议消息的 protobuf 载荷（Phase 11，进程内链路、非网络观测，"
+        "见 PSI_CA_CAPABILITY.md §7.1）；PSI（libpsi）基线未采集（None）"
     ),
     "total_time": "端到端耗时（毫秒）。PSI 三档 = total_ms；MPC = wall_ms（repeat>1 时是中位数）",
     "memory_bytes": (
@@ -163,8 +164,9 @@ TASK_DOC_METRICS: Mapping[str, TaskDocMetric] = {
     ),
     "input_io_time": TaskDocMetric(
         "metadata:input_io_time",
-        "PSI = io_write_ms + io_read_ms；MPC 无 IO；PSI-CA 全程内存（无 IO 步骤）；"
-        "PI-Sum 落盘输入 CSV 但未单独计时（缺口按族登记在 MISSING_METRICS）",
+        "PSI = io_write_ms + io_read_ms；PI-Sum = io_write_ms（只计输入 CSV 落盘段，"
+        "结果走 stdout 无读取段）；MPC 无 IO；PSI-CA 全程内存（无 IO 步骤，"
+        "按族登记在 MISSING_METRICS）",
     ),
     "protocol_time": TaskDocMetric("common:compute_time"),
     "semantic_processing_time": TaskDocMetric(
@@ -174,17 +176,18 @@ TASK_DOC_METRICS: Mapping[str, TaskDocMetric] = {
     "send_bytes": TaskDocMetric(
         "metadata:send_bytes",
         "MPC = comm_send_bytes；PI-Sum = 中继 client→server 字节（Phase 10）；"
-        "PSI / PSI-CA 未采集",
+        "PSI-CA = client 的 Request 载荷（Phase 11）；PSI（libpsi）未采集",
     ),
     "recv_bytes": TaskDocMetric(
         "metadata:recv_bytes",
         "MPC = comm_recv_bytes；PI-Sum = 中继 server→client 字节（Phase 10）；"
-        "PSI / PSI-CA 未采集",
+        "PSI-CA = server 的 ServerSetup + Response 载荷（Phase 11）；"
+        "PSI（libpsi）未采集",
     ),
     "total_bytes": TaskDocMetric(
         "metadata:total_bytes",
         "MPC = comm_total_bytes；PI-Sum = send + recv（Phase 10）；"
-        "PSI / PSI-CA 未采集",
+        "PSI-CA = send + recv（Phase 11）；PSI（libpsi）未采集",
     ),
     "peak_memory": TaskDocMetric("common:memory_bytes", "§九 的 peak_memory"),
     "status": TaskDocMetric("common:status"),
@@ -213,14 +216,10 @@ MISSING_METRICS: Mapping[str, tuple[str, ...]] = {
         "input_io_time",
         "semantic_processing_time",
         "layout_agreement",
-        "send_bytes",
-        "recv_bytes",
-        "total_bytes",
     ),
     BENCHMARK_FAMILY_PSI_SUM: (
         "encode_time",
         "dedup_time",
-        "input_io_time",
         "semantic_processing_time",
         "layout_agreement",
     ),
@@ -418,6 +417,10 @@ class PsiCaBenchmarkMetadata:
     layout_id: str | None
     agreement: bool | None
     protocol_time: float | None
+    #: Phase 11 计量：协议消息的 protobuf 载荷（未计量时为 None，不填 0）
+    send_bytes: float | None
+    recv_bytes: float | None
+    total_bytes: float | None
     peak_memory_mb: float | None
     raw: Mapping[str, Any] = dataclass_field(repr=False)
 
@@ -452,6 +455,8 @@ class PsiSumBenchmarkMetadata:
     intersection_sum: int | None
     intersection_sum_expected: int | None
     protocol_time: float | None
+    #: Phase 11 计量：输入 CSV 落盘段耗时（ms；结果走 stdout，无读取段）
+    input_io_time: float | None
     #: Phase 10 计量：回环中继两方向字节数（未计量时为 None，不填 0）
     send_bytes: float | None
     recv_bytes: float | None
@@ -554,6 +559,9 @@ def metadata_from_psi_ca_record(raw: Mapping[str, Any]) -> PsiCaBenchmarkMetadat
         layout_id=_text(raw.get("layout_id")),
         agreement=_flag(raw.get("agreement")),
         protocol_time=_number(raw.get("psi_ca_execute_ms")),
+        send_bytes=_number(raw.get("send_bytes")),
+        recv_bytes=_number(raw.get("recv_bytes")),
+        total_bytes=_number(raw.get("total_bytes")),
         peak_memory_mb=_number(raw.get("peak_rss_mb")),
         raw=raw,
     )
@@ -585,6 +593,7 @@ def metadata_from_psi_sum_record(raw: Mapping[str, Any]) -> PsiSumBenchmarkMetad
         intersection_sum=_integer(raw.get("intersection_sum")),
         intersection_sum_expected=_integer(raw.get("intersection_sum_expected")),
         protocol_time=_number(raw.get("pi_sum_execute_ms")),
+        input_io_time=_number(raw.get("io_write_ms")),
         send_bytes=_number(raw.get("send_bytes")),
         recv_bytes=_number(raw.get("recv_bytes")),
         total_bytes=_number(raw.get("total_bytes")),
@@ -692,8 +701,8 @@ def psi_ca_record(raw: Mapping[str, Any]) -> CommonBenchmarkRecord:
         ),
         result_size=_integer(raw.get("intersection_count")),
         compute_time=metadata.protocol_time,
-        # 本档未采集通信量：不填 0（缺口见 MISSING_METRICS["PSI-CA"]）
-        communication_bytes=None,
+        # Phase 11：协议消息载荷合计（进程内链路；口径见 PSI_CA_CAPABILITY.md §7.1）
+        communication_bytes=metadata.total_bytes,
         total_time=_number(raw.get("total_ms")),
         memory_bytes=_mb_to_bytes(raw.get("peak_rss_mb")),
         status=_text(raw.get("status")) or STATUS_UNKNOWN,

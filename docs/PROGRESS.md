@@ -1,8 +1,8 @@
 # 项目进展说明：geo-secure 低门槛隐私计算编译器（MVP）
 
 > **口径对齐**：2026 年 9 月工作月报（任务 3）。
-> **截至 2026-10-10**，本地与远程 `main` 一致：**31 个提交**、
-> **1205 项自动化测试全部通过（0 失败 / 0 跳过）**。
+> **截至 2026-10-10**，本地与远程 `main` 一致：**32 个提交**、
+> **1212 项自动化测试全部通过（0 失败 / 0 跳过）**。
 > **验证环境**：WSL2 Ubuntu 26.04.1 / x86_64，Python 3.11.16，spu 0.9.5，jax 0.4.34。
 
 ---
@@ -65,6 +65,7 @@ def check_conflict(route, no_fly_zone):
 | 2026-10-10 | （本提交） | **Phase 8：外部 PSI 执行档接入方案层**——`--psi-count psi-ca` / `--psi-sum pjc` 的计划步骤带出 `execution_backend`（`PSI-CA` / `PI-Sum`），计划表与最终状态表的 Backend 列不再写 `PSI`（与状态词 `count-only` / `count-and-sum` 同一口径）；登记表 `EXTERNAL_PSI_FAMILY_*` 与 backends 逐项交叉断言（21 项测试） | **`1172 passed`**（WSL2 真机，0 跳过） |
 | 2026-10-10 | （本提交） | **Phase 9：统一 benchmark metadata 扩到四族**——`BENCHMARK_FAMILIES = PSI / PSI-CA / PI-SUM / MPC`；两条外部路径基线运行器（`benchmark_psi_ca.py` / `benchmark_psi_sum.py`）与真实基线产物入库（各 3 条、全部 ok）；缺口登记补三处（PI-Sum `peak_memory`、外部两档 `input_io_time` / `semantic_processing_time`）；统一层测试 48 → 64 项 | **`1188 passed`**（WSL2 真机，0 跳过） |
 | 2026-10-10 | （本提交） | **Phase 10：结果策略与密码协议解耦（MPC 侧）+ PI-Sum 计量（通信量 / 内存）**——统一入口 `backends/result_policy.py`（PSI / MPC 共用，`psi_backend` 旧路径再导出兼容）；策略表扩到 5 种（新增 `REVEAL_VALUE`，`WeightedSum` 默认）与族泄漏码（PSI `intersection-body` / MPC `output-only`，不宣称零泄漏、不得默认广播）；`run_spu_simulation(op=...)` 任何执行前解析策略并随结果 / CLI 带出 `policy` / `reveals`；PI-Sum 回环 TCP 中继通信量 + procfs `VmHWM` 峰值内存（默认开启，`--no-measure-*` 可关），基线三条重跑入库 | **`1205 passed`**（WSL2 真机，0 失败 / 0 跳过） |
+| 2026-10-10 | （本提交） | **Phase 11：外部两档计量补齐 + PSI-CA 依赖哈希固定**——①PSI-CA 通信量定口径并落地：量**协议消息的 protobuf 载荷**（`Request` / `ServerSetup` / `Response`，进程内链路 ⇒ 是网络字节的**下界**；产物带 `comm_meter="protobuf-payload"` 与方向），基线三条实测 107 524 / 430 084 / 1 720 324 B（严格线性：send 35 B/元素、recv 70 B/元素）；②PI-Sum 补 `input_io_time`（= `io_write_ms`，只计输入 CSV 落盘段，结果走 stdout 无读取段）；③`openmined-psi==2.0.6` + `protobuf==6.30.2` 按 `requirements-psi-ca.txt` **哈希固定**（`--require-hashes`，反例实测 rc=1），复跑脚本第 1/5 步强制核对版本；缺口收缩：PSI-CA 通信量、PI-Sum `input_io_time` 由「缺」转「有」 | **`1212 passed`**（WSL2 真机，0 失败 / 0 跳过） |
 
 > 「+ 工作区改动」表示该轮结果记录于提交前后的工作区状态，逐轮明细见
 > `docs/VERSION_COMPATIBILITY.md`。
@@ -205,11 +206,15 @@ def check_conflict(route, no_fly_zone):
    `semantic_processing_time`）；两条路径各配一个基线运行器
    （`tests/benchmarks/benchmark_psi_ca.py` / `benchmark_psi_sum.py`），
    真机基线产物入库（各 3 条、全部 ok），统一层测试 48 → 64 项。
-   **Phase 10 已闭合（本提交）**：MPC 侧的策略↔协议解耦（统一入口
+   **Phase 10 已闭合**：MPC 侧的策略↔协议解耦（统一入口
    `backends/result_policy.py` + `REVEAL_VALUE` + 泄漏码 `output-only`）、PI-Sum 的
    通信量计量（回环 TCP 中继）与子进程峰值内存（procfs `VmHWM` 探针）。
+   **Phase 11 已闭合（本提交）**：PSI-CA 通信量（协议消息载荷，进程内链路 ⇒
+   下界，读数见 `docs/PSI_CA_CAPABILITY.md` §7.1）与 PI-Sum 输入 I/O
+   （`io_write_ms`，见 `docs/PSI_SUM_CAPABILITY.md` §7.2）两处缺口补齐；
+   PSI-CA 依赖按 `requirements-psi-ca.txt` 哈希固定（含正反例实测）。
    **仍开放**：`REVEAL_TO_REGULATOR`（部署期模式，两族同判显式拒绝）、
-   libpsi 与 PSI-CA 两档的通信量计量（见 `docs/BENCHMARK_SCHEMA.md` §8）。
+   libpsi（求交档）的通信量计量（见 `docs/BENCHMARK_SCHEMA.md` §8）。
 
 ---
 
@@ -218,7 +223,7 @@ def check_conflict(route, no_fly_zone):
 ```bash
 git clone git@github.com:ThresholdCrypto/GIS_SPU.git && cd GIS_SPU
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 1205 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 1212 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 

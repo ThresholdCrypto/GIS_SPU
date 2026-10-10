@@ -15,8 +15,11 @@
 - 只采集**真实测得到**的量：运行时的 `timings_ms`（`psi_execute_ms` /
   `total_ms`）与**运行器进程**的 ru_maxrss（openmined-psi 是进程内库，
   该读数覆盖协议内存；与 libpsi 基线同一测量口径）；
-- 通信量本档**没有采集**：不填 0、不推测——缺口登记在
-  `backends/benchmark_schema.py` 的 `MISSING_METRICS`（族 `PSI-CA`）；
+- 通信量（Phase 11）：量**协议消息的 protobuf 载荷**（`send_bytes` =
+  client 的 `Request`；`recv_bytes` = server 的 `ServerSetup` + `Response`；
+  方向与口径依据见 `docs/PSI_CA_CAPABILITY.md` §7.1）。本档是进程内链路、
+  无 socket，故不含任何传输封装（gRPC / HTTP2 / TLS）与 TCP/IP 头——真实
+  部署的网络字节 ≥ 此值；上游 API 漂移以致取不到载荷时留空并注明，不填 0；
 - 执行失败如实记 `status="error"` + 错误原文；没有真正跑过的用例不填数字；
 - 能力不可用时**直接失败且不写产物**（退出码 1）——不能用 unavailable 行
   覆盖仓库里的真实基线。
@@ -80,6 +83,11 @@ _CSV_COLUMNS: tuple[str, ...] = (
     "psi_ca_execute_ms",
     "total_ms",
     "wall_ms",
+    "send_bytes",
+    "recv_bytes",
+    "total_bytes",
+    "comm_meter",
+    "comm_direction",
     "memory_mb",
     "peak_rss_mb",
     "agreement",
@@ -144,6 +152,11 @@ def _blank_record(n: int) -> dict[str, Any]:
         "total_ms": None,
         "wall_ms": None,
         "timings_ms": {},
+        "send_bytes": None,
+        "recv_bytes": None,
+        "total_bytes": None,
+        "comm_meter": None,
+        "comm_direction": None,
         "memory_mb": None,
         "peak_rss_mb": None,
         "agreement": None,
@@ -206,6 +219,13 @@ def run_case(n: int, *, report: Any = None) -> dict[str, Any]:
     record["protocol_leak"] = (run.result_policy or {}).get("protocol_leak")
     record["result_semantics"] = run.result_semantics
     record["note"] = "；".join(str(note) for note in run.notes)
+    # Phase 11：协议消息载荷计量（进程内链路；口径见 docs/PSI_CA_CAPABILITY.md §7.1）
+    communication = run.communication or {}
+    record["send_bytes"] = communication.get("send_bytes")
+    record["recv_bytes"] = communication.get("recv_bytes")
+    record["total_bytes"] = communication.get("total_bytes")
+    record["comm_meter"] = communication.get("meter")
+    record["comm_direction"] = communication.get("direction")
     return record
 
 
@@ -247,7 +267,7 @@ def _fmt_bool(value: Any) -> str:
 def _summary(records: Sequence[Mapping[str, Any]]) -> str:
     header = (
         f"{'case':22s}  {'status':12s} {'psi_ms':>9s} {'total_ms':>9s} "
-        f"{'rss_MB':>7s} {'agr':>5s}"
+        f"{'comm_B':>9s} {'rss_MB':>7s} {'agr':>5s}"
     )
     lines = [header]
     for record in records:
@@ -256,6 +276,7 @@ def _summary(records: Sequence[Mapping[str, Any]]) -> str:
             f"{str(record.get('status', '')):12s} "
             f"{_fmt_num(record.get('psi_ca_execute_ms')):>9s} "
             f"{_fmt_num(record.get('total_ms')):>9s} "
+            f"{_fmt_num(record.get('total_bytes')):>9s} "
             f"{_fmt_num(record.get('memory_mb')):>7s} "
             f"{_fmt_bool(record.get('agreement')):>5s}"
         )

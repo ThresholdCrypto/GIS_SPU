@@ -165,6 +165,19 @@ class TestRuntimeExecution:
         run_psi_intersection_sum(LEFT, RIGHT, left_values=VALUES, report=report)
         assert fake.results == [(2, 50)]
 
+    def test_input_csv_write_is_timed_and_registered(self, monkeypatch, tmp_path):
+        # Phase 11：输入 I/O 只计「两份输入 CSV 落盘」这一段；结果走 stdout，
+        # 本档没有输出文件读取段，故不产生 io_read_ms。
+        fake, report = _env(monkeypatch, tmp_path)
+        run = run_psi_intersection_sum(
+            LEFT, RIGHT, left_values=VALUES, report=report
+        )
+        assert run.status == "ok", run.error
+        assert "io_write_ms" in run.timings_ms
+        assert run.timings_ms["io_write_ms"] >= 0.0
+        assert "io_read_ms" not in run.timings_ms
+        assert run.timings_ms["io_write_ms"] <= run.timings_ms["total_ms"]
+
     def test_upstream_flags_match_the_checked_contract(self, monkeypatch, tmp_path):
         fake, report = _env(monkeypatch, tmp_path)
         run_psi_intersection_sum(LEFT, RIGHT, left_values=VALUES, report=report)

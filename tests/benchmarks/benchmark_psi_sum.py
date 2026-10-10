@@ -22,6 +22,8 @@
   （20 ms 间隔；`client_peak_rss_mb` / `server_peak_rss_mb`，`peak_rss_mb` 取
   较大者）。探针口径随记录登记（`comm_meter` / `memory_probe` / `note`），
   测不到就留空并注明，绝不填 0；
+- 输入 I/O（Phase 11）：`io_write_ms` = 把两份输入 CSV 落到本机临时目录的耗时
+  （单段计时；上游结果走 stdout，本档无输出文件读取段，故无 `io_read_ms`）；
 - 执行失败如实记 `status="error"` + 错误原文；没有真正跑过的用例不填数字；
 - 能力不可用时**直接失败且不写产物**（退出码 1）——不能用 unavailable 行
   覆盖仓库里的真实基线。
@@ -90,6 +92,7 @@ _CSV_COLUMNS: tuple[str, ...] = (
     "layout_id",
     "status",
     "setup_ms",
+    "io_write_ms",
     "pi_sum_execute_ms",
     "total_ms",
     "wall_ms",
@@ -158,6 +161,7 @@ def _blank_record(n: int) -> dict[str, Any]:
         "blockers": [],
         "protocol_params": {},
         "setup_ms": None,
+        "io_write_ms": None,
         "pi_sum_execute_ms": None,
         "total_ms": None,
         "wall_ms": None,
@@ -232,6 +236,7 @@ def run_case(
     record["status"] = run.status
     timings = dict(run.timings_ms)
     record["timings_ms"] = timings
+    record["io_write_ms"] = timings.get("io_write_ms")
     record["pi_sum_execute_ms"] = timings.get("pi_sum_execute_ms")
     record["total_ms"] = timings.get("total_ms")
     record["agreement"] = run.agreement
@@ -302,14 +307,16 @@ def _fmt_bool(value: Any) -> str:
 
 def _summary(records: Sequence[Mapping[str, Any]]) -> str:
     header = (
-        f"{'case':24s}  {'status':12s} {'proto_ms':>9s} {'total_ms':>9s} "
-        f"{'count':>6s} {'sum':>7s} {'comm_B':>9s} {'peak_MB':>8s} {'agr':>5s}"
+        f"{'case':24s}  {'status':12s} {'io_ms':>7s} {'proto_ms':>9s} "
+        f"{'total_ms':>9s} {'count':>6s} {'sum':>7s} {'comm_B':>9s} "
+        f"{'peak_MB':>8s} {'agr':>5s}"
     )
     lines = [header]
     for record in records:
         lines.append(
             f"{str(record.get('case', ''))[:24]:24s}  "
             f"{str(record.get('status', '')):12s} "
+            f"{_fmt_num(record.get('io_write_ms')):>7s} "
             f"{_fmt_num(record.get('pi_sum_execute_ms')):>9s} "
             f"{_fmt_num(record.get('total_ms')):>9s} "
             f"{_fmt_num(record.get('intersection_count')):>6s} "
