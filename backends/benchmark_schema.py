@@ -124,14 +124,15 @@ FIELD_SEMANTICS: Mapping[str, str] = {
     ),
     "communication_bytes": (
         "发送 + 接收字节 = §九 的 send_bytes + recv_bytes。"
-        "MPC = comm_total_bytes；PSI 三档基线未采集通信量（None）"
+        "MPC = comm_total_bytes；PI-Sum = 回环中继总字节（Phase 10）；"
+        "PSI / PSI-CA 基线未采集通信量（None）"
     ),
     "total_time": "端到端耗时（毫秒）。PSI 三档 = total_ms；MPC = wall_ms（repeat>1 时是中位数）",
     "memory_bytes": (
         "峰值常驻内存（字节）= §九 的 peak_memory。由 peak_rss_mb 换算；"
         "注意同名的 memory_mb 是「本次运行抬升高水位多少」，不是绝对值。"
-        "PSI-CA 的运行器进程读数覆盖协议（进程内库）；PI-Sum 协议在子进程里，"
-        "本档未采集（None，见 MISSING_METRICS）"
+        "PSI-CA 的运行器进程读数覆盖协议（进程内库）；PI-Sum = 两个子进程的 "
+        "procfs VmHWM 探针值取大者（Phase 10，采样口径见记录 note）"
     ),
     "status": "ok / unavailable / error（原样透传）",
 }
@@ -170,9 +171,21 @@ TASK_DOC_METRICS: Mapping[str, TaskDocMetric] = {
         "metadata:semantic_processing_time", "PSI = semantic_ms；其余族未记录"
     ),
     "total_time": TaskDocMetric("common:total_time"),
-    "send_bytes": TaskDocMetric("metadata:send_bytes", "MPC = comm_send_bytes；PSI 三档未采集"),
-    "recv_bytes": TaskDocMetric("metadata:recv_bytes", "MPC = comm_recv_bytes；PSI 三档未采集"),
-    "total_bytes": TaskDocMetric("metadata:total_bytes", "MPC = comm_total_bytes；PSI 三档未采集"),
+    "send_bytes": TaskDocMetric(
+        "metadata:send_bytes",
+        "MPC = comm_send_bytes；PI-Sum = 中继 client→server 字节（Phase 10）；"
+        "PSI / PSI-CA 未采集",
+    ),
+    "recv_bytes": TaskDocMetric(
+        "metadata:recv_bytes",
+        "MPC = comm_recv_bytes；PI-Sum = 中继 server→client 字节（Phase 10）；"
+        "PSI / PSI-CA 未采集",
+    ),
+    "total_bytes": TaskDocMetric(
+        "metadata:total_bytes",
+        "MPC = comm_total_bytes；PI-Sum = send + recv（Phase 10）；"
+        "PSI / PSI-CA 未采集",
+    ),
     "peak_memory": TaskDocMetric("common:memory_bytes", "§九 的 peak_memory"),
     "status": TaskDocMetric("common:status"),
     "layout_agreement": TaskDocMetric(
@@ -209,11 +222,7 @@ MISSING_METRICS: Mapping[str, tuple[str, ...]] = {
         "dedup_time",
         "input_io_time",
         "semantic_processing_time",
-        "peak_memory",
         "layout_agreement",
-        "send_bytes",
-        "recv_bytes",
-        "total_bytes",
     ),
     BENCHMARK_FAMILY_MPC: (
         "encode_time",
@@ -234,7 +243,6 @@ MISSING_RAW_KEYS: Mapping[str, tuple[str, ...]] = {
     "send_bytes": ("send_bytes", "comm_send_bytes"),
     "recv_bytes": ("recv_bytes", "comm_recv_bytes"),
     "total_bytes": ("total_bytes", "comm_total_bytes"),
-    "peak_memory": ("peak_memory_mb", "peak_memory", "peak_rss_mb", "memory_mb"),
 }
 
 #: 可比较的共有字段（数值型；其余字段不是「大小」）
@@ -444,6 +452,12 @@ class PsiSumBenchmarkMetadata:
     intersection_sum: int | None
     intersection_sum_expected: int | None
     protocol_time: float | None
+    #: Phase 10 计量：回环中继两方向字节数（未计量时为 None，不填 0）
+    send_bytes: float | None
+    recv_bytes: float | None
+    total_bytes: float | None
+    #: Phase 10 计量：两个子进程 procfs VmHWM 探针值取大者（MiB）
+    peak_memory_mb: float | None
     raw: Mapping[str, Any] = dataclass_field(repr=False)
 
     def to_dict(self) -> dict[str, Any]:
@@ -571,6 +585,10 @@ def metadata_from_psi_sum_record(raw: Mapping[str, Any]) -> PsiSumBenchmarkMetad
         intersection_sum=_integer(raw.get("intersection_sum")),
         intersection_sum_expected=_integer(raw.get("intersection_sum_expected")),
         protocol_time=_number(raw.get("pi_sum_execute_ms")),
+        send_bytes=_number(raw.get("send_bytes")),
+        recv_bytes=_number(raw.get("recv_bytes")),
+        total_bytes=_number(raw.get("total_bytes")),
+        peak_memory_mb=_number(raw.get("peak_rss_mb")),
         raw=raw,
     )
 
@@ -700,10 +718,10 @@ def psi_sum_record(raw: Mapping[str, Any]) -> CommonBenchmarkRecord:
         ),
         result_size=_integer(raw.get("intersection_count")),
         compute_time=metadata.protocol_time,
-        # 子进程路径未采集通信量 / 进程内存：不填 0（缺口见 MISSING_METRICS["PI-SUM"]）
-        communication_bytes=None,
+        # Phase 10：回环中继计量（未计量时为 None，不填 0）
+        communication_bytes=metadata.total_bytes,
         total_time=_number(raw.get("total_ms")),
-        memory_bytes=None,
+        memory_bytes=_mb_to_bytes(raw.get("peak_rss_mb")),
         status=_text(raw.get("status")) or STATUS_UNKNOWN,
         metadata=metadata.to_dict(),
     )

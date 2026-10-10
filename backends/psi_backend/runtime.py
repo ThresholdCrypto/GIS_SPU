@@ -221,6 +221,11 @@ class PsiRunResult:
     #: 执行段性能计量（毫秒）：io_write_ms / psi_execute_ms / io_read_ms /
     #: semantic_ms / total_ms。未发生的阶段不填键，不以 0 冒充"测得"。
     timings_ms: dict[str, float] = field(default_factory=dict)
+    #: 通信量计量（Phase 10；仅 PI-Sum 档的显式中继计量填，单位字节，
+    #: 方向口径见 meter/direction 两键）；未计量时为 None
+    communication: Mapping[str, Any] | None = None
+    #: 峰值内存计量（Phase 10；仅 PI-Sum 档的 procfs 探针填）；未计量时为 None
+    memory: Mapping[str, Any] | None = None
 
     @property
     def ok(self) -> bool:
@@ -260,6 +265,10 @@ class PsiRunResult:
             "error": self.error,
             "notes": list(self.notes),
             "timings_ms": dict(self.timings_ms),
+            "communication": (
+                dict(self.communication) if self.communication is not None else None
+            ),
+            "memory": dict(self.memory) if self.memory is not None else None,
         }
 
     def describe(self) -> str:

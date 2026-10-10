@@ -26,7 +26,8 @@
 | 交集**本体** | 接收方（`receiver_rank` 指定；默认 0） | 协议标准语义，**不随结果策略改变**；逐算子登记在 `PSI_OP_LEAKS` |
 | 交集**基数** | 接收方 / 广播路径 | `Intersects` 由基数推导布尔；基数本身已在接收方可见 |
 | 私有集合（非交集部分） | 不交给对方 | PSI 的设计目标（半诚实模型下） |
-| 业务层暴露 | 由 `ResultPolicy` 控制 | `REVEAL_BOOLEAN / COUNT / INTERSECTION`；见 `docs/PSI_RESULT_POLICY.md` |
+| 业务层暴露（PSI） | 由 `ResultPolicy` 控制 | `REVEAL_BOOLEAN / COUNT / INTERSECTION`；见 `docs/PSI_RESULT_POLICY.md` |
+| MPC 输出面（`DistanceLE` / `WeightedSum` / `TemporalOverlap`） | 指定输出方（SPU 模拟下为调用进程） | 登记码 `output-only`：输出在指定输出方揭示，输入与中间值在半诚实模型下不进输出面；**不宣称零泄漏**，不建模按方隔离，不得默认广播（任务书 §十）；`REVEAL_VALUE` 数值档与 `REVEAL_BOOLEAN` 分列 |
 | 输入规模 / 执行耗时 | 真实部署中的流量与时间侧信道 | 本仓库**建模**不到：进程内模拟不模拟网络观测者；真实部署需自行评估 |
 | 参与方绑定（谁提供了哪份输入） | 编译输出 `parties` / notes / CLI | 本仓库只登记调用方**声明的**绑定；不证明声明为真 |
 

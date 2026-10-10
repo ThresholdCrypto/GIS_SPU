@@ -336,9 +336,21 @@ class TestPsiSumProjection:
             assert record.compute_time == raw["pi_sum_execute_ms"]
             assert record.total_time == raw["total_ms"]
             assert record.status == raw["status"]
-            assert record.communication_bytes is None
-            # 子进程路径：运行器进程 RSS 不含协议内存，本档未采集（缺口已登记）
-            assert record.memory_bytes is None
+            # Phase 10 计量：中继总字节 + 子进程 VmHWM 峰值（记录里就有）
+            assert record.communication_bytes == raw["total_bytes"]
+            assert record.memory_bytes == int(round(raw["peak_rss_mb"] * 1024 * 1024))
+
+    def test_phase10_measurements_are_projected(self, psi_sum_records, psi_sum_raw):
+        for record, raw in zip(psi_sum_records, psi_sum_raw):
+            assert raw["comm_meter"] == "loopback-relay"
+            assert raw["memory_probe"] == "procfs-VmHWM"
+            assert raw["send_bytes"] + raw["recv_bytes"] == raw["total_bytes"]
+            assert record.metadata["send_bytes"] == raw["send_bytes"]
+            assert record.metadata["recv_bytes"] == raw["recv_bytes"]
+            assert record.metadata["total_bytes"] == raw["total_bytes"]
+            assert record.metadata["peak_memory_mb"] == raw["peak_rss_mb"]
+            assert record.communication_bytes == raw["total_bytes"]
+            assert record.memory_bytes is not None
 
     def test_sum_matches_the_constructed_expectation(
         self, psi_sum_records, psi_sum_raw

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 外部 PSI 执行档（PSI-CA / PI-Sum）基准基线一键复跑（Phase 9）。
+# 外部 PSI 执行档（PSI-CA / PI-Sum）基准基线一键复跑（Phase 9；PI-Sum 档 Phase 10 起默认带通信量 / 内存计量）。
 #
 #   用法：  bash scripts/verify_external_baselines_wsl.sh
 #

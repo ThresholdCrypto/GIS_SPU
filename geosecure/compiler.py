@@ -735,6 +735,8 @@ class Compiler:
 
             step_protocol = self._step_protocol(step)
             try:
+                # op 必须传：结果策略（§15）按算子解析并随结果登记——
+                # 新算子若未登记策略会在解析期 fail-fast，而不是默认广播。
                 run = run_spu_simulation(
                     fn,
                     [np.asarray(x) for x in examples],
@@ -744,6 +746,7 @@ class Compiler:
                     reference_fn=reference_fn if reference is not None else None,
                     tolerance=self.tolerance,
                     report=self._capability,
+                    op=step.operation,
                 )
             except ValueError as exc:
                 # run_spu_simulation 对非法协议/环宽是 fail-fast 抛 ValueError

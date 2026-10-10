@@ -25,6 +25,7 @@ from .profile import (
     enable_native_console_log,
     parse_comm_profile,
 )
+from ..result_policy import MPC_OP_REVEALS, resolve_result_policy
 from .capability import (
     CapabilityReport,
     check_capabilities,
@@ -68,6 +69,11 @@ class SpuRunResult:
     error: str | None = None
     notes: tuple[str, ...] = ()
     skipped_steps: tuple[str, ...] = ()
+    #: 结果策略（§15 / Phase 10）：业务层暴露什么 + 协议内部输出面什么
+    #: （分开登记；只有显式传入 op 的编译期调用才会填）
+    result_policy: Mapping[str, Any] | None = None
+    #: MPC 输出面登记（`MPC_OP_REVEALS` 原文）；未登记算子为提示句
+    reveals: str = ""
 
     @property
     def ok(self) -> bool:
@@ -96,6 +102,10 @@ class SpuRunResult:
             "error": self.error,
             "notes": list(self.notes),
             "skipped_steps": list(self.skipped_steps),
+            "result_policy": (
+                dict(self.result_policy) if self.result_policy is not None else None
+            ),
+            "reveals": self.reveals,
         }
 
     def describe(self) -> str:
@@ -118,6 +128,13 @@ class SpuRunResult:
                     f"  comm bytes  : send={self.comm_send_bytes} "
                     f"recv={self.comm_recv_bytes} total={self.comm_total_bytes}"
                 )
+            if self.result_policy is not None:
+                lines.append(
+                    f"  policy      : {self.result_policy.get('policy')}"
+                    f"（业务层暴露 {self.result_policy.get('business_value')}）"
+                )
+            if self.reveals:
+                lines.append(f"  reveals     : {self.reveals}")
             for note in self.notes:
                 lines.append(f"  note        : {note}")
             return "\n".join(lines)
@@ -125,6 +142,13 @@ class SpuRunResult:
         lines = [f"SPU simulation: {self.status.upper()}  (protocol={self.protocol}, field={self.field})"]
         if self.error:
             lines.append(f"  error       : {self.error}")
+        if self.result_policy is not None:
+            lines.append(
+                f"  policy      : {self.result_policy.get('policy')}"
+                f"（业务层暴露 {self.result_policy.get('business_value')}）"
+            )
+        if self.reveals:
+            lines.append(f"  reveals     : {self.reveals}")
         for blocker in self.blockers:
             lines.append(f"  blocker     : {blocker}")
         for note in self.notes:
@@ -161,6 +185,8 @@ def run_spu_simulation(
     report: CapabilityReport | None = None,
     copts: Any = None,
     static_argnums: Sequence[int] = (),
+    op: str | None = None,
+    result_policy: str | None = None,
     capture_comm: bool = False,
 ) -> SpuRunResult:
     """在 SPU 模拟器上执行一个 jax 函数。
@@ -174,6 +200,11 @@ def run_spu_simulation(
         reference_fn: 明文参考实现；给出后会计算误差并做容差判定。
         tolerance: 容差；缺省 0.0（整数路径应为精确）。
         report:   已探测的能力报告，避免重复探测。
+        op: 算子名；给出后按统一结果策略表（`backends.result_policy`）解析
+            该算子的结果策略并登记到结果里（编译期调用必须给出；
+            未登记算子在解析期 fail-fast）。None = 不登记（探针/基准路径）。
+        result_policy: 显式策略名；None = 该算子的默认策略。
+            "部署期模式"（REVEAL_TO_REGULATOR）显式拒绝。
         capture_comm: 打开 SPU 的 pphlo profiling 以采集**通信量**
                    （`comm_send_bytes` / `comm_recv_bytes` / 逐原语明细）。
                    注意三点：(a) profiling 有开销，**开了的墙钟不能与没开的比**；
@@ -188,6 +219,12 @@ def run_spu_simulation(
         SpuRunResult。能力不足时 status="unavailable"，绝不返回伪造数值。
     """
 
+    # 结果策略在**任何执行之前**解析（含能力门控）：策略是编译期属性，
+    # 不随环境是否可跑变化；非法策略 / 部署期模式在这里 fail-fast。
+    policy = None
+    if op is not None:
+        policy = resolve_result_policy(op, result_policy)
+
     protocol_name = normalize_protocol(protocol)
     field_name = normalize_field(field)
     size = world_size if world_size is not None else protocol_min_world_size(protocol_name)
@@ -200,6 +237,9 @@ def run_spu_simulation(
         field=field_name,
         world_size=size,
     )
+    if policy is not None:
+        result.result_policy = policy.to_dict()
+        result.reveals = MPC_OP_REVEALS.get(op, "（未登记输出面，请补充）")
 
     # ---------------- 步骤 0：平台与能力门控 ----------------
     platform_ok, platform_note = platform_can_run_spu()

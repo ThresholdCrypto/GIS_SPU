@@ -335,6 +335,14 @@ def print_result(result: CompileResult, *, verbose: bool = False, as_json: bool 
             else:
                 for blocker in run.blockers:
                     _emit(f"      blocker   : {blocker}")
+            if run.result_policy:
+                _emit(
+                    f"      policy    : {run.result_policy.get('policy')}"
+                    f"（业务层暴露 {run.result_policy.get('business_value')}；"
+                    f"{run.result_policy.get('disclosure')}）"
+                )
+            if run.reveals:
+                _emit(f"      reveals   : {run.reveals}")
     else:
         stage = result.stage("spu_simulation")
         _emit(f"  （未执行：{stage.message if stage else 'n/a'}）")

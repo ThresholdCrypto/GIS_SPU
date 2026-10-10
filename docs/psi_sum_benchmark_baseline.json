@@ -24,7 +24,7 @@
     "receiver_rank": 0,
     "layout_id": "geosot3d-v1-x17-y17-z7-l5-toff14-lt4",
     "status": "ok",
-    "note": "PI-Sum 角色映射：client=左侧输入（带关联值、获得结果，对应 receiver_rank=0），server=右侧输入（只持标识符）；本路径落盘：上游只吃 CSV（server 1 列/行、client 2 列/行，无表头），在自建 0700 临时目录内生成，退出即清；传输面：server/client 都走 gRPC LocalCredentials(LOCAL_TCP)，只能同机、无 TLS、无身份认证；PI-Sum 结果：交集基数=128，交集内关联值之和=63749；client 退出码=0",
+    "note": "PI-Sum 角色映射：client=左侧输入（带关联值、获得结果，对应 receiver_rank=0），server=右侧输入（只持标识符）；本路径落盘：上游只吃 CSV（server 1 列/行、client 2 列/行，无表头），在自建 0700 临时目录内生成，退出即清；传输面：server/client 都走 gRPC LocalCredentials(LOCAL_TCP)，只能同机、无 TLS、无身份认证；通信量计量：client 接到回环 TCP 中继（内核分配端口）再转发给 server；中继逐字节统计两个方向（应用层字节，含 gRPC/HTTP2 封装，不含 TCP/IP 头）；内存计量：procfs VmHWM 采样探针（间隔 20 ms）挂在两个子进程上——数值是内核峰值水位；最后一次采样后到退出的窗口 ≤ 采样间隔，口径随结果登记，不假装是精确退出值；PI-Sum 结果：交集基数=128，交集内关联值之和=63749；client 退出码=0",
     "error": null,
     "blockers": [],
     "protocol_params": {
@@ -33,19 +33,28 @@
       "paillier_modulus_size": 1536,
       "impl_commit": "950c5e4"
     },
-    "setup_ms": 0.24,
-    "pi_sum_execute_ms": 1442.76,
-    "total_ms": 1443.438,
-    "wall_ms": 1443.794,
+    "setup_ms": 0.212,
+    "pi_sum_execute_ms": 27885.188,
+    "total_ms": 27887.032,
+    "wall_ms": 27887.385,
     "timings_ms": {
-      "pi_sum_execute_ms": 1442.76,
-      "total_ms": 1443.438
+      "pi_sum_execute_ms": 27885.188,
+      "total_ms": 27887.032
     },
     "agreement": true,
     "intersection_count": 128,
     "intersection_count_expected": 128,
     "intersection_sum": 63749,
-    "intersection_sum_expected": 63749
+    "intersection_sum_expected": 63749,
+    "send_bytes": 168183,
+    "recv_bytes": 10473,
+    "total_bytes": 178656,
+    "comm_meter": "loopback-relay",
+    "comm_direction": "send=client→server；recv=server→client",
+    "peak_rss_mb": 13.363,
+    "client_peak_rss_mb": 13.137,
+    "server_peak_rss_mb": 13.363,
+    "memory_probe": "procfs-VmHWM"
   },
   {
     "case": "PJC-PI-SUM N=2^10",
@@ -72,7 +81,7 @@
     "receiver_rank": 0,
     "layout_id": "geosot3d-v1-x17-y17-z7-l5-toff14-lt4",
     "status": "ok",
-    "note": "PI-Sum 角色映射：client=左侧输入（带关联值、获得结果，对应 receiver_rank=0），server=右侧输入（只持标识符）；本路径落盘：上游只吃 CSV（server 1 列/行、client 2 列/行，无表头），在自建 0700 临时目录内生成，退出即清；传输面：server/client 都走 gRPC LocalCredentials(LOCAL_TCP)，只能同机、无 TLS、无身份认证；PI-Sum 结果：交集基数=512，交集内关联值之和=254969；client 退出码=0",
+    "note": "PI-Sum 角色映射：client=左侧输入（带关联值、获得结果，对应 receiver_rank=0），server=右侧输入（只持标识符）；本路径落盘：上游只吃 CSV（server 1 列/行、client 2 列/行，无表头），在自建 0700 临时目录内生成，退出即清；传输面：server/client 都走 gRPC LocalCredentials(LOCAL_TCP)，只能同机、无 TLS、无身份认证；通信量计量：client 接到回环 TCP 中继（内核分配端口）再转发给 server；中继逐字节统计两个方向（应用层字节，含 gRPC/HTTP2 封装，不含 TCP/IP 头）；内存计量：procfs VmHWM 采样探针（间隔 20 ms）挂在两个子进程上——数值是内核峰值水位；最后一次采样后到退出的窗口 ≤ 采样间隔，口径随结果登记，不假装是精确退出值；PI-Sum 结果：交集基数=512，交集内关联值之和=254969；client 退出码=0",
     "error": null,
     "blockers": [],
     "protocol_params": {
@@ -81,19 +90,28 @@
       "paillier_modulus_size": 1536,
       "impl_commit": "950c5e4"
     },
-    "setup_ms": 0.827,
-    "pi_sum_execute_ms": 5157.408,
-    "total_ms": 5159.41,
-    "wall_ms": 5160.466,
+    "setup_ms": 0.783,
+    "pi_sum_execute_ms": 7908.575,
+    "total_ms": 7911.353,
+    "wall_ms": 7912.441,
     "timings_ms": {
-      "pi_sum_execute_ms": 5157.408,
-      "total_ms": 5159.41
+      "pi_sum_execute_ms": 7908.575,
+      "total_ms": 7911.353
     },
     "agreement": true,
     "intersection_count": 512,
     "intersection_count_expected": 512,
     "intersection_sum": 254969,
-    "intersection_sum_expected": 254969
+    "intersection_sum_expected": 254969,
+    "send_bytes": 670490,
+    "recv_bytes": 38892,
+    "total_bytes": 709382,
+    "comm_meter": "loopback-relay",
+    "comm_direction": "send=client→server；recv=server→client",
+    "peak_rss_mb": 15.23,
+    "client_peak_rss_mb": 14.809,
+    "server_peak_rss_mb": 15.23,
+    "memory_probe": "procfs-VmHWM"
   },
   {
     "case": "PJC-PI-SUM N=2^12",
@@ -120,7 +138,7 @@
     "receiver_rank": 0,
     "layout_id": "geosot3d-v1-x17-y17-z7-l5-toff14-lt4",
     "status": "ok",
-    "note": "PI-Sum 角色映射：client=左侧输入（带关联值、获得结果，对应 receiver_rank=0），server=右侧输入（只持标识符）；本路径落盘：上游只吃 CSV（server 1 列/行、client 2 列/行，无表头），在自建 0700 临时目录内生成，退出即清；传输面：server/client 都走 gRPC LocalCredentials(LOCAL_TCP)，只能同机、无 TLS、无身份认证；PI-Sum 结果：交集基数=2048，交集内关联值之和=1021438；client 退出码=0",
+    "note": "PI-Sum 角色映射：client=左侧输入（带关联值、获得结果，对应 receiver_rank=0），server=右侧输入（只持标识符）；本路径落盘：上游只吃 CSV（server 1 列/行、client 2 列/行，无表头），在自建 0700 临时目录内生成，退出即清；传输面：server/client 都走 gRPC LocalCredentials(LOCAL_TCP)，只能同机、无 TLS、无身份认证；通信量计量：client 接到回环 TCP 中继（内核分配端口）再转发给 server；中继逐字节统计两个方向（应用层字节，含 gRPC/HTTP2 封装，不含 TCP/IP 头）；内存计量：procfs VmHWM 采样探针（间隔 20 ms）挂在两个子进程上——数值是内核峰值水位；最后一次采样后到退出的窗口 ≤ 采样间隔，口径随结果登记，不假装是精确退出值；PI-Sum 结果：交集基数=2048，交集内关联值之和=1021438；client 退出码=0",
     "error": null,
     "blockers": [],
     "protocol_params": {
@@ -129,18 +147,27 @@
       "paillier_modulus_size": 1536,
       "impl_commit": "950c5e4"
     },
-    "setup_ms": 3.399,
-    "pi_sum_execute_ms": 37631.744,
-    "total_ms": 37639.584,
-    "wall_ms": 37643.805,
+    "setup_ms": 3.055,
+    "pi_sum_execute_ms": 19166.067,
+    "total_ms": 19174.65,
+    "wall_ms": 19178.543,
     "timings_ms": {
-      "pi_sum_execute_ms": 37631.744,
-      "total_ms": 37639.584
+      "pi_sum_execute_ms": 19166.067,
+      "total_ms": 19174.65
     },
     "agreement": true,
     "intersection_count": 2048,
     "intersection_count_expected": 2048,
     "intersection_sum": 1021438,
-    "intersection_sum_expected": 1021438
+    "intersection_sum_expected": 1021438,
+    "send_bytes": 2679694,
+    "recv_bytes": 152581,
+    "total_bytes": 2832275,
+    "comm_meter": "loopback-relay",
+    "comm_direction": "send=client→server；recv=server→client",
+    "peak_rss_mb": 23.934,
+    "client_peak_rss_mb": 21.773,
+    "server_peak_rss_mb": 23.934,
+    "memory_probe": "procfs-VmHWM"
   }
 ]

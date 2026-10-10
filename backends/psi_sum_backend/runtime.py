@@ -68,6 +68,7 @@ from .capability import (
     check_psi_sum_capabilities,
     resolve_bin_dir,
 )
+from .metering import CountingRelay, PeakRssProbe, VMHWM_SAMPLE_INTERVAL_S
 
 #: 结果里的协议名（展示用；不是 SPU/libpsi 枚举成员，不放进协议注册表）
 PSI_SUM_PROTOCOL = "PJC-PI-SUM"
@@ -347,6 +348,8 @@ def run_psi_intersection_sum(
     report: PsiSumCapabilityReport | None = None,
     bin_dir: str | os.PathLike[str] | None = None,
     port: str | None = None,
+    measure_communication: bool = False,
+    measure_memory: bool = False,
     quiet: bool = True,
 ) -> PsiRunResult:
     """两方格网集合的**交集内求和**计算（PI-Sum，private-join-and-compute）。
@@ -366,6 +369,11 @@ def run_psi_intersection_sum(
         bin_dir: 上游构建产物目录（缺省读环境变量 ``GIS_SPU_PJC_BIN_DIR``）。
         port: gRPC 监听地址（缺省 ``127.0.0.1:10501``，故意不用上游默认的
             ``0.0.0.0``——本路径只在本机回环内跑）。
+        measure_communication: 在 client 与 server 之间插入回环 TCP 中继，
+            逐字节采集两个方向的通信量（``result.communication``）。
+            中继多一跳，本次 ``timings_ms`` 包含该开销；不测时保持原路径。
+        measure_memory: 对两个子进程挂 procfs VmHWM 采样探针，采集峰值
+            RSS（``result.memory``；探针拿不到真实 pid 时如实留空）。
         quiet: 预留与兄弟后端一致的签名；上游子进程的 stdout 只进 notes。
     """
 
@@ -399,6 +407,19 @@ def run_psi_intersection_sum(
         "传输面：server/client 都走 gRPC LocalCredentials(LOCAL_TCP)，"
         "只能同机、无 TLS、无身份认证",
     )
+    if measure_communication:
+        result.notes = result.notes + (
+            "通信量计量：client 接到回环 TCP 中继（内核分配端口）再转发给 "
+            "server；中继逐字节统计两个方向（应用层字节，含 gRPC/HTTP2 封装，"
+            "不含 TCP/IP 头）",
+        )
+    if measure_memory:
+        result.notes = result.notes + (
+            "内存计量：procfs VmHWM 采样探针（间隔 "
+            f"{VMHWM_SAMPLE_INTERVAL_S * 1000:.0f} ms）挂在两个子进程上——"
+            "数值是内核峰值水位；最后一次采样后到退出的窗口 ≤ 采样间隔，"
+            "口径随结果登记，不假装是精确退出值",
+        )
 
     if op not in PSI_SUM_SUPPORTED_OPS:
         result.status = "error"
@@ -507,7 +528,27 @@ def run_psi_intersection_sum(
     workdir = _make_workdir()
     server_proc = None
     client_proc = None
+    server_probe: PeakRssProbe | None = None
+    client_probe: PeakRssProbe | None = None
+    relay: CountingRelay | None = None
+    client_peak_mb: float | None = None
+    server_peak_mb: float | None = None
     listen_port = port or PSI_SUM_DEFAULT_PORT
+    client_port = listen_port
+    if measure_communication:
+        parsed = _split_host_port(listen_port)
+        if parsed is None:
+            result.status = "error"
+            result.error = (
+                f"通信量计量需要 host:port 形式的监听地址（收到 {listen_port!r}）；"
+                "中继起不来时不退回未计量执行——否则“没测到”会被读成“测得”"
+            )
+            shutil.rmtree(workdir, ignore_errors=True)
+            _release_workdir(workdir)
+            return result
+        relay = CountingRelay(parsed[0], parsed[1])
+        relay.start()
+        client_port = f"127.0.0.1:{relay.port}"
     try:
         server_csv = os.path.join(workdir, "server_data.csv")
         client_csv = os.path.join(workdir, "client_data.csv")
@@ -526,6 +567,9 @@ def run_psi_intersection_sum(
             server_bin,
             [f"--server_data_file={server_csv}", f"--port={listen_port}"],
         )
+        if measure_memory:
+            server_probe = PeakRssProbe(_proc_pid(server_proc))
+            server_probe.start()
         if _read_until(server_proc, PSI_SUM_READY_MARKER, PSI_SUM_STARTUP_TIMEOUT_S) is None:
             result.status = "error"
             result.error = (
@@ -546,11 +590,16 @@ def run_psi_intersection_sum(
             client_bin,
             [
                 f"--client_data_file={client_csv}",
-                f"--port={listen_port}",
+                f"--port={client_port}",
                 f"--paillier_modulus_size={PSI_SUM_PAILLIER_MODULUS_SIZE}",
             ],
         )
+        if measure_memory:
+            client_probe = PeakRssProbe(_proc_pid(client_proc))
+            client_probe.start()
         output, returncode = _read_to_end(client_proc, PSI_SUM_PROTOCOL_TIMEOUT_S)
+        if client_probe is not None:
+            client_peak_mb = client_probe.stop()
     except Exception as exc:
         result.status = "error"
         result.error = f"PI-Sum 执行失败：{type(exc).__name__}: {exc}"
@@ -561,9 +610,44 @@ def run_psi_intersection_sum(
     finally:
         _terminate(client_proc)
         _terminate(server_proc)
+        if server_probe is not None:
+            server_peak_mb = server_probe.stop()
+        if relay is not None:
+            relay.stop()
         # 工作目录里只剩两份输入 CSV：退出即删（atexit 兜底）
         shutil.rmtree(workdir, ignore_errors=True)
         _release_workdir(workdir)
+
+    if relay is not None:
+        totals = relay.totals()
+        result.communication = {
+            "send_bytes": totals["client_to_server_bytes"],
+            "recv_bytes": totals["server_to_client_bytes"],
+            "total_bytes": totals["total_bytes"],
+            "client_to_server_bytes": totals["client_to_server_bytes"],
+            "server_to_client_bytes": totals["server_to_client_bytes"],
+            "meter": "loopback-relay",
+            "direction": "send=client→server；recv=server→client",
+            "note": (
+                "回环 TCP 中继逐字节计数（应用层字节，含 gRPC/HTTP2 封装；"
+                "不含 TCP/IP 头）；中继多一跳，timings_ms 含该开销"
+            ),
+        }
+    if measure_memory:
+        peaks = [
+            value for value in (client_peak_mb, server_peak_mb) if value is not None
+        ]
+        result.memory = {
+            "client_peak_rss_mb": client_peak_mb,
+            "server_peak_rss_mb": server_peak_mb,
+            "peak_rss_mb": max(peaks) if peaks else None,
+            "probe": "procfs-VmHWM",
+            "sampling_interval_ms": round(VMHWM_SAMPLE_INTERVAL_S * 1000.0, 3),
+            "note": (
+                "两个子进程各记一条；peak_rss_mb 取较大者（并发两进程，不是合计）。"
+                "数值是内核峰值水位；最后一次采样后到退出的窗口 ≤ 采样间隔"
+            ),
+        }
 
     result.timings_ms["pi_sum_execute_ms"] = round(
         (time.perf_counter() - _t_proto) * 1000.0, 3
@@ -619,6 +703,23 @@ def run_psi_intersection_sum(
         )
     result.timings_ms["total_ms"] = round((time.perf_counter() - _t_enter) * 1000.0, 3)
     return result
+
+
+def _split_host_port(listen: str) -> tuple[str, int] | None:
+    """把 ``host:port`` 拆成 (host, port)；不合形返回 None（不猜）。"""
+
+    text = str(listen).strip()
+    host, _, port = text.rpartition(":")
+    if not host or not port.isdigit():
+        return None
+    return host, int(port)
+
+
+def _proc_pid(proc: Any) -> int | None:
+    """真实子进程的 pid；测试桩（无 pid）返回 None（探针如实留空）。"""
+
+    pid = getattr(proc, "pid", None)
+    return pid if isinstance(pid, int) and pid > 0 else None
 
 
 def _tail(text: str, lines: int = 6) -> str:

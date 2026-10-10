@@ -1087,3 +1087,34 @@ class TestDeterminism:
         result = compile_file(example("risk_score.py"))
         target.write_text(result.jax_module, encoding="utf-8")
         compile(target.read_text(encoding="utf-8"), str(target), "exec")
+
+
+class TestMpcResultPolicy:
+    """Phase 10：MPC 侧结果策略随编译结果登记（任务书 §十）。"""
+
+    def test_compiler_attaches_policy_for_every_mpc_step(self):
+        result = compile_file(example("risk_score.py"))
+        assert set(result.spu_runs) == {"WeightedSum", "TemporalOverlap"}
+        assert result.spu_runs["WeightedSum"].result_policy["policy"] == "REVEAL_VALUE"
+        assert (
+            result.spu_runs["TemporalOverlap"].result_policy["policy"]
+            == "REVEAL_BOOLEAN"
+        )
+        for run in result.spu_runs.values():
+            assert run.result_policy["protocol_leak"] == "output-only"
+            assert "输出方" in run.reveals
+
+    def test_compile_json_carries_the_policy(self):
+        result = compile_file(example("distance_check.py"))
+        payload = result.to_dict()
+        policy = payload["spu_runs"]["DistanceLE"]["result_policy"]
+        assert policy["policy"] == "REVEAL_BOOLEAN"
+        assert policy["business_value"] == "boolean"
+        assert payload["spu_runs"]["DistanceLE"]["reveals"]
+
+    def test_cli_prints_mpc_policy_and_reveals(self, capsys):
+        cli_main(["build", example("distance_check.py")])
+        output = capsys.readouterr().out
+        assert "policy    : REVEAL_BOOLEAN" in output
+        assert "reveals   : 输出面" in output
+        assert "不得默认广播" in output

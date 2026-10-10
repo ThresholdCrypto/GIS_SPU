@@ -82,9 +82,10 @@ server = 右侧输入（只持标识符）
   「接收方仍获得交集本体」在本档是**错的**，必须替换；
 - 逐算子登记：`PSI_SUM_OP_LEAKS`（当前只有 `CellSetIntersect` 一项）。
 
-结果策略名 `REVEAL_INTERSECTION_SUM` 登记在**本后端**（不进
-`backends/psi_backend/result_policy.py`）：那个模块的 `protocol_leak` 对所有策略
-都固定为 `intersection-body`，把本档的策略塞进去会把两栏说成同一件事。
+结果策略名 `REVEAL_INTERSECTION_SUM` 登记在**本后端**（不进统一策略模块
+`backends/result_policy.py`）：统一模块的 PSI 族 `protocol_leak` 对所有策略
+都固定为 `intersection-body`，把本档的策略塞进去会把两栏说成同一件事
+（本档的泄漏码是 `count+sum`）。
 
 ## 6. 编译期契约：拒绝清单
 
@@ -123,9 +124,27 @@ server = 右侧输入（只持标识符）
    注意耗时读数的**重复性有限**：同机多轮复核里 2^8 档从 1.4 s 到 22.6 s 都出现过
    （机器负载与 Paillier 固定开销主导，规模不是唯一因素）——引用读数时带上轮次
    与机器上下文，别当容量规划的绝对值。
-   **仍未实测**：Paillier 1536 位模数的**进程内存占用**（协议跑在两个子进程里，
-   运行器进程 RSS 不覆盖它们；已在 `MISSING_METRICS["PI-SUM"]` 登记）；
-   跨机部署（两侧 `LocalCredentials(LOCAL_TCP)` 只允许同机，跨机须自行加通道保护）。
+   **2026-10-10 补充（Phase 10）**：进程内存与通信量两条计量已接入运行器
+   （默认开启）——峰值内存用 procfs `VmHWM` 采样探针（client / server 各一条，
+   取较大者），通信量用回环 TCP 中继逐字节计数；三条基线读数见 §7.1。
+   **仍未实测**：跨机部署（两侧 `LocalCredentials(LOCAL_TCP)` 只允许同机，
+   跨机须自行加通道保护）。
+
+### 7.1 Phase 10 计量读数（2026-10-10，WSL2，基线三条）
+
+| 规模 | send（client→server） | recv（server→client） | 合计 | peak RSS（取 client / server 较大者） |
+|---|---:|---:|---:|---:|
+| N=2^8 | 168 183 B | 10 473 B | 178 656 B | 13.363 MB（client 13.137 / server 13.363） |
+| N=2^10 | 670 490 B | 38 892 B | 709 382 B | 15.230 MB（client 14.809 / server 15.230） |
+| N=2^12 | 2 679 694 B | 152 581 B | 2 832 275 B | 23.934 MB（client 21.773 / server 23.934） |
+
+口径（与产物字段逐字对应）：通信量是**应用层字节**（含 gRPC / HTTP2 封装，
+不含 TCP/IP 头），方向 `send=client→server；recv=server→client`；中继多一跳，
+`timings_ms` 含该跳开销（A/B 实测：计量开 / 关的耗时差被本机噪声淹没——耗时
+本身重复性有限，同机 1.4 s–27.9 s 都出现过，见上面第 1 条）。峰值内存是内核
+`VmHWM` 水位，采样间隔 20 ms（最后一次采样到退出的窗口 ≤ 20 ms 记不到）；
+两个子进程并发采样，`peak_rss_mb` 取较大者、不是合计。三条读数与
+`agreement=true` 一同入库 `docs/psi_sum_benchmark_baseline.json`。
 
 2. **接入层已验证**：`tests/test_psi_sum_backend.py`（32 项）与
    `tests/test_cli_psi_sum.py`（20 项）在**测试桩**下全绿。桩替换的是
@@ -166,6 +185,7 @@ geo-secure build examples/intersection_sum.py --psi-sum pjc \
     --psi-sum-weights route=examples/route_risk_weights.csv
 
 # 5) 基准基线（可选；期望 3 条 ok、agree=true，产物写 docs/psi_sum_benchmark_baseline.json）
+#    默认开通信量 + 内存计量；--no-measure-comm / --no-measure-memory 可关（关后留空，不填估计值）
 GIS_SPU_PJC_BIN_DIR=/tmp/pjc/bazel-bin/private_join_and_compute \
     /opt/miniconda3/envs/spu311/bin/python tests/benchmarks/benchmark_psi_sum.py
 ```
@@ -182,3 +202,5 @@ GIS_SPU_PJC_BIN_DIR=/tmp/pjc/bazel-bin/private_join_and_compute \
 - 首次构建在这台 20 核机器上约 11 分钟（Bazel 日志 16:22:19 起、脚本 16:34 结束，5,683 个 action）。
 - 同一环境 `spu 0.9.5` / `jax 0.4.34`，SPU 能力核查 `runnable=true`；
   但 `openmined-psi` 未安装（PSI-CA 档在该环境不可执行，需 `pip install openmined-psi==2.0.6`）——与本档无关，如实记录。
+- **2026-10-10（Phase 10）**：基线三条以计量重跑（通信量 + 峰值内存），
+  读数与口径见 §7.1；`agree=true` 保持。

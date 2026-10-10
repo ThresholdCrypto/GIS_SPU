@@ -51,9 +51,9 @@
 | `unique_size` | 条 | `n_left_unique + n_right_unique` | 同左 | 同左 | `None`（MPC 无去重概念） |
 | `result_size` | 条 | `intersection_count` | `intersection_count` | `intersection_count`（和值在 metadata） | `None`（基线未记录输出元素数） |
 | `compute_time` | ms | `psi_execute_ms` | `psi_ca_execute_ms` | `pi_sum_execute_ms`（含两子进程往返） | `wall_ms - setup_ms` |
-| `communication_bytes` | B | `None`（该基线未采集通信量） | `None`（同左） | `None`（同左） | `comm_total_bytes` |
+| `communication_bytes` | B | `None`（该基线未采集通信量） | `None`（同左） | `total_bytes`（回环中继合计，Phase 10） | `comm_total_bytes` |
 | `total_time` | ms | `total_ms` | `total_ms` | `total_ms` | `wall_ms`（`repeat>1` 时是中位数） |
-| `memory_bytes` | B | `peak_rss_mb × 2^20` | `peak_rss_mb × 2^20`（运行器进程，覆盖协议） | `None`（子进程路径未采集；缺口已登记） | `peak_rss_mb × 2^20` |
+| `memory_bytes` | B | `peak_rss_mb × 2^20` | `peak_rss_mb × 2^20`（运行器进程，覆盖协议） | `peak_rss_mb × 2^20`（两个子进程 VmHWM 探针，取较大者） | `peak_rss_mb × 2^20` |
 | `status` | — | `ok` / `unavailable` / `error` | 同左 | 同左 | 同左 |
 
 两处**容易看错**的口径，特意写在这里：
@@ -66,8 +66,9 @@
    冒充「这条曲线生效了」。
 3. PSI-CA 的 `memory_bytes` 是**运行器进程**峰值 RSS——openmined-psi 进程内
    加载，该读数覆盖协议；PI-Sum 的协议跑在两个子进程里，运行器进程 RSS
-   **不含**它们，所以该档 `memory_bytes` 记 `None`（缺口），不拿一个不覆盖
-   协议的数冒充实测。
+   **不含**它们，所以该档用 procfs `VmHWM` 采样探针直接读**子进程**峰值
+   （Phase 10，client / server 各一条、取较大者；窗口误差 ≤ 采样间隔 20 ms），
+   不用运行器进程的读数冒充。
 
 ## 4. §九 清单逐项去向
 
@@ -83,7 +84,7 @@
 | `intersection_ratio` | `metadata:intersection_ratio` | PSI |
 | `input_io_time` | `metadata:input_io_time` | PSI = `io_write_ms + io_read_ms`；MPC 无 IO；PSI-CA 全程内存；PI-Sum 未单独计时（三档缺口见 §5） |
 | `semantic_processing_time` | `metadata:semantic_processing_time` | 只有 PSI 记录 `semantic_ms`；其余三档缺口 |
-| `send_bytes` `recv_bytes` `total_bytes` | `metadata:*_bytes` | MPC = `comm_*`；PSI 三档缺口 |
+| `send_bytes` `recv_bytes` `total_bytes` | `metadata:*_bytes` | MPC = `comm_*`；PI-Sum = 回环中继（Phase 10）；libpsi 与 PSI-CA 两档缺口 |
 | `result_semantics` | `metadata:result_semantics` | PSI / MPC 由协议注册表派生；PSI-CA / PI-Sum 取记录列（运行时的声明，均为 `exact`） |
 | `encode_time` `dedup_time` `layout_agreement` | `missing` | 见 §5 |
 
@@ -95,8 +96,8 @@
 | `dedup_time` | 缺 | 缺 | 缺 | 缺 | 去重在运行时内部执行（三条 PSI 路径都去重但未单独计时；MPC 无此步） |
 | `input_io_time` | 有 | 缺 | 缺 | 缺 | PSI 拆 `io_write_ms + io_read_ms`；MPC 没有文件 IO；PSI-CA 全程内存；PI-Sum 落盘输入 CSV 但未单独计时 |
 | `semantic_processing_time` | 有 | 缺 | 缺 | 缺 | 只有 PSI 路径记录 `semantic_ms` |
-| `peak_memory` | 有 | 有 | 缺 | 有 | PI-Sum 协议在子进程里，运行器进程 RSS 不覆盖它——未采集 |
-| `send_bytes` / `recv_bytes` / `total_bytes` | 缺 | 缺 | 缺 | 有 | PSI 三档基线未装通信量计量（`docs/BENCHMARK_PROTOCOL.md` §7 已列为待办） |
+| `peak_memory` | 有 | 有 | 有 | 有 | PI-Sum 子进程各挂 procfs VmHWM 采样探针（Phase 10，取 client / server 较大者；窗口误差 ≤ 20 ms 采样间隔） |
+| `send_bytes` / `recv_bytes` / `total_bytes` | 缺 | 缺 | 有 | 有 | PI-Sum 走回环 TCP 中继逐字节计数（Phase 10，gRPC 往返可观测）；libpsi 与 PSI-CA 未装计量，属下一阶段 |
 | `layout_agreement` | 缺 | 缺 | 缺 | 缺 | PSI 三档记录 `layout_id` 但不记握手结论；MPC 无布局概念 |
 
 `MISSING_METRICS` / `MISSING_RAW_KEYS` 是这两张声明的单一来源，
@@ -179,16 +180,30 @@ python scripts/unify_benchmark.py docs/mpc_benchmark_baseline.json \
 外部两档基线的重算（真机 WSL；PI-Sum 需要 `GIS_SPU_PJC_BIN_DIR`，
 见 `docs/PSI_SUM_CAPABILITY.md` §8）：`bash scripts/verify_external_baselines_wsl.sh`。
 
+PI-Sum 运行器（Phase 10 起）默认开计量：通信量走回环中继（`send_bytes` /
+`recv_bytes` / `total_bytes` + `comm_meter`），峰值内存走 procfs 探针
+（`peak_rss_mb` / `client_peak_rss_mb` / `server_peak_rss_mb` + `memory_probe`）；
+可用 `--no-measure-comm` / `--no-measure-memory` 关闭（关闭后对应键留空，
+不填估计值）。计量口径与读数见 `docs/PSI_SUM_CAPABILITY.md` §7.1。
+
 ## 8. 下一步
 
-- 通信量计量：PSI 三档（libpsi / PSI-CA / PI-Sum）都还没有 send/recv 字节——
-  PI-Sum 走可观测的 gRPC 往返（两侧 procfs 计数器 / 上游日志可作来源），
-  PSI-CA / libpsi 需要各自 SDK 的计量钩子，属下一阶段；
-- PI-Sum 的进程内存：可在 server/client 子进程外挂 `/usr/bin/time -v` 或在
-  退出前读 `/proc/<pid>/status` 采峰值 RSS，先验证口径再登记为「有」；
-- Phase 8 余项（任务文档 §十）：result policy / regulator-only disclosure 与
-  密码协议解耦（已有 `backends/psi_backend/result_policy.py` 与
-  `tests/test_result_policy.py` 的基础，待补齐 MPC 侧与统一入口）；
+已落地（Phase 10，2026-10-10）：
+
+- **通信量计量**：PI-Sum 已接入回环 TCP 中继（client 与 server 之间插入中继，
+  双向逐字节、应用层字节），基线读数与口径见 `docs/PSI_SUM_CAPABILITY.md` §7.1；
+- **PI-Sum 子进程内存**：procfs `VmHWM` 采样探针（20 ms 间隔，client / server
+  各一条，取较大者）已接入运行器；`MISSING_METRICS["PI-SUM"]` 相应缩为 5 项
+  （`encode_time` / `dedup_time` / `input_io_time` / `semantic_processing_time` /
+  `layout_agreement`）；
+- **result policy 与密码协议解耦（MPC 侧）**：统一入口 `backends/result_policy.py`
+  （PSI / MPC 共用；旧路径保留为再导出兼容层），新增 `REVEAL_VALUE` 数值档与
+  MPC 泄漏码 `output-only`；`REVEAL_TO_REGULATOR` 维持显式拒绝。
+
+仍开放：
+
+- 通信量计量还差 **libpsi 求交**与 **PSI-CA** 两档——需要各自 SDK 的计量钩子，
+  属下一阶段；
 - 若要让各族运行器**直接**落统一格式（而不是事后投影），可在
   `tests/benchmarks/benchmark_psi.py` / `benchmark_psi_ca.py` /
   `benchmark_psi_sum.py` / `benchmark_mpc.py` 加 `--unified-json` 开关——

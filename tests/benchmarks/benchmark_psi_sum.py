@@ -15,11 +15,13 @@
   三条 PSI 路径测的是同一批输入（同规模、同交集比例、同层级布局）；
 - 关联值规则固定为 `1 + (code % 997)`（确定性；覆盖去重后全部左侧码），
   期望和由运行器按构造重算后写进记录，便于对拍；
-- 只采集**真实测得到**的量：运行时的 `timings_ms`（`pi_sum_execute_ms` /
-  `total_ms`）。协议跑在**两个子进程**里，运行器进程的 ru_maxrss **不含**它们，
-  所以本档**不记** `peak_rss_mb` / `memory_mb`——缺口登记在
-  `backends/benchmark_schema.py` 的 `MISSING_METRICS`（族 `PI-SUM`）；
-- 通信量同样**没有采集**：不填 0、不推测；
+- 计量（Phase 10，默认开启，可用 `--no-measure-comm` / `--no-measure-memory`
+  关闭）：通信量 = client↔server 回环 TCP 中继逐字节计数（`send_bytes` /
+  `recv_bytes` / `total_bytes`；应用层字节，含 gRPC/HTTP2 封装，不含 TCP/IP 头；
+  中继多一跳，耗时含该开销）；峰值内存 = 两个子进程各挂 procfs VmHWM 采样探针
+  （20 ms 间隔；`client_peak_rss_mb` / `server_peak_rss_mb`，`peak_rss_mb` 取
+  较大者）。探针口径随记录登记（`comm_meter` / `memory_probe` / `note`），
+  测不到就留空并注明，绝不填 0；
 - 执行失败如实记 `status="error"` + 错误原文；没有真正跑过的用例不填数字；
 - 能力不可用时**直接失败且不写产物**（退出码 1）——不能用 unavailable 行
   覆盖仓库里的真实基线。
@@ -91,6 +93,12 @@ _CSV_COLUMNS: tuple[str, ...] = (
     "pi_sum_execute_ms",
     "total_ms",
     "wall_ms",
+    "send_bytes",
+    "recv_bytes",
+    "total_bytes",
+    "peak_rss_mb",
+    "client_peak_rss_mb",
+    "server_peak_rss_mb",
     "agreement",
     "intersection_count",
     "intersection_count_expected",
@@ -159,6 +167,15 @@ def _blank_record(n: int) -> dict[str, Any]:
         "intersection_count_expected": None,
         "intersection_sum": None,
         "intersection_sum_expected": None,
+        "send_bytes": None,
+        "recv_bytes": None,
+        "total_bytes": None,
+        "comm_meter": None,
+        "comm_direction": None,
+        "peak_rss_mb": None,
+        "client_peak_rss_mb": None,
+        "server_peak_rss_mb": None,
+        "memory_probe": None,
     }
 
 
@@ -168,6 +185,8 @@ def run_case(
     index: int = 0,
     bin_dir: str | None = None,
     report: Any = None,
+    measure_communication: bool = True,
+    measure_memory: bool = True,
 ) -> dict[str, Any]:
     """执行一条用例并返回记录（失败不抛：如实记进 `status` / `error`）。"""
 
@@ -199,6 +218,8 @@ def run_case(
             report=report,
             bin_dir=bin_dir,
             port=f"127.0.0.1:{_PORT_BASE + index}",
+            measure_communication=measure_communication,
+            measure_memory=measure_memory,
         )
     except Exception as exc:  # 基线脚本不吞异常：如实记错误，不伪造结果
         record["status"] = "error"
@@ -230,6 +251,17 @@ def run_case(
     record["protocol_leak"] = (run.result_policy or {}).get("protocol_leak")
     record["result_semantics"] = run.result_semantics
     record["note"] = "；".join(str(note) for note in run.notes)
+    communication = run.communication or {}
+    record["send_bytes"] = communication.get("send_bytes")
+    record["recv_bytes"] = communication.get("recv_bytes")
+    record["total_bytes"] = communication.get("total_bytes")
+    record["comm_meter"] = communication.get("meter")
+    record["comm_direction"] = communication.get("direction")
+    memory = run.memory or {}
+    record["peak_rss_mb"] = memory.get("peak_rss_mb")
+    record["client_peak_rss_mb"] = memory.get("client_peak_rss_mb")
+    record["server_peak_rss_mb"] = memory.get("server_peak_rss_mb")
+    record["memory_probe"] = memory.get("probe")
     return record
 
 
@@ -271,7 +303,7 @@ def _fmt_bool(value: Any) -> str:
 def _summary(records: Sequence[Mapping[str, Any]]) -> str:
     header = (
         f"{'case':24s}  {'status':12s} {'proto_ms':>9s} {'total_ms':>9s} "
-        f"{'count':>6s} {'sum':>7s} {'agr':>5s}"
+        f"{'count':>6s} {'sum':>7s} {'comm_B':>9s} {'peak_MB':>8s} {'agr':>5s}"
     )
     lines = [header]
     for record in records:
@@ -282,6 +314,8 @@ def _summary(records: Sequence[Mapping[str, Any]]) -> str:
             f"{_fmt_num(record.get('total_ms')):>9s} "
             f"{_fmt_num(record.get('intersection_count')):>6s} "
             f"{_fmt_num(record.get('intersection_sum')):>7s} "
+            f"{_fmt_num(record.get('total_bytes')):>9s} "
+            f"{_fmt_num(record.get('peak_rss_mb')):>8s} "
             f"{_fmt_bool(record.get('agreement')):>5s}"
         )
     return "\n".join(lines)
@@ -302,6 +336,18 @@ def parse_args(argv=None):
     )
     parser.add_argument(
         "--csv", default="docs/psi_sum_benchmark_baseline.csv", help="CSV 输出路径（相对项目根）"
+    )
+    parser.add_argument(
+        "--no-measure-comm",
+        dest="measure_comm",
+        action="store_false",
+        help="关闭通信量计量（默认开启：回环 TCP 中继逐字节计数）",
+    )
+    parser.add_argument(
+        "--no-measure-memory",
+        dest="measure_memory",
+        action="store_false",
+        help="关闭峰值内存计量（默认开启：procfs VmHWM 采样探针）",
     )
     parser.add_argument("--no-json", action="store_true", help="不写 JSON")
     parser.add_argument("--no-csv", action="store_true", help="不写 CSV")
@@ -339,11 +385,23 @@ def main(argv=None) -> int:
     for idx, size in enumerate(sizes, 1):
         n = 2**size
         print(f"[{idx}/{total}] {PSI_SUM_PROTOCOL} N={format_n(n)}", flush=True)
-        record = run_case(n, index=idx, bin_dir=args.bin_dir, report=report)
+        record = run_case(
+            n,
+            index=idx,
+            bin_dir=args.bin_dir,
+            report=report,
+            measure_communication=args.measure_comm,
+            measure_memory=args.measure_memory,
+        )
         records.append(record)
         print(
             f"    status={record['status']} pi_sum_execute_ms={record.get('pi_sum_execute_ms')} "
             f"total_ms={record.get('total_ms')} agreement={record.get('agreement')}",
+            flush=True,
+        )
+        print(
+            f"    comm={record.get('total_bytes')} bytes (send={record.get('send_bytes')},"
+            f" recv={record.get('recv_bytes')}) peak_rss={record.get('peak_rss_mb')} MB",
             flush=True,
         )
         if out_json is not None:
