@@ -1,8 +1,8 @@
 # 项目进展说明：geo-secure 低门槛隐私计算编译器（MVP）
 
 > **口径对齐**：2026 年 9 月工作月报（任务 3）。
-> **截至 2026-10-10**，本地与远程 `main` 一致：**27 个提交**、
-> **1103 项自动化测试全部通过（0 失败 / 0 跳过）**。
+> **截至 2026-10-10**，本地与远程 `main` 一致：**28 个提交**、
+> **1151 项自动化测试全部通过（0 失败 / 0 跳过）**。
 > **验证环境**：WSL2 Ubuntu 26.04.1 / x86_64，Python 3.11.16，spu 0.9.5，jax 0.4.34。
 
 ---
@@ -60,6 +60,7 @@ def check_conflict(route, no_fly_zone):
 | 2026-10-09 | （工作区） | 管控层：复跑脚本**供应链固定**（上游钉 commit + bazelisk `v1.29.0` sha256 校验）+ 细粒度沙箱档草案（`docs/SANDBOX_AND_SUPPLY_CHAIN.md` / `scripts/codex_permissions.example.toml`） | 脚本已实测：sha256 正/反例、按 sha fetch 得 `950c5e4`；沙箱档已实测：本机 Windows 后端兑现不了（deny-glob 需 elevated、schannel TLS 不可用、白名单未见生效）——**暂不启用** |
 | 2026-10-09 | （工作区） | 真机确认：SPU 模拟路径 `distance_check` / `risk_score` 全 `verified`（err=0.0）+ PSI-CA 计数档真机验证（`openmined-psi==2.0.6`，解除该档「未验证」） | 全量 `1094 passed`（0 failed / 0 skipped，WSL spu311）；PSI-CA 两文件 `29 passed` |
 | 2026-10-10 | （本提交） | **Phase 4：Planner → Runtime 的 MPC 协议闭环**——执行期协议改为**逐步解析**（`_step_protocol`：显式指定 > 方案实测选择 > 登记默认值），修掉“两个 MPC 步骤各选不同协议时被统一成第一个协议”的静默换协议；新增 `_check_mpc_closure` 兜底核对与 9 项对拍测试；编译 JSON 的 plan 步带出 `mpc_protocol` / `mpc_protocol_basis` | **`1103 passed`**（WSL2 真机，0 跳过） |
+| 2026-10-10 | （本提交） | **Phase 7：统一 benchmark metadata**——新增 `backends/benchmark_schema.py`（共有 13 字段 + 两族指标 + 缺口登记）与投影器 `scripts/unify_benchmark.py`，48 项测试；跨协议比较只比 `ok` 行、不同族/算子/规模直接报错、同用例重测取中位数（见 `docs/BENCHMARK_SCHEMA.md`） | **`1151 passed`**（WSL2 真机，0 跳过） |
 
 > 「+ 工作区改动」表示该轮结果记录于提交前后的工作区状态，逐轮明细见
 > `docs/VERSION_COMPATIBILITY.md`。
@@ -181,6 +182,14 @@ def check_conflict(route, no_fly_zone):
    构建且无官方 PyPI 包，**真机已复跑（2026-10-09，WSL2）**：Bazel 构建成功、PI-Sum 协议跑通，`result = (2, 13)` 与登记期望一致——命令见
    `docs/PSI_SUM_CAPABILITY.md` §8。
 
+5. **~~统一 benchmark metadata~~ ——已闭合（本版 Phase 7）**：两族记录投影到同一张表
+   （`backends/benchmark_schema.py`：共有 13 字段 + `PSIBenchmarkMetadata` /
+   `MPCBenchmarkMetadata` + `metadata.raw` 保真）；§九 清单 21 项逐条登记去向，
+   某族确实没采集的指标登记成缺口并由测试在真实产物上锁死；跨协议比较只比 `ok` 行、
+   不同族/算子/规模直接报错、同用例重测取中位数并带出样本数与极差。
+   见 `docs/BENCHMARK_SCHEMA.md`。
+   下一步（Phase 8）：result policy / regulator-only 与底层密码协议解耦的 MPC 侧与统一入口。
+
 ---
 
 ## 7. 复现
@@ -188,7 +197,7 @@ def check_conflict(route, no_fly_zone):
 ```bash
 git clone git@github.com:ThresholdCrypto/GIS_SPU.git && cd GIS_SPU
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 1103 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 1151 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 

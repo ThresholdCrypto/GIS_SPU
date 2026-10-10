@@ -24,8 +24,8 @@ Python 地理业务代码
 ```
 
 > **项目进展说明**（完成度、里程碑时间线、已验证 / 未落地、关键实测结论、复现方式）
-> 见 [`docs/PROGRESS.md`](docs/PROGRESS.md)。当前 `main` 共 **27 个提交**、
-> **1103 项测试全部通过、0 跳过**（2026-10-10 于 WSL2 + spu 0.9.5 复跑）。
+> 见 [`docs/PROGRESS.md`](docs/PROGRESS.md)。当前 `main` 共 **28 个提交**、
+> **1151 项测试全部通过、0 跳过**（2026-10-10 于 WSL2 + spu 0.9.5 复跑）。
 
 ## 快速开始
 
@@ -47,7 +47,7 @@ bash scripts/setup_wsl_spu.sh         # 一键：系统依赖 + Python 3.11 + �
 
 ```bash
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 1103 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 1151 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -1077,6 +1077,7 @@ tests/test_spu_backend.py         52 项   协议/环宽规范化、能力门控
 tests/test_spu_profile.py         13 项   SPU 通信量剖析：pphlo 日志解析与 fd 级捕获（P2-2）
 tests/test_benchmark_mpc.py       70 项   MPC 基线：用例构造、协议×算子×环宽矩阵、通信量采集、策略 A/B、诚实留空、四个探针开关的产物路径与互斥
 tests/test_benchmark.py           33 项   PSI 基线生成器确定性/合法性、记录 schema、unavailable 诚实规则、写入器、真实 RR22 记录
+tests/test_benchmark_schema.py   48 项   统一 benchmark metadata（Phase 7）：共有 13 字段投影、缺口在真实产物上锁死、跨协议比较（只比 ok 行 / 不同规模不比 / 重复取中位数）
 tests/test_psi_backend.py         82 项   PSI 能力/协议归一化/真实求交/空输入/泄漏面/诚实留空/日志卫生/带噪与精确披露/RR22 参数链路
 tests/test_psi_ca_backend.py      16 项   PSI-Cardinality 计数档（第四后端族）：能力/API 核对、只出交集基数、编译期拒绝契约、执行装配与真机判读
 tests/test_psi_sum_backend.py     32 项   PI-Sum 交集内求和档（第五后端族）：上游 flag 形态核对、编译期拒绝清单、执行装配与真机结果判读
@@ -1099,11 +1100,11 @@ tests/test_execution_chain.py     15 项   链式执行使用上一步 PSI 输�
 tests/test_rr22_geosot.py          8 项   GeoSOT-3D 编码 → CellSet → CompactCellSet → RR22 链路（相交/不相交/相同/空集/高位码/重复/排序）
 tests/test_end_to_end.py          77 项   全流程、状态表、CLI（协议/曲线/子集/RR22/布局形状/MPC 协议）、六类失败报告、编译入口参数、诊断聚合、确定性
                                   ─────
-                                  1103 通过 / 0 跳过
+                                  1151 通过 / 0 跳过
 ```
 
 在 **WSL2 + Linux + Python 3.11.16 + jax 0.4.34 + spu 0.9.5** 上，
-**1103 项全部通过，无跳过**。真实执行隐私协议的用例：
+**1151 项全部通过，无跳过**。真实执行隐私协议的用例：
 
 | 类别 | 数量 | 说明 |
 |------|------|------|
@@ -1363,7 +1364,7 @@ DistanceLE  QuantizedVector  MPC/SPU  verified
 ```bash
 # WSL2 / Linux 上（Python 3.10 或 3.11）
 pip install -r requirements-spu.txt      # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q               # 1103 项全部通过（0 跳过）
+python -m pytest tests/ -q               # 1151 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
@@ -1630,7 +1631,7 @@ backends/
 
 - ~~在 WSL2 / Linux + Python 3.11 环境下接通真实 SPU 模拟，
   把 `tests/test_spu_backend.py::TestRealSpuSimulation` 从 skip 变为通过~~
-  ——**已闭合**：本机 `1103 passed / 0 failed / 0 skipped`，无一条真实执行用例被跳过。
+  ——**已闭合**：本机 `1151 passed / 0 failed / 0 skipped`，无一条真实执行用例被跳过。
 - 补 `FM128` 路径测试（64 位键的溢出场景）。
 - ~~补不同协议的代价实测（`semi2k` / `aby3` / `cheetah`）~~ ——**已闭合（本版 P1）**：
   `tests/benchmarks/benchmark_mpc.py` 已把 3 个 MPC 算子 × 5 个 SPU 协议 × 3 个环宽
@@ -1805,6 +1806,21 @@ geo-secure build examples/distance_check.py \
   格网集合与布局握手（见 5.7）；
 - PSI 性能基线：`tests/benchmarks/benchmark_psi.py`（见 5.8 与 `docs/BENCHMARK_PROTOCOL.md`）；
 - 可扩展：批量编译、代价报告导出、与 CI 集成（把 `geo-secure check` 作为前置门禁）。
+
+### 8.7 统一 benchmark metadata（Phase 7，已落地）
+
+任务文档 §九 要求「PSI / MPC 都能输出统一的 benchmark metadata」，
+且「不要为了统一而丢失 PSI 特有指标」。本版把两族记录投影到同一张表：
+
+- 模块 `backends/benchmark_schema.py`：`CommonBenchmarkRecord`（13 个共有字段）
+  + `PSIBenchmarkMetadata` / `MPCBenchmarkMetadata` + `metadata.raw`（原记录保真）；
+- §九 清单 21 项逐条登记去向（`common:` / `metadata:` / `missing`），
+  某族**确实没采集**的指标显式登记成缺口，并由测试在真实产物上锁死；
+- 投影器 `scripts/unify_benchmark.py`：只读既有基线，不重跑、不改写产物；
+- 跨协议比较 `compare_protocols`：只比 `ok` 行、不同族/算子/规模直接报错、
+  同用例重测取中位数并带出样本数与极差。
+
+详见 `docs/BENCHMARK_SCHEMA.md`；测试 `tests/test_benchmark_schema.py`（48 项）。
 
 ---
 
