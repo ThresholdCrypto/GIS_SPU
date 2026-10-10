@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
-"""统一 benchmark metadata（Phase 7 / 任务文档 §九）：把 PSI 与 MPC 两族的性能记录投影到同一张表。
+"""统一 benchmark metadata（Phase 7 / 任务文档 §九）：把四个协议族（PSI / PSI-CA / PI-SUM / MPC）的性能记录投影到同一张表。
 
 任务文档 §九 要求「未来 PSI / MPC 都应该能够输出统一的 benchmark metadata」，
 并给出三层形状：
 
-    CommonBenchmarkRecord    两族共有的 13 个字段（同名同口径）
-    PSIBenchmarkMetadata     PSI 特有指标（交集比例 / 协议耗时拆段 / 曲线关系 …）
-    MPCBenchmarkMetadata     MPC 特有指标（环宽 / 重复实验统计 / 通信量拆原语 …）
+    CommonBenchmarkRecord     各族共有的 13 个字段（同名同口径）
+    PSIBenchmarkMetadata      libpsi 求交档特有指标（交集比例 / 协议耗时拆段 / 曲线关系 …）
+    PsiCaBenchmarkMetadata    PSI-CA 计数档特有指标（结构 / 计数 / 进程内存测量口径 …）
+    PsiSumBenchmarkMetadata   PI-Sum 交集内求和档特有指标（上游提交 / 关联值规则 / 和值 …）
+    MPCBenchmarkMetadata      MPC 特有指标（环宽 / 重复实验统计 / 通信量拆原语 …）
 
 本模块是**只读投影层**：
 
-- 输入是两族运行器已经落盘的产物（`docs/psi_benchmark_baseline.json`、
+- 输入是各族运行器已经落盘的产物（`docs/psi_benchmark_baseline.json`、
+  `docs/psi_ca_benchmark_baseline.json`、`docs/psi_sum_benchmark_baseline.json`、
   `docs/mpc_benchmark_baseline.json`、`docs/mpc_comm_baseline.json`）；
   不执行协议、不重跑基线、不改写产物；
 - **不丢字段**：原始记录原样放进 `metadata.raw`；统一层只做投影，
@@ -22,7 +25,9 @@
 ==========================================
 后者回答「这个协议请求成不成立」，本模块回答「跑完的结果怎么摆到一张表上」。
 两者都只读注册表事实（协议族 / world_size / 结果语义 / 曲线关系 / 环宽），
-不各自维护第二份名单。
+不各自维护第二份名单。外部两条 PSI 路径（PSI-CA / PI-Sum）没有注册表：
+它们的 world_size / result_semantics 等事实从**记录列**读取（由运行器写入
+运行时结论），读不到就记 None——不为它们另立一份名单。
 """
 
 from __future__ import annotations
@@ -41,10 +46,19 @@ from backends.psi_backend.capability import (
 from backends.spu_backend.capability import normalize_protocol as normalize_mpc_protocol
 from backends.spu_backend.protocol_registry import MPC_PROTOCOL_SPECS
 
-#: 协议族（顺序稳定：报告与测试按此渲染）
+#: 协议族（顺序稳定：报告与测试按此渲染）。
+#: PSI = libpsi 求交；PSI-CA = openmined-psi 计数；PI-SUM = private-join-and-compute
+#: 交集内求和——三条 PSI 路径独立执行、泄漏承诺互不相同，各自成族。
 BENCHMARK_FAMILY_PSI = "PSI"
+BENCHMARK_FAMILY_PSI_CA = "PSI-CA"
+BENCHMARK_FAMILY_PSI_SUM = "PI-SUM"
 BENCHMARK_FAMILY_MPC = "MPC"
-BENCHMARK_FAMILIES: tuple[str, ...] = (BENCHMARK_FAMILY_PSI, BENCHMARK_FAMILY_MPC)
+BENCHMARK_FAMILIES: tuple[str, ...] = (
+    BENCHMARK_FAMILY_PSI,
+    BENCHMARK_FAMILY_PSI_CA,
+    BENCHMARK_FAMILY_PSI_SUM,
+    BENCHMARK_FAMILY_MPC,
+)
 
 #: 状态词（原样透传；未执行的行不给任何数字）
 STATUS_OK = "ok"
@@ -52,7 +66,8 @@ STATUS_UNAVAILABLE = "unavailable"
 STATUS_ERROR = "error"
 STATUS_UNKNOWN = "unknown"
 
-#: PSI 基线只跑一条执行路径（CellSetIntersect）；记录里没有 operation 列时按此填
+#: PSI 三档基线（libpsi 求交 / PSI-CA 计数 / PI-Sum 交集内求和）都只跑一条执行路径
+#: （CellSetIntersect）；记录里没有 operation 列时按此填
 PSI_BENCHMARK_OPERATION = "CellSetIntersect"
 
 #: MB → 字节（记录里的内存列以 MB 计；换算后 MB 原值仍在 metadata.raw 里）
@@ -79,31 +94,44 @@ COMMON_FIELDS: tuple[str, ...] = (
     "status",
 )
 
-#: 共有字段的口径与单位（毫秒 / 字节）。两族来路不同的地方逐条写明。
+#: 共有字段的口径与单位（毫秒 / 字节）。各族来路不同的地方逐条写明。
 FIELD_SEMANTICS: Mapping[str, str] = {
-    "family": "协议族：PSI / MPC",
-    "protocol": "协议名（官方枚举名；两族名字不重叠）",
-    "operation": "算子名；PSI 基线只跑 CellSetIntersect，MPC 取记录的 op",
-    "world_size": "参与方数量下限，取自各自协议注册表",
+    "family": (
+        "协议族：PSI = libpsi 求交；PSI-CA = openmined-psi 计数；"
+        "PI-SUM = private-join-and-compute 交集内求和；MPC = 密态算子运行时"
+    ),
+    "protocol": "协议名（PSI 三档用各自路径协议名 / MPC 用官方枚举名；各族名字不重叠）",
+    "operation": "算子名；PSI 三档基线只跑 CellSetIntersect，MPC 取记录的 op",
+    "world_size": (
+        "参与方数量下限：PSI / MPC 取自各自协议注册表；PSI-CA / PI-Sum "
+        "从记录列读取（运行器写入运行时结论）"
+    ),
     "field": (
         "密码域：MPC = 环宽 FM32/FM64/FM128；PSI = 椭圆曲线"
-        "（曲线关系为 ignored 的协议记 None，因为给了也不读）"
+        "（曲线关系为 ignored 的协议记 None，因为给了也不读）；"
+        "PSI-CA / PI-Sum 无曲线 / 环宽概念（结构 / Paillier 等参数在 metadata）"
     ),
-    "input_size": "N：输入规模。PSI = n_left + n_right；MPC = 可归约元素数 k",
-    "unique_size": "unique_N：去重后规模。PSI = 两方唯一键数之和；MPC 无去重概念（None）",
-    "result_size": "结果规模。PSI = 交集基数（ECDH 含重复乘数）；MPC 基线未记录（None）",
+    "input_size": "N：输入规模。PSI 三档 = n_left + n_right；MPC = 可归约元素数 k",
+    "unique_size": "unique_N：去重后规模。PSI 三档 = 两方唯一键数之和；MPC 无去重概念（None）",
+    "result_size": (
+        "结果规模。PSI = 交集基数（ECDH 含重复乘数）；PSI-CA / PI-Sum = 交集基数"
+        "（PI-Sum 的和值在 metadata）；MPC 基线未记录（None）"
+    ),
     "compute_time": (
         "协议计算耗时（毫秒）= §九 的 protocol_time。PSI = psi_execute_ms；"
+        "PSI-CA = psi_ca_execute_ms；PI-Sum = pi_sum_execute_ms（含两个子进程往返）；"
         "MPC = wall_ms - setup_ms（setup 是造数，wall 含它在内）"
     ),
     "communication_bytes": (
         "发送 + 接收字节 = §九 的 send_bytes + recv_bytes。"
-        "MPC = comm_total_bytes；PSI 基线未采集通信量（None）"
+        "MPC = comm_total_bytes；PSI 三档基线未采集通信量（None）"
     ),
-    "total_time": "端到端耗时（毫秒）。PSI = total_ms；MPC = wall_ms（repeat>1 时是中位数）",
+    "total_time": "端到端耗时（毫秒）。PSI 三档 = total_ms；MPC = wall_ms（repeat>1 时是中位数）",
     "memory_bytes": (
         "峰值常驻内存（字节）= §九 的 peak_memory。由 peak_rss_mb 换算；"
-        "注意同名的 memory_mb 是「本次运行抬升高水位多少」，不是绝对值"
+        "注意同名的 memory_mb 是「本次运行抬升高水位多少」，不是绝对值。"
+        "PSI-CA 的运行器进程读数覆盖协议（进程内库）；PI-Sum 协议在子进程里，"
+        "本档未采集（None，见 MISSING_METRICS）"
     ),
     "status": "ok / unavailable / error（原样透传）",
 }
@@ -118,7 +146,7 @@ class TaskDocMetric:
 
 
 #: 任务文档 §九「建议至少记录」的指标清单，逐项登记去向：
-#: `common:<字段>` / `metadata:<本族字段>` / `missing`（两族当前都没采集）。
+#: `common:<字段>` / `metadata:<本族字段>` / `missing`（各族基线当前都没采集）。
 TASK_DOC_METRICS: Mapping[str, TaskDocMetric] = {
     "family": TaskDocMetric("common:family"),
     "protocol": TaskDocMetric("common:protocol"),
@@ -128,19 +156,32 @@ TASK_DOC_METRICS: Mapping[str, TaskDocMetric] = {
     "N": TaskDocMetric("common:input_size", "§九 的 N"),
     "unique_N": TaskDocMetric("common:unique_size", "§九 的 unique_N"),
     "intersection_ratio": TaskDocMetric("metadata:intersection_ratio"),
-    "encode_time": TaskDocMetric("missing", "两族产物都没有这一列（编码耗时在编译器侧，不在基线里）"),
-    "dedup_time": TaskDocMetric("missing", "两族产物都没有这一列（去重在编译器侧，不在基线里）"),
-    "input_io_time": TaskDocMetric("metadata:input_io_time", "PSI = io_write_ms + io_read_ms；MPC 无 IO"),
+    "encode_time": TaskDocMetric("missing", "各族产物都没有这一列（编码耗时在编译器侧，不在基线里）"),
+    "dedup_time": TaskDocMetric(
+        "missing", "各族产物都没有这一列（去重在运行时内部执行，未单独计时）"
+    ),
+    "input_io_time": TaskDocMetric(
+        "metadata:input_io_time",
+        "PSI = io_write_ms + io_read_ms；MPC 无 IO；PSI-CA 全程内存（无 IO 步骤）；"
+        "PI-Sum 落盘输入 CSV 但未单独计时（缺口按族登记在 MISSING_METRICS）",
+    ),
     "protocol_time": TaskDocMetric("common:compute_time"),
-    "semantic_processing_time": TaskDocMetric("metadata:semantic_processing_time", "MPC 未记录"),
+    "semantic_processing_time": TaskDocMetric(
+        "metadata:semantic_processing_time", "PSI = semantic_ms；其余族未记录"
+    ),
     "total_time": TaskDocMetric("common:total_time"),
-    "send_bytes": TaskDocMetric("metadata:send_bytes", "PSI 未采集；MPC = comm_send_bytes"),
-    "recv_bytes": TaskDocMetric("metadata:recv_bytes", "PSI 未采集；MPC = comm_recv_bytes"),
-    "total_bytes": TaskDocMetric("metadata:total_bytes", "PSI 未采集；MPC = comm_total_bytes"),
+    "send_bytes": TaskDocMetric("metadata:send_bytes", "MPC = comm_send_bytes；PSI 三档未采集"),
+    "recv_bytes": TaskDocMetric("metadata:recv_bytes", "MPC = comm_recv_bytes；PSI 三档未采集"),
+    "total_bytes": TaskDocMetric("metadata:total_bytes", "MPC = comm_total_bytes；PSI 三档未采集"),
     "peak_memory": TaskDocMetric("common:memory_bytes", "§九 的 peak_memory"),
     "status": TaskDocMetric("common:status"),
-    "layout_agreement": TaskDocMetric("missing", "PSI 记录 layout_id 但不记握手结论；MPC 无布局概念"),
-    "result_semantics": TaskDocMetric("metadata:result_semantics", "由协议注册表派生，不在原记录里"),
+    "layout_agreement": TaskDocMetric(
+        "missing", "PSI 三档记录 layout_id 但不记握手结论；MPC 无布局概念"
+    ),
+    "result_semantics": TaskDocMetric(
+        "metadata:result_semantics",
+        "PSI / MPC 由协议注册表派生；PSI-CA / PI-Sum 取记录列（运行时的声明）",
+    ),
 }
 
 #: §九 建议、但某族基线**确实没采集**的指标（测试逐条在真实产物上锁死）
@@ -148,6 +189,27 @@ MISSING_METRICS: Mapping[str, tuple[str, ...]] = {
     BENCHMARK_FAMILY_PSI: (
         "encode_time",
         "dedup_time",
+        "layout_agreement",
+        "send_bytes",
+        "recv_bytes",
+        "total_bytes",
+    ),
+    BENCHMARK_FAMILY_PSI_CA: (
+        "encode_time",
+        "dedup_time",
+        "input_io_time",
+        "semantic_processing_time",
+        "layout_agreement",
+        "send_bytes",
+        "recv_bytes",
+        "total_bytes",
+    ),
+    BENCHMARK_FAMILY_PSI_SUM: (
+        "encode_time",
+        "dedup_time",
+        "input_io_time",
+        "semantic_processing_time",
+        "peak_memory",
         "layout_agreement",
         "send_bytes",
         "recv_bytes",
@@ -172,6 +234,7 @@ MISSING_RAW_KEYS: Mapping[str, tuple[str, ...]] = {
     "send_bytes": ("send_bytes", "comm_send_bytes"),
     "recv_bytes": ("recv_bytes", "comm_recv_bytes"),
     "total_bytes": ("total_bytes", "comm_total_bytes"),
+    "peak_memory": ("peak_memory_mb", "peak_memory", "peak_rss_mb", "memory_mb"),
 }
 
 #: 可比较的共有字段（数值型；其余字段不是「大小」）
@@ -325,6 +388,69 @@ class PSIBenchmarkMetadata:
 
 
 @dataclass(frozen=True)
+class PsiCaBenchmarkMetadata:
+    """PSI-CA 特有指标（openmined-psi 计数档）；来路见
+    `metadata_from_psi_ca_record`。"""
+
+    case: str | None
+    structure: str | None
+    protocol_leak: str | None
+    result_semantics: str | None
+    n_left: int | None
+    n_right: int | None
+    n_left_unique: int | None
+    n_right_unique: int | None
+    intersection_ratio: float | None
+    intersection_ratio_actual: float | None
+    duplicate_ratio: float | None
+    duplicate_count: int | None
+    high_bits: bool | None
+    level: int | None
+    z: int | None
+    layout_id: str | None
+    agreement: bool | None
+    protocol_time: float | None
+    peak_memory_mb: float | None
+    raw: Mapping[str, Any] = dataclass_field(repr=False)
+
+    def to_dict(self) -> dict[str, Any]:
+        return _dataclass_dict(self)
+
+
+@dataclass(frozen=True)
+class PsiSumBenchmarkMetadata:
+    """PI-Sum 特有指标（private-join-and-compute 交集内求和档）；来路见
+    `metadata_from_psi_sum_record`。"""
+
+    case: str | None
+    upstream: str | None
+    upstream_commit: str | None
+    paillier_modulus_size: int | None
+    protocol_leak: str | None
+    result_semantics: str | None
+    value_function: str | None
+    n_left: int | None
+    n_right: int | None
+    n_left_unique: int | None
+    n_right_unique: int | None
+    intersection_ratio: float | None
+    duplicate_ratio: float | None
+    duplicate_count: int | None
+    high_bits: bool | None
+    level: int | None
+    z: int | None
+    layout_id: str | None
+    agreement: bool | None
+    intersection_sum: int | None
+    intersection_sum_expected: int | None
+    protocol_time: float | None
+    raw: Mapping[str, Any] = dataclass_field(repr=False)
+
+    def to_dict(self) -> dict[str, Any]:
+        return _dataclass_dict(self)
+
+
+@dataclass(frozen=True)
 class MPCBenchmarkMetadata:
     """MPC 特有指标（§九 的 MPC 档）；来路见 `metadata_from_mpc_record`。"""
 
@@ -392,6 +518,63 @@ def metadata_from_psi_record(raw: Mapping[str, Any]) -> PSIBenchmarkMetadata:
     )
 
 
+def metadata_from_psi_ca_record(raw: Mapping[str, Any]) -> PsiCaBenchmarkMetadata:
+    """按 PSI-CA 基线运行器（`tests/benchmarks/benchmark_psi_ca.py`）的字段口径取指标。"""
+
+    return PsiCaBenchmarkMetadata(
+        case=_text(raw.get("case")),
+        structure=_text(raw.get("structure")),
+        protocol_leak=_text(raw.get("protocol_leak")),
+        result_semantics=_text(raw.get("result_semantics")),
+        n_left=_integer(raw.get("n_left")),
+        n_right=_integer(raw.get("n_right")),
+        n_left_unique=_integer(raw.get("n_left_unique")),
+        n_right_unique=_integer(raw.get("n_right_unique")),
+        intersection_ratio=_number(raw.get("intersection_ratio")),
+        intersection_ratio_actual=_number(raw.get("intersection_ratio_actual")),
+        duplicate_ratio=_number(raw.get("duplicate_ratio")),
+        duplicate_count=_integer(raw.get("duplicate_count")),
+        high_bits=_flag(raw.get("high_bits")),
+        level=_integer(raw.get("level")),
+        z=_integer(raw.get("z")),
+        layout_id=_text(raw.get("layout_id")),
+        agreement=_flag(raw.get("agreement")),
+        protocol_time=_number(raw.get("psi_ca_execute_ms")),
+        peak_memory_mb=_number(raw.get("peak_rss_mb")),
+        raw=raw,
+    )
+
+
+def metadata_from_psi_sum_record(raw: Mapping[str, Any]) -> PsiSumBenchmarkMetadata:
+    """按 PI-Sum 基线运行器（`tests/benchmarks/benchmark_psi_sum.py`）的字段口径取指标。"""
+
+    return PsiSumBenchmarkMetadata(
+        case=_text(raw.get("case")),
+        upstream=_text(raw.get("upstream")),
+        upstream_commit=_text(raw.get("upstream_commit")),
+        paillier_modulus_size=_integer(raw.get("paillier_modulus_size")),
+        protocol_leak=_text(raw.get("protocol_leak")),
+        result_semantics=_text(raw.get("result_semantics")),
+        value_function=_text(raw.get("value_function")),
+        n_left=_integer(raw.get("n_left")),
+        n_right=_integer(raw.get("n_right")),
+        n_left_unique=_integer(raw.get("n_left_unique")),
+        n_right_unique=_integer(raw.get("n_right_unique")),
+        intersection_ratio=_number(raw.get("intersection_ratio")),
+        duplicate_ratio=_number(raw.get("duplicate_ratio")),
+        duplicate_count=_integer(raw.get("duplicate_count")),
+        high_bits=_flag(raw.get("high_bits")),
+        level=_integer(raw.get("level")),
+        z=_integer(raw.get("z")),
+        layout_id=_text(raw.get("layout_id")),
+        agreement=_flag(raw.get("agreement")),
+        intersection_sum=_integer(raw.get("intersection_sum")),
+        intersection_sum_expected=_integer(raw.get("intersection_sum_expected")),
+        protocol_time=_number(raw.get("pi_sum_execute_ms")),
+        raw=raw,
+    )
+
+
 def metadata_from_mpc_record(raw: Mapping[str, Any]) -> MPCBenchmarkMetadata:
     """按 `docs/MPC_BENCHMARK_PROTOCOL.md` 的字段口径取 MPC 指标。"""
 
@@ -422,7 +605,7 @@ def metadata_from_mpc_record(raw: Mapping[str, Any]) -> MPCBenchmarkMetadata:
 
 @dataclass(frozen=True)
 class CommonBenchmarkRecord:
-    """两族共有的 13 个字段 + 本族指标（`metadata`）。"""
+    """各族共有的 13 个字段 + 本族指标（`metadata`）。"""
 
     family: str
     protocol: str
@@ -474,6 +657,58 @@ def psi_record(raw: Mapping[str, Any]) -> CommonBenchmarkRecord:
     )
 
 
+def psi_ca_record(raw: Mapping[str, Any]) -> CommonBenchmarkRecord:
+    """把一条 PSI-CA 基线记录投影成共有字段（口径见 `FIELD_SEMANTICS`）。"""
+
+    metadata = metadata_from_psi_ca_record(raw)
+    protocol = _text(raw.get("protocol"))
+    return CommonBenchmarkRecord(
+        family=BENCHMARK_FAMILY_PSI_CA,
+        protocol=protocol or "",
+        operation=_text(raw.get("operation")) or PSI_BENCHMARK_OPERATION,
+        world_size=_integer(raw.get("world_size")),
+        field=None,
+        input_size=_sum_integers(raw.get("n_left"), raw.get("n_right")),
+        unique_size=_sum_integers(
+            raw.get("n_left_unique"), raw.get("n_right_unique")
+        ),
+        result_size=_integer(raw.get("intersection_count")),
+        compute_time=metadata.protocol_time,
+        # 本档未采集通信量：不填 0（缺口见 MISSING_METRICS["PSI-CA"]）
+        communication_bytes=None,
+        total_time=_number(raw.get("total_ms")),
+        memory_bytes=_mb_to_bytes(raw.get("peak_rss_mb")),
+        status=_text(raw.get("status")) or STATUS_UNKNOWN,
+        metadata=metadata.to_dict(),
+    )
+
+
+def psi_sum_record(raw: Mapping[str, Any]) -> CommonBenchmarkRecord:
+    """把一条 PI-Sum 基线记录投影成共有字段（口径见 `FIELD_SEMANTICS`）。"""
+
+    metadata = metadata_from_psi_sum_record(raw)
+    protocol = _text(raw.get("protocol"))
+    return CommonBenchmarkRecord(
+        family=BENCHMARK_FAMILY_PSI_SUM,
+        protocol=protocol or "",
+        operation=_text(raw.get("operation")) or PSI_BENCHMARK_OPERATION,
+        world_size=_integer(raw.get("world_size")),
+        field=None,
+        input_size=_sum_integers(raw.get("n_left"), raw.get("n_right")),
+        unique_size=_sum_integers(
+            raw.get("n_left_unique"), raw.get("n_right_unique")
+        ),
+        result_size=_integer(raw.get("intersection_count")),
+        compute_time=metadata.protocol_time,
+        # 子进程路径未采集通信量 / 进程内存：不填 0（缺口见 MISSING_METRICS["PI-SUM"]）
+        communication_bytes=None,
+        total_time=_number(raw.get("total_ms")),
+        memory_bytes=None,
+        status=_text(raw.get("status")) or STATUS_UNKNOWN,
+        metadata=metadata.to_dict(),
+    )
+
+
 def mpc_record(raw: Mapping[str, Any]) -> CommonBenchmarkRecord:
     """把一条 MPC 基线记录投影成共有字段（口径见 `FIELD_SEMANTICS`）。"""
 
@@ -502,6 +737,8 @@ _RECORD_ADAPTERS: Mapping[
     str, Callable[[Mapping[str, Any]], CommonBenchmarkRecord]
 ] = {
     BENCHMARK_FAMILY_PSI: psi_record,
+    BENCHMARK_FAMILY_PSI_CA: psi_ca_record,
+    BENCHMARK_FAMILY_PSI_SUM: psi_sum_record,
     BENCHMARK_FAMILY_MPC: mpc_record,
 }
 
@@ -533,14 +770,23 @@ def status_counts(
 
 
 def infer_family(record: Mapping[str, Any]) -> str:
-    """按记录里**实际存在的列**判断族；判不出就报错，不猜。"""
+    """按记录里**实际存在的列**判断族；判不出就报错，不猜。
 
+    三条 PSI 路径靠各自的执行耗时列区分（`psi_ca_execute_ms` /
+    `pi_sum_execute_ms` / `psi_execute_ms`）；这两条检查必须在通用 PSI
+    规则之前——新路径的记录同样带 `n_left`。
+    """
+
+    if "psi_ca_execute_ms" in record:
+        return BENCHMARK_FAMILY_PSI_CA
+    if "pi_sum_execute_ms" in record:
+        return BENCHMARK_FAMILY_PSI_SUM
     if "op" in record and "k" in record:
         return BENCHMARK_FAMILY_MPC
     if "psi_execute_ms" in record or "n_left" in record:
         return BENCHMARK_FAMILY_PSI
     raise ValueError(
-        f"无法判断记录的协议族（既不像 PSI 也不像 MPC）：{sorted(record)}"
+        f"无法判断记录的协议族（不像已登记的四个族）：{sorted(record)}"
     )
 
 

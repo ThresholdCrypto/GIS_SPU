@@ -116,6 +116,9 @@ server = 右侧输入
 
 # 4) 测试（真机下 TestCountModeExecution 走 "ok + count-only" 分支）
 /opt/miniconda3/envs/spu311/bin/python -m pytest tests/test_psi_ca_backend.py tests/test_cli_psi_ca.py -q
+
+# 5) 基准基线（可选；期望 3 条 ok、agree=true，产物写 docs/psi_ca_benchmark_baseline.json）
+/opt/miniconda3/envs/spu311/bin/python tests/benchmarks/benchmark_psi_ca.py
 ```
 
 **实测（2026-10-09，WSL2 Ubuntu + Python 3.11.16）**

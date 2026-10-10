@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """统一 benchmark metadata（Phase 7 / 任务文档 §九）的测试。
 
-对拍用**真实产物**（`docs/` 下三份基线 JSON），不造假记录：
+对拍用**真实产物**（`docs/` 下五份基线 JSON），不造假记录：
 投影必须与产物逐字段对得上，声明为「缺口」的指标必须真的不在产物里。
 """
 
@@ -23,6 +23,8 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PSI_BASELINE = os.path.join(PROJECT_ROOT, "docs", "psi_benchmark_baseline.json")
 MPC_BASELINE = os.path.join(PROJECT_ROOT, "docs", "mpc_benchmark_baseline.json")
 MPC_COMM_BASELINE = os.path.join(PROJECT_ROOT, "docs", "mpc_comm_baseline.json")
+PSI_CA_BASELINE = os.path.join(PROJECT_ROOT, "docs", "psi_ca_benchmark_baseline.json")
+PSI_SUM_BASELINE = os.path.join(PROJECT_ROOT, "docs", "psi_sum_benchmark_baseline.json")
 
 #: 任务文档 §九 的 `BenchmarkRecord` 字段（逐字对照，测试独立抄一份）
 TASK_DOC_COMMON_FIELDS = (
@@ -84,6 +86,16 @@ def psi_raw():
 
 
 @pytest.fixture(scope="module")
+def psi_ca_raw():
+    return _read(PSI_CA_BASELINE)
+
+
+@pytest.fixture(scope="module")
+def psi_sum_raw():
+    return _read(PSI_SUM_BASELINE)
+
+
+@pytest.fixture(scope="module")
 def mpc_raw():
     return _read(MPC_BASELINE)
 
@@ -96,6 +108,16 @@ def mpc_comm_raw():
 @pytest.fixture(scope="module")
 def psi_records():
     return bs.load_benchmark_file(PSI_BASELINE)
+
+
+@pytest.fixture(scope="module")
+def psi_ca_records():
+    return bs.load_benchmark_file(PSI_CA_BASELINE)
+
+
+@pytest.fixture(scope="module")
+def psi_sum_records():
+    return bs.load_benchmark_file(PSI_SUM_BASELINE)
 
 
 @pytest.fixture(scope="module")
@@ -122,9 +144,9 @@ class TestSchemaTables:
     def test_task_doc_targets_resolve(self):
         psi_fields = set(bs.PSIBenchmarkMetadata.__dataclass_fields__)
         mpc_fields = set(bs.MPCBenchmarkMetadata.__dataclass_fields__)
-        declared_gaps = set(bs.MISSING_METRICS["PSI"]) | set(
-            bs.MISSING_METRICS["MPC"]
-        )
+        declared_gaps = set()
+        for names in bs.MISSING_METRICS.values():
+            declared_gaps |= set(names)
         for name, metric in bs.TASK_DOC_METRICS.items():
             kind, _, field = metric.target.partition(":")
             if kind == "common":
@@ -148,7 +170,7 @@ class TestSchemaTables:
         assert set(bs.MISSING_RAW_KEYS) == declared
 
     def test_families_are_declared(self):
-        assert bs.BENCHMARK_FAMILIES == ("PSI", "MPC")
+        assert bs.BENCHMARK_FAMILIES == ("PSI", "PSI-CA", "PI-SUM", "MPC")
         assert set(bs.MISSING_METRICS) == set(bs.BENCHMARK_FAMILIES)
 
     def test_curve_relation_vocabulary_matches_registry(self):
@@ -239,6 +261,111 @@ class TestPsiProjection:
     def test_metadata_keeps_the_whole_raw_record(self, psi_raw):
         for raw in psi_raw:
             metadata = bs.psi_record(raw).metadata
+            assert metadata["raw"] == raw
+
+
+class TestPsiCaProjection:
+    def test_every_row_projects_in_order(self, psi_ca_records, psi_ca_raw):
+        assert len(psi_ca_records) == len(psi_ca_raw) == 3
+        assert [record.metadata["case"] for record in psi_ca_records] == [
+            record["case"] for record in psi_ca_raw
+        ]
+
+    def test_common_fields_come_from_the_record(self, psi_ca_records, psi_ca_raw):
+        for record, raw in zip(psi_ca_records, psi_ca_raw):
+            assert record.family == "PSI-CA"
+            assert record.protocol == raw["protocol"] == "PSI-CA"
+            assert record.operation == "CellSetIntersect"
+            assert record.world_size == raw["world_size"] == 2
+            assert record.input_size == _sum([raw["n_left"], raw["n_right"]])
+            assert record.unique_size == _sum(
+                [raw["n_left_unique"], raw["n_right_unique"]]
+            )
+            assert record.result_size == raw["intersection_count"]
+            assert record.compute_time == raw["psi_ca_execute_ms"]
+            assert record.total_time == raw["total_ms"]
+            assert record.status == raw["status"]
+            assert record.communication_bytes is None
+
+    def test_memory_is_the_runner_process_peak_rss(
+        self, psi_ca_records, psi_ca_raw
+    ):
+        for record, raw in zip(psi_ca_records, psi_ca_raw):
+            assert record.metadata["peak_memory_mb"] == raw["peak_rss_mb"]
+            assert record.memory_bytes == int(
+                round(raw["peak_rss_mb"] * bs.BYTES_PER_MB)
+            )
+
+    def test_count_matches_the_constructed_expectation(
+        self, psi_ca_records, psi_ca_raw
+    ):
+        for record, raw in zip(psi_ca_records, psi_ca_raw):
+            assert raw["intersection_count"] == raw["intersection_count_expected"]
+            assert record.metadata["agreement"] is True
+
+    def test_leak_and_semantics_come_from_the_record(self, psi_ca_records):
+        for record in psi_ca_records:
+            assert record.metadata["structure"] == "RAW"
+            assert record.metadata["protocol_leak"] == "count-only"
+            assert record.metadata["result_semantics"] == "exact"
+
+    def test_metadata_keeps_the_whole_raw_record(self, psi_ca_raw):
+        for raw in psi_ca_raw:
+            metadata = bs.psi_ca_record(raw).metadata
+            assert metadata["raw"] == raw
+
+
+class TestPsiSumProjection:
+    def test_every_row_projects_in_order(self, psi_sum_records, psi_sum_raw):
+        assert len(psi_sum_records) == len(psi_sum_raw) == 3
+        assert [record.metadata["case"] for record in psi_sum_records] == [
+            record["case"] for record in psi_sum_raw
+        ]
+
+    def test_common_fields_come_from_the_record(self, psi_sum_records, psi_sum_raw):
+        for record, raw in zip(psi_sum_records, psi_sum_raw):
+            assert record.family == "PI-SUM"
+            assert record.protocol == raw["protocol"] == "PJC-PI-SUM"
+            assert record.operation == "CellSetIntersect"
+            assert record.world_size == raw["world_size"] == 2
+            assert record.input_size == _sum([raw["n_left"], raw["n_right"]])
+            assert record.unique_size == _sum(
+                [raw["n_left_unique"], raw["n_right_unique"]]
+            )
+            assert record.result_size == raw["intersection_count"]
+            assert record.compute_time == raw["pi_sum_execute_ms"]
+            assert record.total_time == raw["total_ms"]
+            assert record.status == raw["status"]
+            assert record.communication_bytes is None
+            # 子进程路径：运行器进程 RSS 不含协议内存，本档未采集（缺口已登记）
+            assert record.memory_bytes is None
+
+    def test_sum_matches_the_constructed_expectation(
+        self, psi_sum_records, psi_sum_raw
+    ):
+        for record, raw in zip(psi_sum_records, psi_sum_raw):
+            assert raw["intersection_sum"] == raw["intersection_sum_expected"]
+            assert record.metadata["intersection_sum"] == raw["intersection_sum"]
+            assert record.metadata["intersection_sum_expected"] == raw[
+                "intersection_sum_expected"
+            ]
+            assert record.metadata["agreement"] is True
+
+    def test_upstream_provenance_is_carried(self, psi_sum_records):
+        for record in psi_sum_records:
+            assert record.metadata["upstream"] == "google/private-join-and-compute"
+            assert record.metadata["upstream_commit"] == "950c5e4"
+            assert record.metadata["paillier_modulus_size"] == 1536
+            assert record.metadata["value_function"] == "1+(code%997)"
+
+    def test_leak_and_semantics_come_from_the_record(self, psi_sum_records):
+        for record in psi_sum_records:
+            assert record.metadata["protocol_leak"] == "count+sum"
+            assert record.metadata["result_semantics"] == "exact"
+
+    def test_metadata_keeps_the_whole_raw_record(self, psi_sum_raw):
+        for raw in psi_sum_raw:
+            metadata = bs.psi_sum_record(raw).metadata
             assert metadata["raw"] == raw
 
 
@@ -334,8 +461,12 @@ class TestLosslessness:
 
 
 class TestFamilyInference:
-    def test_infers_both_families(self, psi_raw, mpc_raw):
+    def test_infers_every_declared_family(
+        self, psi_raw, psi_ca_raw, psi_sum_raw, mpc_raw
+    ):
         assert bs.infer_family(psi_raw[0]) == "PSI"
+        assert bs.infer_family(psi_ca_raw[0]) == "PSI-CA"
+        assert bs.infer_family(psi_sum_raw[0]) == "PI-SUM"
         assert bs.infer_family(mpc_raw[0]) == "MPC"
 
     def test_refuses_to_guess(self):
@@ -375,6 +506,18 @@ class TestMissingMetricsAreReal:
         for name in bs.MISSING_METRICS["MPC"]:
             keys = bs.MISSING_RAW_KEYS[name]
             for raw in list(mpc_raw) + list(mpc_comm_raw):
+                assert not any(key in raw for key in keys), (name, keys)
+
+    def test_declared_gaps_are_absent_from_the_psi_ca_artifact(self, psi_ca_raw):
+        for name in bs.MISSING_METRICS["PSI-CA"]:
+            keys = bs.MISSING_RAW_KEYS[name]
+            for raw in psi_ca_raw:
+                assert not any(key in raw for key in keys), (name, keys)
+
+    def test_declared_gaps_are_absent_from_the_psi_sum_artifact(self, psi_sum_raw):
+        for name in bs.MISSING_METRICS["PI-SUM"]:
+            keys = bs.MISSING_RAW_KEYS[name]
+            for raw in psi_sum_raw:
                 assert not any(key in raw for key in keys), (name, keys)
 
     def test_psi_io_time_is_not_a_gap(self, psi_records):
@@ -467,6 +610,19 @@ class TestCompareProtocols:
         skipped = dict(compared.skipped)
         assert skipped["RR22 N=2^12 dup=0.25"] == "status=error（未执行的行不给数字）"
         assert skipped["KKRT N=2^12 dup=0.25"] == "status=error（未执行的行不给数字）"
+
+    def test_within_psi_ca_family_is_comparable(self, psi_ca_records):
+        compared = bs.compare_protocols(
+            psi_ca_records, "compute_time", input_size=2048
+        )
+        assert [row.key for row in compared.rows] == ["PSI-CA N=2^10"]
+        assert compared.rows[0].samples == 1
+
+    def test_cross_family_comparison_is_refused(self, psi_records, psi_ca_records):
+        with pytest.raises(ValueError, match="多个族"):
+            bs.compare_protocols(
+                list(psi_records) + list(psi_ca_records), "total_time"
+            )
 
     def test_mpc_repeats_are_aggregated_by_median(self, mpc_records):
         compared = bs.compare_protocols(

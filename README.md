@@ -1101,7 +1101,7 @@ tests/test_spu_backend.py         52 项   协议/环宽规范化、能力门控
 tests/test_spu_profile.py         13 项   SPU 通信量剖析：pphlo 日志解析与 fd 级捕获（P2-2）
 tests/test_benchmark_mpc.py       70 项   MPC 基线：用例构造、协议×算子×环宽矩阵、通信量采集、策略 A/B、诚实留空、四个探针开关的产物路径与互斥
 tests/test_benchmark.py           33 项   PSI 基线生成器确定性/合法性、记录 schema、unavailable 诚实规则、写入器、真实 RR22 记录
-tests/test_benchmark_schema.py   48 项   统一 benchmark metadata（Phase 7）：共有 13 字段投影、缺口在真实产物上锁死、跨协议比较（只比 ok 行 / 不同规模不比 / 重复取中位数）
+tests/test_benchmark_schema.py   64 项   统一 benchmark metadata（Phase 7 / 9）：四族（PSI / PSI-CA / PI-SUM / MPC）13 字段投影、缺口在真实产物上锁死、跨协议比较（只比 ok 行 / 不同规模不比 / 重复取中位数）
 tests/test_psi_backend.py         82 项   PSI 能力/协议归一化/真实求交/空输入/泄漏面/诚实留空/日志卫生/带噪与精确披露/RR22 参数链路
 tests/test_psi_ca_backend.py      16 项   PSI-Cardinality 计数档（第四后端族）：能力/API 核对、只出交集基数、编译期拒绝契约、执行装配与真机判读
 tests/test_psi_sum_backend.py     32 项   PI-Sum 交集内求和档（第五后端族）：上游 flag 形态核对、编译期拒绝清单、执行装配与真机结果判读
@@ -1832,20 +1832,28 @@ geo-secure build examples/distance_check.py \
 - PSI 性能基线：`tests/benchmarks/benchmark_psi.py`（见 5.8 与 `docs/BENCHMARK_PROTOCOL.md`）；
 - 可扩展：批量编译、代价报告导出、与 CI 集成（把 `geo-secure check` 作为前置门禁）。
 
-### 8.7 统一 benchmark metadata（Phase 7，已落地）
+### 8.7 统一 benchmark metadata（Phase 7 / Phase 9，已落地）
 
 任务文档 §九 要求「PSI / MPC 都能输出统一的 benchmark metadata」，
-且「不要为了统一而丢失 PSI 特有指标」。本版把两族记录投影到同一张表：
+且「不要为了统一而丢失 PSI 特有指标」。本版把**四个协议族**记录投影到同一张表：
 
 - 模块 `backends/benchmark_schema.py`：`CommonBenchmarkRecord`（13 个共有字段）
-  + `PSIBenchmarkMetadata` / `MPCBenchmarkMetadata` + `metadata.raw`（原记录保真）；
+  + `PSIBenchmarkMetadata` / `PsiCaBenchmarkMetadata` / `PsiSumBenchmarkMetadata` /
+  `MPCBenchmarkMetadata` + `metadata.raw`（原记录保真）；
+- 三条 PSI 路径泄漏承诺互不相同（`intersection-body` / `count-only` / `count+sum`），
+  记录在 `metadata.protocol_leak`，不混成一个“PSI”；
 - §九 清单 21 项逐条登记去向（`common:` / `metadata:` / `missing`），
-  某族**确实没采集**的指标显式登记成缺口，并由测试在真实产物上锁死；
+  某族**确实没采集**的指标显式登记成缺口（如 PI-Sum 的子进程内存），
+  并由测试在真实产物上锁死；
+- 两条外部路径各有基线运行器（`tests/benchmarks/benchmark_psi_ca.py` /
+  `benchmark_psi_sum.py`），真实基线产物 `docs/psi_ca_benchmark_baseline.json`
+  （3 条）与 `docs/psi_sum_benchmark_baseline.json`（3 条）已入库；
 - 投影器 `scripts/unify_benchmark.py`：只读既有基线，不重跑、不改写产物；
+  一条命令重算两条外部基线 + 统一层测试：`bash scripts/verify_external_baselines_wsl.sh`；
 - 跨协议比较 `compare_protocols`：只比 `ok` 行、不同族/算子/规模直接报错、
   同用例重测取中位数并带出样本数与极差。
 
-详见 `docs/BENCHMARK_SCHEMA.md`；测试 `tests/test_benchmark_schema.py`（48 项）。
+详见 `docs/BENCHMARK_SCHEMA.md`；测试 `tests/test_benchmark_schema.py`（64 项）。
 
 ---
 

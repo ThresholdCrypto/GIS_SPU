@@ -6,6 +6,8 @@
         --json docs/psi_benchmark_unified.json
     python scripts/unify_benchmark.py docs/mpc_benchmark_baseline.json \
         docs/mpc_comm_baseline.json --json docs/mpc_benchmark_unified.json
+    python scripts/unify_benchmark.py docs/psi_ca_benchmark_baseline.json \
+        docs/psi_sum_benchmark_baseline.json --json docs/psi_external_unified.json
     python scripts/unify_benchmark.py docs/psi_benchmark_baseline.json \
         --compare total_time --input-size 8192
 

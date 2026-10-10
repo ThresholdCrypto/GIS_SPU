@@ -1,8 +1,8 @@
 # 项目进展说明：geo-secure 低门槛隐私计算编译器（MVP）
 
 > **口径对齐**：2026 年 9 月工作月报（任务 3）。
-> **截至 2026-10-10**，本地与远程 `main` 一致：**29 个提交**、
-> **1172 项自动化测试全部通过（0 失败 / 0 跳过）**。
+> **截至 2026-10-10**，本地与远程 `main` 一致：**30 个提交**、
+> **1188 项自动化测试全部通过（0 失败 / 0 跳过）**。
 > **验证环境**：WSL2 Ubuntu 26.04.1 / x86_64，Python 3.11.16，spu 0.9.5，jax 0.4.34。
 
 ---
@@ -63,6 +63,7 @@ def check_conflict(route, no_fly_zone):
 | 2026-10-10 | （本提交） | **Phase 4：Planner → Runtime 的 MPC 协议闭环**——执行期协议改为**逐步解析**（`_step_protocol`：显式指定 > 方案实测选择 > 登记默认值），修掉“两个 MPC 步骤各选不同协议时被统一成第一个协议”的静默换协议；新增 `_check_mpc_closure` 兜底核对与 9 项对拍测试；编译 JSON 的 plan 步带出 `mpc_protocol` / `mpc_protocol_basis` | **`1103 passed`**（WSL2 真机，0 跳过） |
 | 2026-10-10 | （本提交） | **Phase 7：统一 benchmark metadata**——新增 `backends/benchmark_schema.py`（共有 13 字段 + 两族指标 + 缺口登记）与投影器 `scripts/unify_benchmark.py`，48 项测试；跨协议比较只比 `ok` 行、不同族/算子/规模直接报错、同用例重测取中位数（见 `docs/BENCHMARK_SCHEMA.md`） | **`1151 passed`**（WSL2 真机，0 跳过） |
 | 2026-10-10 | （本提交） | **Phase 8：外部 PSI 执行档接入方案层**——`--psi-count psi-ca` / `--psi-sum pjc` 的计划步骤带出 `execution_backend`（`PSI-CA` / `PI-Sum`），计划表与最终状态表的 Backend 列不再写 `PSI`（与状态词 `count-only` / `count-and-sum` 同一口径）；登记表 `EXTERNAL_PSI_FAMILY_*` 与 backends 逐项交叉断言（21 项测试） | **`1172 passed`**（WSL2 真机，0 跳过） |
+| 2026-10-10 | （本提交） | **Phase 9：统一 benchmark metadata 扩到四族**——`BENCHMARK_FAMILIES = PSI / PSI-CA / PI-SUM / MPC`；两条外部路径基线运行器（`benchmark_psi_ca.py` / `benchmark_psi_sum.py`）与真实基线产物入库（各 3 条、全部 ok）；缺口登记补三处（PI-Sum `peak_memory`、外部两档 `input_io_time` / `semantic_processing_time`）；统一层测试 48 → 64 项 | **`1188 passed`**（WSL2 真机，0 跳过） |
 
 > 「+ 工作区改动」表示该轮结果记录于提交前后的工作区状态，逐轮明细见
 > `docs/VERSION_COMPATIBILITY.md`。
@@ -193,9 +194,15 @@ def check_conflict(route, no_fly_zone):
    **Phase 8 前半已闭合（本提交）**：外部 PSI 执行档接入方案层——计划步骤带出
    `execution_backend`（`PSI-CA` / `PI-Sum`）与该档强制的结果策略、协议泄漏面
    （`planner/registry.py` 的 `EXTERNAL_PSI_FAMILY_*`，与两个 backends 逐项交叉断言）。
+   **Phase 9 已闭合（本提交）**：`benchmark_schema` 并入两条外部路径——族扩为
+   `PSI / PSI-CA / PI-SUM / MPC` 四族，新增两套 metadata / 适配器 / 族推断与
+   缺口登记（PI-Sum `peak_memory`、外部两档 `input_io_time` /
+   `semantic_processing_time`）；两条路径各配一个基线运行器
+   （`tests/benchmarks/benchmark_psi_ca.py` / `benchmark_psi_sum.py`），
+   真机基线产物入库（各 3 条、全部 ok），统一层测试 48 → 64 项。
    **仍开放**：`REVEAL_TO_REGULATOR`（部署期模式，显式拒绝）与 MPC 侧的策略↔协议解耦；
-   `benchmark_schema.BENCHMARK_FAMILIES` 仍只覆盖 libpsi 一条 PSI 路径——两条外部
-   路径要并入得先有真实基线产物，不拿推测数字填表。
+   三条 PSI 路径的通信量计量与 PI-Sum 的子进程内存采集
+   （见 `docs/BENCHMARK_SCHEMA.md` §8）。
 
 ---
 
@@ -204,13 +211,15 @@ def check_conflict(route, no_fly_zone):
 ```bash
 git clone git@github.com:ThresholdCrypto/GIS_SPU.git && cd GIS_SPU
 pip install -r requirements-spu.txt   # spu==0.9.5 / jax<=0.4.34 / numpy<2
-python -m pytest tests/ -q            # 1172 项全部通过（0 跳过）
+python -m pytest tests/ -q            # 1188 项全部通过（0 跳过）
 python -m geosecure.cli build examples/distance_check.py
 ```
 
 WSL2 / Linux 上一键脚本：`bash scripts/setup_wsl_spu.sh`。
 外部 PSI 执行档（PSI-CA / PI-Sum）在方案层的标注复核：
 `bash scripts/verify_external_family_plan.sh`（三种档位的最终状态表 + 全量回归）。
+外部两档基准基线重算：`bash scripts/verify_external_baselines_wsl.sh`
+（PSI-CA + PI-Sum 真机基线 + 统一层测试；PI-Sum 需 `GIS_SPU_PJC_BIN_DIR`）。
 
 ---
 

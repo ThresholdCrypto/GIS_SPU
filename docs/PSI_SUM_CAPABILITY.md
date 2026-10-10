@@ -116,8 +116,16 @@ server = 右侧输入（只持标识符）
    `result-sems = exact`、client 退出码 0；能力核查 `runnable=true`，实际使用
    `paillier_modulus_size=1536`（与上游默认一致）。命令见 §8，能力核查原文见
    `docs/psi_sum_capability_report_wsl.json`。
-   **仍未实测**：Paillier 1536 位模数在本机的耗时与内存占用；跨机部署
-   （两侧 `LocalCredentials(LOCAL_TCP)` 只允许同机，跨机须自行加通道保护）。
+   **2026-10-10 从零复跑复核**（WSL 重装后 /tmp 被清空）：clone → Bazel 构建
+   （5,683 个 action）→ `psi-sum-check` → `build examples/intersection_sum.py`
+   全链重跑，结果与上一致（`(2, 13)`、`agree=True`）；同日产出性能基线
+   `docs/psi_sum_benchmark_baseline.json`（N=2^8 / 2^10 / 2^12，三条均 `agree=true`）。
+   注意耗时读数的**重复性有限**：同机多轮复核里 2^8 档从 1.4 s 到 22.6 s 都出现过
+   （机器负载与 Paillier 固定开销主导，规模不是唯一因素）——引用读数时带上轮次
+   与机器上下文，别当容量规划的绝对值。
+   **仍未实测**：Paillier 1536 位模数的**进程内存占用**（协议跑在两个子进程里，
+   运行器进程 RSS 不覆盖它们；已在 `MISSING_METRICS["PI-SUM"]` 登记）；
+   跨机部署（两侧 `LocalCredentials(LOCAL_TCP)` 只允许同机，跨机须自行加通道保护）。
 
 2. **接入层已验证**：`tests/test_psi_sum_backend.py`（32 项）与
    `tests/test_cli_psi_sum.py`（20 项）在**测试桩**下全绿。桩替换的是
@@ -156,6 +164,10 @@ cd /mnt/c/Users/DELL/Documents/Codex/2026-09-20/geosot-3d-dqg-4d-c-users-2/GIS_S
 geo-secure psi-sum-check                       # 能力核查：应 runnable=true
 geo-secure build examples/intersection_sum.py --psi-sum pjc \
     --psi-sum-weights route=examples/route_risk_weights.csv
+
+# 5) 基准基线（可选；期望 3 条 ok、agree=true，产物写 docs/psi_sum_benchmark_baseline.json）
+GIS_SPU_PJC_BIN_DIR=/tmp/pjc/bazel-bin/private_join_and_compute \
+    /opt/miniconda3/envs/spu311/bin/python tests/benchmarks/benchmark_psi_sum.py
 ```
 
 期望：状态表里 `CellSetIntersect` 的 Status 为 `count-and-sum`，
